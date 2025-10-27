@@ -40,6 +40,11 @@ class Building(BaseModel):
     num_floors: Optional[int] = Field(
         None, description="The number of floors in the building."
     )
+    floor_area: Optional[float] = Field(
+        None,
+        ge=0.0,
+        description="The total floor area of the building in square meters.",
+    )
 
     @field_validator("idf_file_path")
     def validate_idf_file_path(cls, v: Path) -> Path:

@@ -91,6 +91,7 @@ class TestBuilding:
             building_type=BuildingType.OFFICE_LARGE,
             location="Chicago",
             idf_file_path=temp_idf,
+            floor_area=1000.0
         )
 
         # Assert
@@ -107,6 +108,17 @@ class TestBuilding:
                 location="Chicago",
                 idf_file_path=Path("/nonexistent/file.idf"),
             )
+
+    def test_building_negative_area(self, temp_idf):  
+        """测试负面积"""  
+        with pytest.raises(ValueError, match="Floor area must be positive"):  
+            Building(  
+                name="Test",  
+                building_type=BuildingType.OFFICE_LARGE,  
+                location="Chicago",  
+                idf_file_path=temp_idf,  
+                floor_area=-100.0,  
+            ) 
 
 
 class TestECMParameters:
