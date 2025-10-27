@@ -56,10 +56,11 @@ class ECMParameters(BaseModel):
         default=None,
         description="Cooling set point temperature in °C",
     )
-    lighting_power_reduction_level: Optional[float] = Field(
+    lighting_power_reduction_level: Optional[int] = Field(
         default=None,
-        ge=0.0,
-        description="Lighting power reduction level",
+        ge=1,
+        le=3,
+        description="Lighting power reduction level (discrete level: 1, 2, 3)",
     )
 
     @property
@@ -71,7 +72,7 @@ class ECMParameters(BaseModel):
             return None
 
         level_map = self._lighting_power_reduction_map[self.building_type]
-        return level_map.get(int(self.lighting_power_reduction_level), None)
+        return level_map.get(self.lighting_power_reduction_level, None)
 
     _lighting_power_reduction_map = {
         BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},

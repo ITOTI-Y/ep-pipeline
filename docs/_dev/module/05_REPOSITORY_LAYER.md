@@ -1062,10 +1062,17 @@ class FileSystemResultRepository(IResultRepository):
         """
         # 遍历所有结果文件
         results = []
-        for result_file in self._base_directory.glob("*.json"):
-            result = self._load_result_from_file(result_file)
-            if result and str(building_id) in result_file.stem:
-                results.append(result)
+        for result_file in self._base_directory.glob("*.json"):  
+            try:  
+                with open(result_file, 'r', encoding='utf-8') as f:  
+                    data = json.load(f)  
+                meta = data.get('metadata', {}) or {}  
+                if str(building_id) == meta.get('building_id'):  
+                    result = self._deserialize_result(data)  
+                    if result:  
+                        results.append(result)  
+            except Exception as e:  
+                self._logger.warning(f"Failed to scan {result_file}: {e}")
 
         return results
 
@@ -1183,6 +1190,7 @@ class FileSystemResultRepository(IResultRepository):
             'sql_path': str(result.sql_path) if result.sql_path else None,
             'error_messages': result.error_messages,
             'warning_messages': result.warning_messages,
+            'metadata': getattr(result, 'metadata', {}) or {},
         }
 
     def _deserialize_result(self, data: dict) -> SimulationResult:
@@ -1239,7 +1247,7 @@ SQLAlchemy数据库模型
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Float, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, Float, Boolean, DateTime, Text, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declarative_base
 
@@ -1678,7 +1686,7 @@ if __name__ == "__main__":
 使用缓存的仓储示例
 """
 
-from backend.infrastructure.repositories.cache import CachedBuildingRepository
+from backend.infrastructure.cache import CachedBuildingRepository
 from backend.infrastructure.cache import SmartCache
 
 
@@ -1737,8 +1745,8 @@ class TestFileSystemBuildingRepository:
         idf_dir.mkdir()
 
         # 创建测试IDF文件
-        (idf_dir / "Chicago_OfficeLarge.idf").write_text("VERSION,23.1;")
-        (idf_dir / "Chicago_OfficeSmall.idf").write_text("VERSION,23.1;")
+        (idf_dir / "Chicago_OfficeLarge.idf").write_text("VERSION,25.1;")
+        (idf_dir / "Chicago_ApartmentHighRise.idf").write_text("VERSION,25.1;")
 
         return idf_dir
 

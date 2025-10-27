@@ -112,5 +112,5 @@ class SimulationResult(BaseModel):
         status = "Success" if self.success else "Failed"
         return (
             f"SimulationResult(id={self.id}, job_id={self.job_id}, status={status}, "
-            f"source_eui={self.source_eui}"
+            f"source_eui={self.source_eui})"
         )

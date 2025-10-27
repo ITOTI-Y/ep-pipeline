@@ -118,6 +118,7 @@ EnergyPlus执行器实现
 
 from pathlib import Path
 from typing import Optional
+import io
 import time
 
 from eppy.modeleditor import IDF

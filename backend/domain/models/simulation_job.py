@@ -92,6 +92,10 @@ class SimulationJob(BaseModel):
             )
 
         self.status = SimulationStatus.COMPLETED
+        if getattr(result, "job_id", None) != self.id:
+            raise ValueError(
+                f"Result job_id {getattr(result, 'job_id', None)} does not match SimulationJob id {self.id}."
+            )
         self.completed_at = datetime.now()
         self.result = result
 
@@ -133,5 +137,5 @@ class SimulationJob(BaseModel):
     def __str__(self) -> str:
         return (
             f"SimulationJob(id={self.id}, type={self.simulation_type.value}, "
-            f"status={self.status.value}"
+            f"status={self.status.value})"
         )

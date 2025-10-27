@@ -702,7 +702,10 @@ def clean_directory(
     count = 0
     for file in directory.glob("*"):
         if file.is_file():
-            should_delete = (file.suffix in extensions) if keep_files else (file.suffix in extensions)
+            if keep_files:  
+                should_delete = (file.suffix not in extensions)  
+            else:  
+                should_delete = (file.suffix in extensions)
 
             if should_delete:
                 try:

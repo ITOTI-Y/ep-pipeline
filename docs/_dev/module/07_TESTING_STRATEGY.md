@@ -91,7 +91,6 @@ class TestBuilding:
             building_type=BuildingType.OFFICE_LARGE,
             location="Chicago",
             idf_file_path=temp_idf,
-            floor_area=1000.0,
         )
 
         # Assert
@@ -101,23 +100,12 @@ class TestBuilding:
 
     def test_create_building_invalid_file(self):
         """测试无效文件路径"""
-        with pytest.raises(ValueError, match="IDF file does not exist"):
+        with pytest.raises(ValueError, match="does not exist or is not a file"):
             Building(
                 name="Test",
                 building_type=BuildingType.OFFICE_LARGE,
                 location="Chicago",
                 idf_file_path=Path("/nonexistent/file.idf"),
-            )
-
-    def test_building_negative_area(self, temp_idf):
-        """测试负面积"""
-        with pytest.raises(ValueError, match="Floor area must be positive"):
-            Building(
-                name="Test",
-                building_type=BuildingType.OFFICE_LARGE,
-                location="Chicago",
-                idf_file_path=temp_idf,
-                floor_area=-100.0,
             )
 
 

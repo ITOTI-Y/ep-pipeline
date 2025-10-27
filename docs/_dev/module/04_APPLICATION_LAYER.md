@@ -228,7 +228,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 from backend.domain.models import BuildingType, SimulationType
 from backend.services.orchestration import SimulationOrchestrator
-from backend.application.observers import ProgressObserver
+from backend.application.observers import (  
+    ConsoleProgressObserver,  
+    LoggingProgressObserver,  
+    MetricProgressObserver,  
+    ProgressSubject,  
+    )
 
 
 console = Console()

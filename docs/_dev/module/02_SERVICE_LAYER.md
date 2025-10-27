@@ -1699,10 +1699,7 @@ def run_optimization():
     weather = ...   # 同上
 
     # 创建优化服务
-    ga_strategy = GeneticAlgorithmStrategy(
-        population_size=50,
-        max_iterations=100,
-    )
+    ga_strategy = GeneticAlgorithmStrategy(population_size=50)
 
     orchestrator = container.resolve(SimulationOrchestrator)
     optimization_service = OptimizationService(
