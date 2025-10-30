@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "eppy>=0.5.63",
+    "loguru>=0.7.3",
     "pydantic>=2.12.3",
 ]
