@@ -1033,7 +1033,7 @@ ECM 参数值对象 - 使用Pydantic实现
 表示能效措施（Energy Conservation Measures）的参数。
 """
 
-from typing import Optional
+from typing import Optional, Dict
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 

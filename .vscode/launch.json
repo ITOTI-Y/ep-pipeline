@@ -4,9 +4,13 @@
             "name": "pytest",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/tests",
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}/tests",
+                "-v"
+            ],
             "console": "integratedTerminal",
-            "args": "pytest"
+            "justMyCode": false
         }
     ]
 }

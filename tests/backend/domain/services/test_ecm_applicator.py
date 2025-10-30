@@ -82,8 +82,8 @@ class TestECMApplicatorMainApplyMethod:
         # Should complete without errors
         assert True
 
-    def test_apply_calls_window_parameters_when_set(self, applicator, mock_idf):
-        """Test that apply calls window parameter method when window params are set."""
+    def test_apply_does_not_call_window_parameters_with_only_u_value(self, applicator, mock_idf):
+        """Test that apply does NOT call window parameter method when only U-value is set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
@@ -91,7 +91,7 @@ class TestECMApplicatorMainApplyMethod:
         
         with patch.object(applicator, '_apply_window_parameters') as mock_method:
             applicator.apply(mock_idf, params)
-            mock_method.assert_called_once_with(mock_idf, params)
+            mock_method.assert_not_called()
 
     def test_apply_calls_window_parameters_with_shgc_all_three_parameters_set(self, applicator, mock_idf):
         """Test window parameters are applied when only SHGC is set."""
@@ -188,6 +188,8 @@ class TestECMApplicatorMainApplyMethod:
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
+            window_shgc=0.4,
+            visible_transmittance=0.7,
             wall_insulation=2.5,
             cop=4.0,
         )
@@ -207,6 +209,8 @@ class TestECMApplicatorMainApplyMethod:
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
+            window_shgc=0.4,
+            visible_transmittance=0.7,
         )
         
         with patch.object(applicator, '_apply_window_parameters') as mock_method:
@@ -312,10 +316,10 @@ class TestApplyWindowParameters:
         applicator._apply_window_parameters(mock_idf, params)
         
         # Check that only windows were modified
-        assert hasattr(mock_window1, 'Construction_Name')
-        assert hasattr(mock_window2, 'Construction_Name')
+        assert 'Construction_Name' in mock_window1.__dict__
+        assert 'Construction_Name' in mock_window2.__dict__
         # Door should not be modified
-        assert not mock_door.Construction_Name or mock_door.Construction_Name != mock_window1.Construction_Name
+        assert 'Construction_Name' not in mock_door.__dict__
 
     def test_handles_empty_fenestration_surfaces_list(self, applicator, mock_idf):
         """Test that method handles empty fenestration surfaces list."""
