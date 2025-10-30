@@ -30,8 +30,8 @@ class ECMApplicator(IECMApplicator):
             self._logger.info(f"Applying ECM parameters: {parameters.to_dict()}")
             if (
                 parameters.window_u_value is not None
-                or parameters.window_shgc is not None
-                or parameters.visible_transmittance is not None
+                and parameters.window_shgc is not None
+                and parameters.visible_transmittance is not None
             ):
                 self._apply_window_parameters(idf, parameters)
             if parameters.wall_insulation is not None:
@@ -59,17 +59,12 @@ class ECMApplicator(IECMApplicator):
             idf (IDF): IDF object
             parameters (ECMParameters): ECM parameters
         """
-        try:
-            window_material_name = (
-                "WindowMaterial_SimpleGlazingSystem"
-                + f"_{parameters.window_u_value:.2f}"
-                + f"_{parameters.window_shgc:.2f}"
-                + f"_{parameters.visible_transmittance:.2f}"
-            )
-        
-        except Exception:
-            self._logger.exception("Failed to apply window parameters")
-            raise RuntimeError("Failed to apply window parameters")
+        window_material_name = (
+            "WindowMaterial_SimpleGlazingSystem"
+            + f"_{parameters.window_u_value:.2f}"
+            + f"_{parameters.window_shgc:.2f}"
+            + f"_{parameters.visible_transmittance:.2f}"
+        )
 
         if (
             idf.getobject("WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM", window_material_name)

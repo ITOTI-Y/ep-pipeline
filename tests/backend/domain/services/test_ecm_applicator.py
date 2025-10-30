@@ -93,8 +93,21 @@ class TestECMApplicatorMainApplyMethod:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
-    def test_apply_calls_window_parameters_with_shgc_only(self, applicator, mock_idf):
+    def test_apply_calls_window_parameters_with_shgc_all_three_parameters_set(self, applicator, mock_idf):
         """Test window parameters are applied when only SHGC is set."""
+        params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
+            window_u_value=1.5,
+            window_shgc=0.4,
+            visible_transmittance=0.7,
+        )
+        
+        with patch.object(applicator, '_apply_window_parameters') as mock_method:
+            applicator.apply(mock_idf, params)
+            mock_method.assert_called_once_with(mock_idf, params)
+
+    def test_apply_does_not_call_window_parameters_with_partial_params(self, applicator, mock_idf):
+        """Test window parameters are NOT applied when only some parameters are set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
@@ -102,18 +115,7 @@ class TestECMApplicatorMainApplyMethod:
         
         with patch.object(applicator, '_apply_window_parameters') as mock_method:
             applicator.apply(mock_idf, params)
-            mock_method.assert_called_once_with(mock_idf, params)
-
-    def test_apply_calls_window_parameters_with_visible_transmittance_only(self, applicator, mock_idf):
-        """Test window parameters are applied when only visible transmittance is set."""
-        params = ECMParameters(
-            building_type=BuildingType.OFFICE_LARGE,
-            visible_transmittance=0.7,
-        )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_method:
-            applicator.apply(mock_idf, params)
-            mock_method.assert_called_once_with(mock_idf, params)
+            mock_method.assert_not_called()
 
     def test_apply_calls_wall_insulation_when_set(self, applicator, mock_idf):
         """Test that apply calls wall insulation method when set."""
@@ -313,6 +315,7 @@ class TestApplyWindowParameters:
         assert hasattr(mock_window1, 'Construction_Name')
         assert hasattr(mock_window2, 'Construction_Name')
         # Door should not be modified
+        assert not mock_door.Construction_Name or mock_door.Construction_Name != mock_window1.Construction_Name
 
     def test_handles_empty_fenestration_surfaces_list(self, applicator, mock_idf):
         """Test that method handles empty fenestration surfaces list."""
