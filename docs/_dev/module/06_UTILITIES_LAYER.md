@@ -623,16 +623,21 @@ class ParallelExecutor:
 
         self._logger.info(f"Starting parallel execution: {total} items, {self._max_workers} workers")
 
+        completed = [0]
+
+        def wrapped_func(item):
+            result = func(item)
+            completed[0] += 1
+            if process_callback:
+                process_callback(complete[0], total)
+            return result
+
         try:
             results = Parallel(
                 n_jobs=self._max_workers,
                 backend=backend,
                 verbose=0
-            )(delayed(func)(item) for item in items)
-
-            if progress_callback:
-                progress_callback(total, total)
-
+            )(delayed(wrapped_func)(item) for item in items)
             return results
         except Exception as e:
             self._logger.error(f"Parallel execution failed: {e}")

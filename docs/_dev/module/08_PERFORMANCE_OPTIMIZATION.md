@@ -106,7 +106,7 @@ class ParallelSimulationExecutor:
                 n_jobs=self._max_workers,
                 backend='loky',
                 verbose=0
-            )(delayed(executor_func)(job) for job in jobs)
+            )(delayed(self._safe_execute)(job) for job in jobs)
 
             return results
         except Exception as e:
@@ -114,6 +114,18 @@ class ParallelSimulationExecutor:
             raise
 
         return results
+
+    def _safe_execute(self, job):
+        try:
+            return executor_func(job)
+        except Exception as e:
+            self._logger.error(f"Job failed: {e}")
+            return SimulationResult(
+                job_id = job.id,
+                output_directory = job.ouput_directory,
+                success = False
+                error_message=[str(e)]
+            )
 ```
 
 ### 2. 工作负载平衡
