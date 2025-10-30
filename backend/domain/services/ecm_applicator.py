@@ -59,13 +59,17 @@ class ECMApplicator(IECMApplicator):
             idf (IDF): IDF object
             parameters (ECMParameters): ECM parameters
         """
-
-        window_material_name = (
-            "WindowMaterial_SimpleGlazingSystem"
-            + f"_{parameters.window_u_value:.2f}"
-            + f"_{parameters.window_shgc:.2f}"
-            + f"_{parameters.visible_transmittance:.2f}"
-        )
+        try:
+            window_material_name = (
+                "WindowMaterial_SimpleGlazingSystem"
+                + f"_{parameters.window_u_value:.2f}"
+                + f"_{parameters.window_shgc:.2f}"
+                + f"_{parameters.visible_transmittance:.2f}"
+            )
+        
+        except Exception:
+            self._logger.exception("Failed to apply window parameters")
+            raise RuntimeError("Failed to apply window parameters")
 
         if (
             idf.getobject("WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM", window_material_name)
@@ -264,6 +268,10 @@ class ECMApplicator(IECMApplicator):
 
         if not lights:
             self._logger.warning("No LIGHTS objects found in IDF")
+            return
+
+        if lighting_power_reduction is None:
+            self._logger.warning("Lighting power reduction is not set")
             return
 
         for light in lights:
