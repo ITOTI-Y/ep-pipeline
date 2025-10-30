@@ -135,13 +135,9 @@ class BuildingType(str, Enum):
 
     OFFICE_LARGE = "OfficeLarge"
     OFFICE_MEDIUM = "OfficeMedium"
-    OFFICE_SMALL = "OfficeSmall"
     MULTI_FAMILY_RESIDENTIAL = "MultiFamilyResidential"
     SINGLE_FAMILY_RESIDENTIAL = "SingleFamilyResidential"
-    RETAIL = "Retail"
-    WAREHOUSE = "Warehouse"
-    HOSPITAL = "Hospital"
-    SCHOOL = "School"
+    APARTMENT_HIGH_RISE = "ApartmentHighRise"
 
     def __str__(self) -> str:
         return self.value
@@ -155,6 +151,9 @@ class SimulationStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+
+    def __str__(self) -> str:
+        return self.value
 
     def is_terminal(self) -> bool:
         """是否为终止状态"""
@@ -1046,26 +1045,28 @@ class ECMParameters(BaseModel):
     使用Pydantic实现不可变值对象，包含所有能效改造措施的参数。
 
     Attributes:
+        building_type: 建筑类型（必需）
         window_u_value: 窗户传热系数（W/m²K）
         window_shgc: 太阳得热系数（0-1）
+        visible_transmittance: 窗户可见光透射率（0-1）
         wall_insulation: 墙体保温 R-value
-        roof_insulation: 屋顶保温 R-value
         infiltration_rate: 渗透率（ACH）
         natural_ventilation_area: 自然通风面积（m²）
-        cooling_cop: 制冷系统 COP
-        heating_efficiency: 供热效率（0-1）
-        cooling_setpoint: 制冷设定温度（°C）
-        heating_setpoint: 供热设定温度（°C）
-        lighting_power_density: 照明功率密度（W/m²）
-        lighting_reduction_factor: 照明削减因子（0-1）
+        cop: 制冷/制热系统 COP
+        cooling_air_temperature: 制冷空气温度（°C）
+        lighting_power_reduction_level: 照明功率削减等级（1-3的离散值）
 
     Example:
         >>> ecm = ECMParameters(
+        ...     building_type=BuildingType.OFFICE_LARGE,
         ...     window_u_value=1.5,
         ...     window_shgc=0.4,
-        ...     cooling_cop=4.0,
+        ...     cop=4.0,
+        ...     lighting_power_reduction_level=2,
         ... )
         >>> ecm_dict = ecm.to_dict()
+        >>> # 照明功率削减通过映射表计算
+        >>> ecm.lighting_power_reduction  # 返回0.47(办公楼等级2)
         >>> # 可哈希
         >>> hash(ecm)
         1234567890
@@ -1076,11 +1077,14 @@ class ECMParameters(BaseModel):
         validate_assignment=True,
     )
 
+    building_type: BuildingType = Field(
+        ..., description="建筑类型"
+    )
+
     # 围护结构参数
     window_u_value: Optional[float] = Field(
         default=None,
-        gt=0.1,
-        lt=10.0,
+        ge=0.0,
         description="窗户传热系数（W/m²K）"
     )
 
@@ -1091,86 +1095,86 @@ class ECMParameters(BaseModel):
         description="太阳得热系数（0-1）"
     )
 
-    wall_insulation: Optional[float] = Field(
+    visible_transmittance: Optional[float] = Field(
         default=None,
-        gt=0,
-        description="墙体保温 R-value"
+        ge=0.0,
+        le=1.0,
+        description="窗户可见光透射率（0-1）"
     )
 
-    roof_insulation: Optional[float] = Field(
+    wall_insulation: Optional[float] = Field(
         default=None,
-        gt=0,
-        description="屋顶保温 R-value"
+        ge=0.0,
+        description="墙体保温 R-value"
     )
 
     # 通风参数
     infiltration_rate: Optional[float] = Field(
         default=None,
-        gt=0,
+        ge=0.0,
         description="渗透率（ACH）"
     )
 
     natural_ventilation_area: Optional[float] = Field(
         default=None,
-        ge=0,
+        ge=0.0,
         description="自然通风面积（m²）"
     )
 
     # HVAC 参数
-    cooling_cop: Optional[float] = Field(
+    cop: Optional[float] = Field(
         default=None,
         ge=1.0,
-        le=10.0,
-        description="制冷系统 COP"
+        description="制冷/制热系统 COP"
     )
 
-    heating_efficiency: Optional[float] = Field(
+    cooling_air_temperature: Optional[float] = Field(
         default=None,
-        gt=0.0,
-        le=1.0,
-        description="供热效率（0-1）"
-    )
-
-    cooling_setpoint: Optional[float] = Field(
-        default=None,
-        ge=18.0,
-        le=30.0,
-        description="制冷设定温度（°C）"
-    )
-
-    heating_setpoint: Optional[float] = Field(
-        default=None,
-        ge=15.0,
-        le=25.0,
-        description="供热设定温度（°C）"
+        description="制冷空气温度（°C）"
     )
 
     # 照明参数
-    lighting_power_density: Optional[float] = Field(
+    lighting_power_reduction_level: Optional[int] = Field(
         default=None,
-        ge=0,
-        description="照明功率密度（W/m²）"
+        ge=1,
+        le=3,
+        description="照明功率削减等级（离散等级: 1, 2, 3）"
     )
 
-    lighting_reduction_factor: Optional[float] = Field(
-        default=None,
-        ge=0.0,
-        le=1.0,
-        description="照明削减因子（0-1）"
-    )
+    @property
+    def lighting_power_reduction(self) -> Optional[float]:
+        """
+        根据建筑类型和削减等级计算照明功率削减率
+
+        Returns:
+            照明功率削减率，如果未设置等级或建筑类型不在映射表中则返回 None
+        """
+        if (
+            self.lighting_power_reduction_level is None
+            or self.building_type not in self._lighting_power_reduction_map
+        ):
+            return None
+
+        level_map = self._lighting_power_reduction_map[self.building_type]
+        return level_map.get(self.lighting_power_reduction_level, None)
+
+    _lighting_power_reduction_map: Dict[BuildingType, Dict[int, float]] = {
+        BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},
+        BuildingType.OFFICE_MEDIUM: {1: 0.2, 2: 0.47, 3: 0.53},
+        BuildingType.APARTMENT_HIGH_RISE: {1: 0.35, 2: 0.45, 3: 0.55},
+        BuildingType.SINGLE_FAMILY_RESIDENTIAL: {1: 0.45, 2: 0.5, 3: 0.64},
+        BuildingType.MULTI_FAMILY_RESIDENTIAL: {1: 0.35, 2: 0.45, 3: 0.55},
+    }
 
     # 业务方法
-    def to_dict(self) -> dict[str, float]:
+    def to_dict(self) -> Dict[str, Any]:
         """
         转换为字典，只包含非 None 值
 
         Returns:
             包含所有非 None 参数的字典
         """
-        return {
-            k: v for k, v in self.model_dump().items()
-            if v is not None
-        }
+        return self.model_dump(mode="json", exclude_none=True)
 
     def merge(self, other: 'ECMParameters') -> 'ECMParameters':
         """
@@ -1182,9 +1186,16 @@ class ECMParameters(BaseModel):
         Returns:
             合并后的新 ECM 参数对象
 
+        Raises:
+            ValueError: 如果两个对象的建筑类型不同
+
         Note:
             other 中的非 None 值会覆盖 self 中的值
         """
+        if other.building_type != self.building_type:
+            raise ValueError(
+                "Cannot merge ECMParameters with different building types."
+            )
         merged_dict = self.to_dict()
         merged_dict.update(other.to_dict())
         return ECMParameters(**merged_dict)
@@ -1192,6 +1203,12 @@ class ECMParameters(BaseModel):
     def __hash__(self) -> int:
         """支持哈希，用于缓存键"""
         return hash(tuple(sorted(self.to_dict().items())))
+
+    def __eq__(self, other: object) -> bool:
+        """支持相等性比较"""
+        if not isinstance(other, ECMParameters):
+            return NotImplemented
+        return self.to_dict() == other.to_dict()
 
     def __str__(self) -> str:
         """字符串表示"""
@@ -1208,11 +1225,9 @@ class ECMParameters(BaseModel):
 表示地理位置信息。
 """
 
-from typing import Optional
+from typing import Tuple, Optional
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-
-from ..models.enums import ClimateZone
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Location(BaseModel):
@@ -1222,73 +1237,61 @@ class Location(BaseModel):
     表示一个地理位置的信息。
 
     Attributes:
-        city: 城市名称
-        country: 国家名称
-        climate_zone: 气候区
-        latitude: 纬度
-        longitude: 经度
+        city: 城市名称（必需）
+        latitude: 纬度（必需）
+        longitude: 经度（必需）
 
     Example:
         >>> location = Location(
         ...     city="Chicago",
-        ...     country="USA",
-        ...     climate_zone=ClimateZone.ZONE_5A,
         ...     latitude=41.8781,
         ...     longitude=-87.6298,
         ... )
         >>> str(location)
-        'Chicago, USA'
+        'Chicago (41.8781, -87.6298)'
+        >>> location.get_coordinates()
+        (41.8781, -87.6298)
     """
 
     model_config = ConfigDict(
         frozen=True,  # 不可变
         validate_assignment=True,
+        str_strip_whitespace=True,
     )
 
     city: str = Field(
+        ...,
         min_length=1,
         description="城市名称"
     )
 
-    country: str = Field(
-        min_length=1,
-        description="国家名称"
-    )
-
-    climate_zone: Optional[ClimateZone] = Field(
-        default=None,
-        description="气候区"
-    )
-
-    latitude: Optional[float] = Field(
-        default=None,
+    latitude: float = Field(
+        ...,
         ge=-90.0,
         le=90.0,
         description="纬度"
     )
 
-    longitude: Optional[float] = Field(
-        default=None,
+    longitude: float = Field(
+        ...,
         ge=-180.0,
         le=180.0,
         description="经度"
     )
 
     # 业务方法
-    def get_coordinates(self) -> Optional[tuple[float, float]]:
+    def get_coordinates(self) -> Optional[Tuple[float, float]]:
         """
         获取坐标
 
         Returns:
-            (latitude, longitude) 元组，如果坐标不可用则返回 None
+            (latitude, longitude) 元组
         """
-        if self.latitude is not None and self.longitude is not None:
-            return (self.latitude, self.longitude)
-        return None
+        return (self.latitude, self.longitude)
 
     def __str__(self) -> str:
         """字符串表示"""
-        return f"{self.city}, {self.country}"
+        return f"{self.city} ({self.latitude}, {self.longitude})"
 ```
 
 ### 3. 模拟时间段（simulation_period.py）
@@ -1310,20 +1313,26 @@ class SimulationPeriod(BaseModel):
     表示模拟的起止时间。
 
     Attributes:
-        start_year: 开始年份
-        end_year: 结束年份
-        start_month: 开始月份（1-12）
-        end_month: 结束月份（1-12）
-        start_day: 开始日期（1-31）
-        end_day: 结束日期（1-31）
+        start_year: 开始年份（必需）
+        end_year: 结束年份（必需）
+        start_month: 开始月份（1-12，必需）
+        end_month: 结束月份（1-12，必需）
+        start_day: 开始日期（1-31，必需）
+        end_day: 结束日期（1-31，必需）
 
     Example:
         >>> period = SimulationPeriod(
         ...     start_year=2040,
         ...     end_year=2040,
+        ...     start_month=1,
+        ...     end_month=12,
+        ...     start_day=1,
+        ...     end_day=31,
         ... )
         >>> period.get_duration_years()
         1
+        >>> period.is_full_year()
+        True
     """
 
     model_config = ConfigDict(
@@ -1332,67 +1341,70 @@ class SimulationPeriod(BaseModel):
     )
 
     start_year: int = Field(
-        ge=1900,
-        le=2100,
+        ...,
         description="开始年份"
     )
 
     end_year: int = Field(
-        ge=1900,
-        le=2100,
+        ...,
         description="结束年份"
     )
 
     start_month: int = Field(
-        default=1,
+        ...,
         ge=1,
         le=12,
         description="开始月份"
     )
 
     end_month: int = Field(
-        default=12,
+        ...,
         ge=1,
         le=12,
         description="结束月份"
     )
 
     start_day: int = Field(
-        default=1,
+        ...,
         ge=1,
         le=31,
         description="开始日期"
     )
 
     end_day: int = Field(
-        default=31,
+        ...,
         ge=1,
         le=31,
         description="结束日期"
     )
 
     @model_validator(mode='after')
-    def validate_period(self) -> 'SimulationPeriod':
+    def validate_period(self):
         """验证时间段的有效性"""
         # 验证年份顺序
         if self.start_year > self.end_year:
-            raise ValueError(
-                f"Start year ({self.start_year}) must be <= end year ({self.end_year})"
-            )
+            raise ValueError("start_year must be less than or equal to end_year")
 
-        # 如果是同一年，检查时间顺序
+        # 如果是同一年，检查月份顺序
         if self.start_year == self.end_year:
             if self.start_month > self.end_month:
                 raise ValueError(
-                    f"Start month ({self.start_month}) must be <= end month ({self.end_month}) "
-                    f"for the same year"
+                    "start_month must be less than or equal to end_month when start_year equals end_year"
                 )
+            # 如果是同一年同一月，检查日期顺序
+            if self.start_month == self.end_month:
+                if self.start_day > self.end_day:
+                    raise ValueError(
+                        "start_day must be less than or equal to end_day when start_year and start_month equal end_year and end_month"
+                    )
 
-            if self.start_month == self.end_month and self.start_day > self.end_day:
-                raise ValueError(
-                    f"Start day ({self.start_day}) must be <= end day ({self.end_day}) "
-                    f"for the same month"
-                )
+        # 验证日期的有效性
+        try:
+            from datetime import date
+            _ = date(self.start_year, self.start_month, self.start_day)
+            _ = date(self.end_year, self.end_month, self.end_day)
+        except ValueError as e:
+            raise ValueError(f"Invalid date in simulation period: {e}") from e
 
         return self
 
@@ -1411,7 +1423,7 @@ class SimulationPeriod(BaseModel):
         是否为完整年份
 
         Returns:
-            如果模拟覆盖完整年份则返回 True
+            如果模拟覆盖���整年份则返回 True
         """
         return (
             self.start_month == 1
@@ -1538,8 +1550,8 @@ class ECMApplicator(IECMApplicator):
             如果所有参数都有效则返回 True
 
         Note:
-            Pydantic已经在创建时进行了基本验证，
-            这里主要进行业务规则验证。
+            Pydantic已经在创建时进行了��本验证，
+            这���主要进行业务规则验证。
         """
         # Pydantic已经验证了基本约束
         # 这里可以添加额外的业务规则验证
@@ -2224,7 +2236,6 @@ building = Building(
     idf_file_path=Path("data/chicago_office.idf"),
     floor_area=5000.0,
     num_floors=10,
-    year_built=2015,
 )
 
 # 2. JSON序列化
@@ -2248,10 +2259,11 @@ print(f"Weather: {weather.get_scenario_description()}")
 
 # 6. 创建 ECM 参数（不可变）
 ecm_params = ECMParameters(
+    building_type=BuildingType.OFFICE_LARGE,
     window_u_value=1.5,
     window_shgc=0.4,
-    cooling_cop=4.0,
-    lighting_reduction_factor=0.2,
+    cop=4.0,
+    lighting_power_reduction_level=2,  # 等级2
 )
 
 # 尝试修改会报错（frozen=True）
@@ -2259,8 +2271,9 @@ ecm_params = ECMParameters(
 
 # 7. 合并参数
 ecm_params2 = ECMParameters(
-    cooling_cop=5.0,  # 覆盖
-    heating_efficiency=0.9,  # 新增
+    building_type=BuildingType.OFFICE_LARGE,
+    cop=5.0,  # 覆盖
+    cooling_air_temperature=24.0,  # 新增
 )
 merged_params = ecm_params.merge(ecm_params2)
 
@@ -2353,11 +2366,11 @@ ecm_applicator = ECMApplicator()
 
 # 定义ECM参数
 ecm_params = ECMParameters(
+    building_type=BuildingType.OFFICE_LARGE,
     window_u_value=1.5,       # 低导热窗户
     window_shgc=0.4,          # 低太阳得热系数
-    cooling_cop=4.5,          # 高效制冷系统
-    heating_efficiency=0.92,  # 高效供热系统
-    lighting_reduction_factor=0.3,  # 照明节能30%
+    cop=4.5,                  # 高效制冷/制热系统
+    lighting_power_reduction_level=3,  # 照明等级3（最高节能）
 )
 
 # 验证并应用ECM参数
@@ -2395,7 +2408,6 @@ building = Building(
 # 创建位置对象
 location = Location(
     city="Chicago",
-    country="USA",
     latitude=41.8781,
     longitude=-87.6298,
 )
@@ -2602,33 +2614,48 @@ class TestECMParameters:
     def test_create_ecm_parameters(self):
         """测试创建 ECM 参数"""
         params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
         )
 
+        assert params.building_type == BuildingType.OFFICE_LARGE
         assert params.window_u_value == 1.5
         assert params.window_shgc == 0.4
 
     def test_invalid_u_value(self):
         """测试无效的 U 值（Pydantic验证）"""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(window_u_value=15.0)  # 超出范围
+            ECMParameters(
+                building_type=BuildingType.OFFICE_LARGE,
+                window_u_value=-1.0  # 负数，小于0
+            )
 
         assert "window_u_value" in str(exc_info.value)
 
     def test_immutability(self):
         """测试不可变性（frozen=True）"""
-        params = ECMParameters(window_u_value=1.5)
+        params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
+            window_u_value=1.5
+        )
 
         with pytest.raises(ValidationError):
             params.window_u_value = 2.0  # 不能修改！
 
     def test_merge(self):
         """测试合并"""
-        params1 = ECMParameters(window_u_value=1.5)
-        params2 = ECMParameters(window_shgc=0.4)
+        params1 = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
+            window_u_value=1.5
+        )
+        params2 = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
+            window_shgc=0.4
+        )
 
         merged = params1.merge(params2)
+        assert merged.building_type == BuildingType.OFFICE_LARGE
         assert merged.window_u_value == 1.5
         assert merged.window_shgc == 0.4
 
@@ -2642,6 +2669,7 @@ class TestECMApplicator:
 
         applicator = ECMApplicator()
         params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
         )
@@ -2682,6 +2710,7 @@ class TestECMApplicator:
         # 创建应用器和参数
         applicator = ECMApplicator()
         params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
         )
@@ -2698,7 +2727,9 @@ class TestECMApplicator:
         from backend.domain.services import ECMApplicator
 
         applicator = ECMApplicator()
-        params = ECMParameters()  # 空参数（无效）
+        params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE
+        )  # 空参数（无效）
 
         mock_idf = None  # IDF对象（不会被使用）
 
@@ -2899,8 +2930,9 @@ class TestSimulationJobLifecycle:
 
         # 3. 创建ECM参数
         ecm_params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
-            cooling_cop=4.0,
+            cop=4.0,
         )
 
         # 4. 创建模拟任务
@@ -2965,17 +2997,17 @@ class TestBuildingOptimizationWorkflow:
         # 2. 创建位置
         location = Location(
             city="Chicago",
-            country="USA",
             latitude=41.88,
             longitude=-87.63,
         )
 
         # 3. 创建ECM参数
         ecm_params = ECMParameters(
+            building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
-            cooling_cop=4.5,
-            lighting_reduction_factor=0.3,
+            cop=4.5,
+            lighting_power_reduction_level=3,
         )
 
         # 4. Mock IDF操作
@@ -3000,7 +3032,7 @@ class TestBuildingOptimizationWorkflow:
         assert pv_design['estimated_annual_generation_kwh'] > 0
 
         # 8. 验证ECM参数数量
-        assert len(ecm_params.to_dict()) == 4
+        assert len(ecm_params.to_dict()) == 5
 
 
 # 运行测试

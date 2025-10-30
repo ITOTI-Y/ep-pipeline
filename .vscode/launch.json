@@ -1,15 +1,12 @@
 {
     "configurations": [
         {
-            "name": "pytest all tests",
+            "name": "pytest",
             "type": "debugpy",
             "request": "launch",
-            "module": "pytest",
-            "args": [
-                "tests/", "-v"
-            ],
+            "program": "${workspaceFolder}/tests",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "args": "pytest"
         }
     ]
 }
