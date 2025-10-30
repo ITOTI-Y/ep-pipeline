@@ -2112,9 +2112,8 @@ def setup_container(config: ConfigManager) -> DependencyContainer:
 ### 1. 并行执行
 
 ```python
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from typing import Callable, List, TypeVar
-import multiprocessing
+from joblib import Parallel, delayed, cpu_count
+from typing import Callable, List, TypeVar, Optional
 
 
 T = TypeVar('T')
@@ -2139,7 +2138,7 @@ class ParallelExecutor:
             use_processes: 是否使用多进程而非多线程
         """
         if max_workers is None:
-            max_workers = multiprocessing.cpu_count()
+            max_workers = cpu_count()
 
         self._max_workers = max_workers
         self._use_processes = use_processes
@@ -2161,29 +2160,23 @@ class ParallelExecutor:
         Returns:
             结果列表
         """
-        executor_class = ProcessPoolExecutor if self._use_processes else ThreadPoolExecutor
-
-        results = []
+        backend = 'loky' if self._use_processes else 'threading'
         total = len(items)
-        completed = 0
 
-        with executor_class(max_workers=self._max_workers) as executor:
-            future_to_item = {executor.submit(func, item): item for item in items}
+        try:
+            results = Parallel(
+                n_jobs=self._max_workers,
+                backend=backend,
+                verbose=0
+            )(delayed(func)(item) for item in items)
 
-            for future in as_completed(future_to_item):
-                try:
-                    result = future.result()
-                    results.append(result)
-                except Exception as e:
-                    # 记录错误，但继续处理
-                    logger.error(f"Task failed: {e}")
-                    results.append(None)
+            if progress_callback:
+                progress_callback(total, total)
 
-                completed += 1
-                if progress_callback:
-                    progress_callback(completed, total)
-
-        return results
+            return results
+        except Exception as e:
+            logger.error(f"Parallel execution failed: {e}")
+            raise
 
     def map_chunked(
         self,

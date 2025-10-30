@@ -281,9 +281,7 @@ loguru = "^0.7"   # 简洁强大的日志
 
 #### 并行处理
 ```toml
-# 标准库
-concurrent.futures  # 线程池和进程池
-multiprocessing    # 多进程支持
+joblib = "^1.3"  # 并行处理库
 ```
 
 #### 缓存

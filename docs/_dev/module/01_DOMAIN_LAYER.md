@@ -1499,13 +1499,10 @@ ECM 应用器实现
 """
 
 from typing import Any, Optional
-import logging
+from loguru import logger
 
 from ..value_objects.ecm_parameters import ECMParameters
 from .i_ecm_applicator import IECMApplicator
-
-
-logger = logging.getLogger(__name__)
 
 
 class ECMApplicator(IECMApplicator):
@@ -1885,15 +1882,12 @@ PV 系统设计器实现
 """
 
 from typing import Optional
-import logging
 import math
+from loguru import logger
 
 from ..models.building import Building
 from ..value_objects.location import Location
 from .i_pv_system_designer import IPVSystemDesigner
-
-
-logger = logging.getLogger(__name__)
 
 
 class PVSystemDesigner(IPVSystemDesigner):

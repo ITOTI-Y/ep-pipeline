@@ -58,11 +58,10 @@
 
 ```python
 """
-使用ProcessPoolExecutor进行并行执行
+使用joblib进行并行执行
 """
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import multiprocessing
+from joblib import Parallel, delayed, cpu_count
 from typing import List, Callable, Optional
 from loguru import logger
 
@@ -82,7 +81,7 @@ class ParallelSimulationExecutor:
             max_workers: 最大工作进程数（None = CPU核心数）
         """
         if max_workers is None:
-            max_workers = multiprocessing.cpu_count()
+            max_workers = cpu_count()
 
         self._max_workers = max_workers
         self._logger = logger
@@ -102,32 +101,30 @@ class ParallelSimulationExecutor:
         Returns:
             结果列表
         """
-        results = []
+        self._executor_func = executor_func
+        try:
+            results = Parallel(
+                n_jobs=self._max_workers,
+                backend='loky',
+                verbose=0
+            )(delayed(self._safe_execute)(job) for job in jobs)
 
-        with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-            # 提交所有任务
-            future_to_job = {
-                executor.submit(executor_func, job): job
-                for job in jobs
-            }
+            return results
+        except Exception as e:
+            self._logger.error(f"Parallel execution failed: {e}")
+            raise
 
-            # 收集结果
-            for future in as_completed(future_to_job):
-                job = future_to_job[future]
-                try:
-                    result = future.result()
-                    results.append(result)
-                except Exception as e:
-                    self._logger.error(f"Job {job.id} failed: {e}")
-                    # 创建失败结果
-                    result = SimulationResult(
-                        job_id=job.id,
-                        output_directory=job.output_directory,
-                    )
-                    result.add_error(str(e))
-                    results.append(result)
-
-        return results
+    def _safe_execute(self, job):
+        try:
+            return self._executor_func(job)
+        except Exception as e:
+            self._logger.error(f"Job failed: {e}")
+            return SimulationResult(
+                job_id = job.id,
+                output_directory = job.output_directory,
+                success = False
+                error_message=str(e)
+            )
 ```
 
 ### 2. 工作负载平衡
