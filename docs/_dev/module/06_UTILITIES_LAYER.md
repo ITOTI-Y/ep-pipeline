@@ -628,8 +628,8 @@ class ParallelExecutor:
         def wrapped_func(item):
             result = func(item)
             completed[0] += 1
-            if process_callback:
-                process_callback(complete[0], total)
+            if progress_callback:
+                progress_callback(complete[0], total)
             return result
 
         try:
