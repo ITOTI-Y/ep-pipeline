@@ -18,9 +18,7 @@ class Building(BaseModel):
     )
 
     name: str = Field(..., description="The name of the building.")
-    building_type: BuildingType = Field(
-        ..., description="The type of the building."
-    )
+    building_type: BuildingType = Field(..., description="The type of the building.")
     location: str = Field(..., description="The location of the building.")
     idf_file_path: Path = Field(
         ..., description="The file path to the building's IDF file."
@@ -42,6 +40,11 @@ class Building(BaseModel):
     num_floors: Optional[int] = Field(
         None, description="The number of floors in the building."
     )
+    floor_area: Optional[float] = Field(
+        None,
+        gt=0.0,
+        description="The total floor area of the building in square meters.",
+    )
 
     @field_validator("idf_file_path")
     def validate_idf_file_path(cls, v: Path) -> Path:
@@ -56,7 +59,7 @@ class Building(BaseModel):
     def get_identifier(self) -> str:
         """Returns a string identifier for the building."""
         return f"{self.location}_{self.building_type.value}"
-    
+
     def update_metadata(self, key: str, value: Any) -> None:
         """Updates the metadata dictionary with a new key-value pair."""
         self.metadata[key] = value
@@ -65,7 +68,7 @@ class Building(BaseModel):
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Retrieves a value from the metadata dictionary by key."""
         return self.metadata.get(key, default)
-    
+
     def __str__(self) -> str:
         return (
             f"Building(name='{self.name}',"
