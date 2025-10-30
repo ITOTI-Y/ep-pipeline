@@ -14,7 +14,7 @@ Tests cover:
 - Error handling and edge cases
 """
 import pytest
-from unittest.mock import MagicMock, Mock, patch, call
+from unittest.mock import MagicMock, patch
 from loguru import logger
 
 from backend.domain.services.ecm_applicator import ECMApplicator, IECMApplicator
@@ -28,7 +28,7 @@ class TestIECMApplicatorInterface:
     def test_interface_cannot_be_instantiated(self):
         """Test that the abstract interface cannot be instantiated."""
         with pytest.raises(TypeError):
-            IECMApplicator()
+            IECMApplicator() # type: ignore
 
     def test_interface_requires_apply_method(self):
         """Test that implementing class must provide apply method."""
@@ -36,7 +36,7 @@ class TestIECMApplicatorInterface:
             pass
         
         with pytest.raises(TypeError):
-            IncompleteApplicator()
+            IncompleteApplicator() # type: ignore
 
 
 class TestECMApplicatorInitialization:
