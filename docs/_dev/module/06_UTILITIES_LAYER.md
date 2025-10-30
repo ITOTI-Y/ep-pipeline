@@ -621,8 +621,8 @@ class ParallelExecutor:
         """
         executor_class = ProcessPoolExecutor if self._use_processes else ThreadPoolExecutor
 
-        results: List[Optional[R]] = [None] * total
         total = len(items)
+        results: List[Optional[R]] = [None] * total
         completed = 0
 
         self._logger.info(f"Starting parallel execution: {total} items, {self._max_workers} workers")

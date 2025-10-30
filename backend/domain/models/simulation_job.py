@@ -91,11 +91,11 @@ class SimulationJob(BaseModel):
                 f" Only RUNNING jobs can be completed."
             )
 
-        self.status = SimulationStatus.COMPLETED
         if getattr(result, "job_id", None) != self.id:
             raise ValueError(
                 f"Result job_id {getattr(result, 'job_id', None)} does not match SimulationJob id {self.id}."
             )
+        self.status = SimulationStatus.COMPLETED
         self.completed_at = datetime.now()
         self.result = result
 
