@@ -544,9 +544,8 @@ class OptimizationError(EPWebUIException):
 支持多线程和多进程并行执行。
 """
 
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from joblib import Parallel, delayed, cpu_count
 from typing import Callable, List, Optional, TypeVar
-import multiprocessing
 
 from loguru import logger
 
@@ -590,7 +589,7 @@ class ParallelExecutor:
             use_processes: 是否使用多进程（True）还是多线程（False）
         """
         if max_workers is None:
-            max_workers = multiprocessing.cpu_count()
+            max_workers = cpu_count()
 
         self._max_workers = max_workers
         self._use_processes = use_processes
@@ -619,31 +618,25 @@ class ParallelExecutor:
             >>>
             >>> results = executor.map(square, [1, 2, 3, 4])
         """
-        executor_class = ProcessPoolExecutor if self._use_processes else ThreadPoolExecutor
-
+        backend = 'loky' if self._use_processes else 'threading'
         total = len(items)
-        results: List[Optional[R]] = [None] * total
-        completed = 0
 
         self._logger.info(f"Starting parallel execution: {total} items, {self._max_workers} workers")
 
-        with executor_class(max_workers=self._max_workers) as executor:
-            future_to_idx = {executor.submit(func, item): idx for idx, item in enumerate(items)}
+        try:
+            results = Parallel(
+                n_jobs=self._max_workers,
+                backend=backend,
+                verbose=0
+            )(delayed(func)(item) for item in items)
 
-            for future in as_completed(future_to_idx):
-                try:
-                    idx = future_to_idx[future]
-                    results[idx] = future.result()
-                except Exception as e:
-                    self._logger.error(f"Task failed: {e}")
-                    results[idx] = None
+            if progress_callback:
+                progress_callback(total, total)
 
-                completed += 1
-                if progress_callback:
-                    progress_callback(completed, total)
-
-        self._logger.info(f"Parallel execution completed: {completed}/{total} tasks")
-        return results
+            return results
+        except Exception as e:
+            self._logger.error(f"Parallel execution failed: {e}")
+            raise
 ```
 
 ---
