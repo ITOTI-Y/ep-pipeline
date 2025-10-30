@@ -8,4 +8,5 @@ dependencies = [
     "eppy>=0.5.63",
     "loguru>=0.7.3",
     "pydantic>=2.12.3",
+    "pytest>=8.4.2",
 ]

@@ -287,7 +287,7 @@ class TestECMParametersImmutability:
         """Test that new attributes cannot be added."""
         params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
         with pytest.raises(ValidationError):
-            params.new_attribute = "value"
+            params.new_attribute = "value" # type: ignore
 
 
 class TestECMParametersToDictMethod:

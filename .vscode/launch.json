@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "pytest all tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "tests/", "-v"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}
