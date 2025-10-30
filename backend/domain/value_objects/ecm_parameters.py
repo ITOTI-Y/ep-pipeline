@@ -47,14 +47,14 @@ class ECMParameters(BaseModel):
         ge=0.0,
         description="Area available for natural ventilation in m²",
     )
-    cooling_cop: Optional[float] = Field(
+    cop: Optional[float] = Field(
         default=None,
         ge=1.0,
-        description="Coefficient of Performance (COP) of the cooling system",
+        description="Coefficient of Performance (COP) of the cooling or heating system",
     )
-    cooling_set_point: Optional[float] = Field(
+    cooling_air_temperature: Optional[float] = Field(
         default=None,
-        description="Cooling set point temperature in °C",
+        description="Cooling air temperature in °C",
     )
     lighting_power_reduction_level: Optional[int] = Field(
         default=None,
