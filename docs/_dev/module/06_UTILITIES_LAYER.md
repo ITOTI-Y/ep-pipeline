@@ -511,7 +511,7 @@ class ParsingError(SimulationError):
     pass
 
 
-class FileNotFoundError(EPWebUIException):
+class EPFileNotFoundError(EPWebUIException):
     """文件未找到错误"""
     pass
 
@@ -621,22 +621,22 @@ class ParallelExecutor:
         """
         executor_class = ProcessPoolExecutor if self._use_processes else ThreadPoolExecutor
 
-        results = []
+        results: List[Optional[R]] = [None] * total
         total = len(items)
         completed = 0
 
         self._logger.info(f"Starting parallel execution: {total} items, {self._max_workers} workers")
 
         with executor_class(max_workers=self._max_workers) as executor:
-            future_to_item = {executor.submit(func, item): item for item in items}
+            future_to_idx = {executor.submit(func, item): idx for idx, item in enumerate(items)}
 
-            for future in as_completed(future_to_item):
+            for future in as_completed(future_to_idx):
                 try:
-                    result = future.result()
-                    results.append(result)
+                    idx = future_to_idx[future]
+                    results[idx] = future.result()
                 except Exception as e:
                     self._logger.error(f"Task failed: {e}")
-                    results.append(None)
+                    results[idx] = None
 
                 completed += 1
                 if progress_callback:

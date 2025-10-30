@@ -74,7 +74,7 @@ class ECMParameters(BaseModel):
         level_map = self._lighting_power_reduction_map[self.building_type]
         return level_map.get(self.lighting_power_reduction_level, None)
 
-    _lighting_power_reduction_map = {
+    _lighting_power_reduction_map: Dict[BuildingType, Dict[int, float]] = {
         BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.OFFICE_MEDIUM: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.APARTMENT_HIGH_RISE: {1: 0.35, 2: 0.45, 3: 0.55},
@@ -83,15 +83,24 @@ class ECMParameters(BaseModel):
     }
 
     def to_dict(self) -> Dict[str, Any]:
-        return {k: v for k, v in self.model_dump().items() if v is not None}
+        return self.model_dump(mode="json", exclude_none=True)
 
     def merge(self, other: "ECMParameters") -> "ECMParameters":
+        if other.building_type != self.building_type:
+            raise ValueError(
+                "Cannot merge ECMParameters with different building types."
+            )
         merged_dict = self.to_dict()
         merged_dict.update(other.to_dict())
         return ECMParameters(**merged_dict)
 
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.to_dict().items())))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ECMParameters):
+            return NotImplemented
+        return self.to_dict() == other.to_dict()
 
     def __str__(self) -> str:
         non_none_params = [f"{k}={v}" for k, v in self.to_dict().items()]

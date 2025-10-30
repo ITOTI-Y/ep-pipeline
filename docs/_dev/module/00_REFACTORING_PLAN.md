@@ -89,7 +89,7 @@ EP-WebUI 是一个基于 EnergyPlus 的建筑能源模拟和优化框架。本�
 
 ### 代码库现状
 
-```
+```text
 EP-WebUI/
 ├── backend/
 │   ├── configs/          # ✅ 配置文件（OmegaConf）
@@ -344,7 +344,7 @@ pre-commit  # Git hooks
 
 ### 分层架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     应用层 (Application)                      │
 │  - CLI 入口                                                   │
@@ -402,7 +402,7 @@ pre-commit  # Git hooks
 
 ### 总览
 
-```
+```text
 Phase 1: 基础架构 (Week 1-2)
     ↓
 Phase 2: 核心服务 (Week 3-4)
@@ -949,13 +949,13 @@ def test_parallel_performance(benchmark_jobs):
 #### 阅读顺序
 
 **新开发者**:
-```
+```text
 00 总体计划 → 01 领域层 → 02 服务层 → 06 工具层 →
 03 基础设施 → 04 应用层 → 07 测试策略
 ```
 
 **架构师**:
-```
+```text
 00 总体计划 → 架构图 → 各层文档概览
 ```
 

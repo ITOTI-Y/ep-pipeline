@@ -44,7 +44,7 @@ class SimulationPeriod(BaseModel):
             _ = date(self.start_year, self.start_month, self.start_day)
             _ = date(self.end_year, self.end_month, self.end_day)
         except ValueError as e:
-            raise ValueError(f"Invalid date in simulation period: {e}")
+            raise ValueError(f"Invalid date in simulation period: {e}") from e
         return self
 
     def get_duration_years(self) -> int:

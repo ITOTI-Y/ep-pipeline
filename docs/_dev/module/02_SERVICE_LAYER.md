@@ -771,10 +771,11 @@ class BaseSimulationService(ISimulationService[TContext], Generic[TContext]):
 
         for var_name in required_variables:
             # 检查是否已存在
-            exists = any(
-                ov.Variable_Name == var_name
-                for ov in idf.idfobjects.get("OUTPUT:VARIABLE", [])
-            )
+            try:
+                ov_list = idf.idfobjects["OUTPUT:VARIABLE"]
+            except Exception:
+                ov_list = []
+            exists = any(ov.Variable_Name == var_name for ov in ov_list)
 
             if not exists:
                 idf.newidfobject(
@@ -1021,7 +1022,7 @@ class ECMSimulationService(BaseSimulationService[SimulationContext]):
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Optional, List
 
 from backend.domain.value_objects import ECMParameters
 

@@ -87,7 +87,7 @@ Domain Layer (领域层)
 
 ## 目录结构
 
-```
+```text
 backend/application/
 ├── __init__.py
 ├── cli/                          # CLI命令
@@ -804,7 +804,7 @@ class BatchCompletedEvent:
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from loguru import logger

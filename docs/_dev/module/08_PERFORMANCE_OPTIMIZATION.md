@@ -63,6 +63,8 @@
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing
+from typing import List, Callable, Optional
+from loguru import logger
 
 
 class ParallelSimulationExecutor:
@@ -223,7 +225,8 @@ L2: 磁盘缓存（温数据）
 L3: 远程缓存（可选，如Redis）
 """
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict, Tuple
+from loguru import logger
 import pickle
 import hashlib
 from pathlib import Path
@@ -262,8 +265,8 @@ class MultiLevelCache:
         self._max_disk_size = max_disk_size_gb * 1024 * 1024 * 1024
 
         # 统计信息
-        self._hits = 0
-        self._misses = 0
+        self._hits: int = 0
+        self._misses: int = 0
 
     def get(self, key: str) -> Optional[Any]:
         """

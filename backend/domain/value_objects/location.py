@@ -7,9 +7,10 @@ class Location(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         validate_assignment=True,
+        str_strip_whitespace=True,
     )
 
-    city: str = Field(..., description="Name of the city.")
+    city: str = Field(..., min_length=1, description="Name of the city.")
     latitude: float = Field(
         ...,
         ge=-90.0,
@@ -24,9 +25,7 @@ class Location(BaseModel):
     )
 
     def get_coordinates(self) -> Optional[Tuple[float, float]]:
-        if self.latitude is not None and self.longitude is not None:
-            return (self.latitude, self.longitude)
-        return None
-    
+        return (self.latitude, self.longitude)
+
     def __str__(self) -> str:
         return f"{self.city} ({self.latitude}, {self.longitude})"

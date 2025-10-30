@@ -101,7 +101,7 @@ class SimulationJob(BaseModel):
 
     def fail(self, error_message: str) -> None:
         """Mark the simulation job as failed."""
-        if self.status.is_terminal() and self.status != SimulationStatus.RUNNING:
+        if self.status.is_terminal():
             raise ValueError(
                 f"Cannot fail a job that is {self.status}."
                 f" Job is already in a terminal state."

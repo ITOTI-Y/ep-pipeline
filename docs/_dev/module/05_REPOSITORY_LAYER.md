@@ -84,7 +84,7 @@ class SomeService:
 
 ## 目录结构
 
-```
+```text
 backend/infrastructure/repositories/
 ├── __init__.py
 ├── interfaces/                              # 仓储接口（领域层定义）
@@ -664,6 +664,8 @@ class FileSystemBuildingRepository(IBuildingRepository):
         Returns:
             建筑总数
         """
+        if self._cache:
+            return len(self._cache)
         return len(self.find_all())
 
     def _load_building_from_file(

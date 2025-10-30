@@ -95,6 +95,9 @@ class SimulationResult(BaseModel):
         if not self.success:
             return False
 
+        if self.has_errors():
+            return False
+
         if self.source_eui is None:
             return False
 

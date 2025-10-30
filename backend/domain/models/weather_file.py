@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Dict, Optional
 from uuid import UUID, uuid4
@@ -48,6 +49,8 @@ class WeatherFile(BaseModel):
         if self.is_typical_meteorological_year():
             return "Typical Meteorological Year (TMY)"
         if self.is_future:
+            raw = self.scenario.strip().upper().replace(" ", "")
+            digits = re.sub(r"[^0-9]", "", raw.replace("SSP", ""))
             scenario_map: Dict[str, str] = {
                 "126": "SSP1-2.6 (Low Emissions)",
                 "245": "SSP2-4.5 (Intermediate Emissions)",
@@ -55,7 +58,7 @@ class WeatherFile(BaseModel):
                 "434": "SSP4-3.4 (Intermediate Emissions, low overshoot)",
                 "585": "SSP5-8.5 (High Emissions)",
             }
-            return scenario_map.get(self.scenario, f"Future Scenario {self.scenario}")
+            return scenario_map.get(digits, f"Future Scenario {self.scenario}")
 
         return self.scenario
 
