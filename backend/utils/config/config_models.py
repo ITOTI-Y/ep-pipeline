@@ -33,13 +33,23 @@ class PathsConfig(BaseModel):
             raise ValueError(f"Path is not a file: {v}")
         return v
 
-    @field_validator("prototype_dir", "tmy_dir", "ftmy_dir", "output_dir", "baseline_dir", "pv_dir", "optimization_dir", "temp_dir")
+    @field_validator(
+        "prototype_dir",
+        "tmy_dir",
+        "ftmy_dir",
+        "output_dir",
+        "baseline_dir",
+        "pv_dir",
+        "optimization_dir",
+        "temp_dir",
+    )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""
         if not v.exists():
             v.mkdir(parents=True, exist_ok=True)
+        elif not v.is_dir():
+            raise ValueError(f"Path is not a directory: {v}")
         return v
-
 
 
 class SimulationConfig(BaseModel):

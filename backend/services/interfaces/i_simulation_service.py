@@ -30,10 +30,33 @@ class ISimulationService(ABC, Generic[Tcontext]):
 
     @abstractmethod
     def execute(self, context: Tcontext) -> SimulationResult:
+        """
+        Execute the simulation.
+
+        Args:
+            context (Tcontext): The simulation context.
+
+        Returns:
+            SimulationResult: The simulation result containing output paths,
+                energy metrics, and execution metadata.
+
+        Raises:
+            SimulationError: If the simulation execution fails.
+            RuntimeError: If EnergyPlus encounters a runtime error.
+        """
         pass
 
     @abstractmethod
     def cleanup(self, context: Tcontext) -> None:
+        """
+        Clean up temporary files and resources after simulation.
+
+        This method should remove intermediate files and release any
+        resources held during the simulation. It should not raise exceptions.
+
+        Args:
+            context (Tcontext): The simulation context.
+        """
         pass
 
     def run(self, context: Tcontext) -> SimulationResult:

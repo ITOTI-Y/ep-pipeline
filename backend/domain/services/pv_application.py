@@ -1,8 +1,6 @@
-import sqlite3
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-import pandas as pd
 from eppy.modeleditor import IDF
 from loguru import logger
 
@@ -31,7 +29,7 @@ class IPVApplicator(ABC):
         pass
 
 
-class PVApplicator(IPVApplicator): # TODO
+class PVApplicator(IPVApplicator):  # TODO
     def __init__(self) -> None:
         self._logger = logger.bind(service=self.__class__.__name__)
 
@@ -66,4 +64,12 @@ class PVApplicator(IPVApplicator): # TODO
             title = surface_info["title"]
             azimuth = surface_info["azimuth"]
             surface_name = surface_info["surface_name"]
-        pass
+        raise NotImplementedError
+
+    def _find_suitable_surfaces(
+        self,
+        idf: IDF,
+        baseline_result: SimulationResult,
+        min_irradiance_threshold: float = 800.0,
+    ) -> List[Dict[str, Any]]:
+        raise NotImplementedError

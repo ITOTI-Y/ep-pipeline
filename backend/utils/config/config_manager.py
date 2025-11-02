@@ -9,7 +9,7 @@ from .config_models import AnalysisConfig, PathsConfig, SimulationConfig
 class ConfigManager:
     def __init__(self, config_dir: Path = Path("backend/configs")):
         self._logger = logger.bind(module=self.__class__.__name__)
-        self._config_dir = config_dir
+        self._config_dir = Path(config_dir)
         self._raw_config = self._load_config()
 
         self.paths = self._parse_paths_config()
@@ -71,8 +71,8 @@ class ConfigManager:
     def _parse_analysis_config(self) -> AnalysisConfig:
         analysis_config = OmegaConf.select(self._raw_config, "analysis")
         if analysis_config is None:
-            self._logger.error(f"Analysis config not found in {self._raw_config}")
-            raise ValueError(f"Analysis config not found in {self._raw_config}")
+            self._logger.warning("Analysis config not found; using defaults")
+            return AnalysisConfig()
 
         analysis_dict = OmegaConf.to_container(
             analysis_config,
