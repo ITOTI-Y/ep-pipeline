@@ -1,0 +1,12 @@
+paths:
+  data_dir: backend/data
+  prototype_dir: ${paths.data_dir}/prototypes/
+  tmy_dir: ${paths.data_dir}/tmys/
+  ftmy_dir: ${paths.data_dir}/ftmys/
+  output_dir: backend/output/
+  baseline_dir: ${paths.output_dir}/baseline/
+  pv_dir: ${paths.output_dir}/pv/
+  optimization_dir: ${paths.output_dir}/optimization/
+  eplus_executable: /usr/local/EnergyPlus-25-1-0/energyplus
+  idd_file: /usr/local/EnergyPlus-25-1-0/Energy+.idd
+  temp_dir: backend/temp/

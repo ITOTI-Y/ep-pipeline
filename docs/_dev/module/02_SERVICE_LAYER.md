@@ -472,93 +472,351 @@ class IResultParser(ABC):
 
 ### 模拟上下文（SimulationContext）
 
+#### 为什么使用 Pydantic
+
+使用 Pydantic 而非 dataclass 的关键优势：
+
+1. **自动验证**: 运行时类型检查和数据验证
+2. **架构一致性**: 与领域层保持一致（领域模型已使用 Pydantic）
+3. **更好的错误信息**: 详细的验证错误提示
+4. **JSON 序列化**: 内置序列化支持，便于缓存和日志
+5. **字段验证器**: 使用 `@field_validator` 替代手写验证逻辑
+
 ```python
 """
-模拟上下文
+模拟上下文（使用 Pydantic）
 
-包含执行模拟所需的所有信息。
+包含执行模拟所需的所有信息，提供自动验证和类型安全。
 """
 
-from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, Optional
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from eppy.modeleditor import IDF
 
 from backend.domain.models import SimulationJob
 
 
-@dataclass
-class SimulationContext:
+class SimulationContext(BaseModel):
     """
     模拟上下文基类
 
+    使用 Pydantic 提供自动验证和类型安全。
     所有具体上下文的基类。
 
     Attributes:
         job: 模拟任务对象
-        idf: IDF 对象
-        working_directory: 工作目录
+        idf: IDF 对象（EnergyPlus 模型）
+        working_directory: 工作目录路径
+        metadata: 额外的元数据字典
+
+    Example:
+        >>> from pathlib import Path
+        >>> context = SimulationContext(
+        ...     job=simulation_job,
+        ...     idf=idf_object,
+        ...     working_directory=Path("output/baseline"),
+        ... )
+        >>> # 自动创建工作目录
+        >>> assert context.working_directory.exists()
     """
 
-    job: SimulationJob
-    idf: IDF
-    working_directory: Path
+    model_config = ConfigDict(
+        validate_assignment=True,  # 赋值时也验证
+        arbitrary_types_allowed=True,  # 允许 IDF 等非标准类型
+        frozen=False,  # 允许修改（模拟过程中可能需要更新）
+    )
 
-    def __post_init__(self) -> None:
-        """验证上下文"""
-        if not self.working_directory.exists():
-            self.working_directory.mkdir(parents=True, exist_ok=True)
+    job: SimulationJob = Field(
+        ...,
+        description="模拟任务对象，包含建筑、天气文件等信息"
+    )
+    idf: Any = Field(  # 使用 Any 因为 IDF 不是 Pydantic 模型
+        ...,
+        description="EnergyPlus IDF 对象"
+    )
+    working_directory: Path = Field(
+        ...,
+        description="模拟工作目录，存放临时文件和输出"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="额外的元数据，用于扩展"
+    )
+
+    @field_validator("working_directory")
+    def ensure_working_directory_exists(cls, v: Path) -> Path:
+        """
+        确保工作目录存在
+
+        如果目录不存在，自动创建。
+
+        注意：
+            Pydantic V2 中，@field_validator 会自动将方法转换为 classmethod，
+            因此不需要显式添加 @classmethod 装饰器。
+
+        Args:
+            cls: 类本身（自动传入）
+            v: working_directory 字段的值
+
+        Returns:
+            Path: 验证后的路径
+        """
+        if not v.exists():
+            v.mkdir(parents=True, exist_ok=True)
+        return v
+
+    @field_validator("idf")
+    def validate_idf(cls, v: Any) -> Any:
+        """
+        验证 IDF 对象
+
+        确保传入的是有效的 IDF 对象。
+
+        Args:
+            cls: 类本身（自动传入）
+            v: IDF 对象
+
+        Returns:
+            Any: 验证后的 IDF 对象
+
+        Raises:
+            ValueError: 如果不是有效的 IDF 对象
+        """
+        # 检查是否是 IDF 实例（简单检查）
+        if not hasattr(v, 'idfobjects'):
+            raise ValueError(
+                f"Invalid IDF object: must have 'idfobjects' attribute. "
+                f"Got type: {type(v)}"
+            )
+        return v
+
+    def get_output_path(self, filename: str) -> Path:
+        """
+        获取输出文件的完整路径
+
+        Args:
+            filename: 文件名
+
+        Returns:
+            Path: 完整的文件路径
+        """
+        return self.working_directory / filename
+
+    def get_idf_path(self) -> Path:
+        """
+        获取 IDF 文件的保存路径
+
+        Returns:
+            Path: IDF 文件路径
+        """
+        return self.get_output_path(f"{self.job.output_prefix}.idf")
 
 
-@dataclass
 class BaselineContext(SimulationContext):
     """
     基准模拟上下文
 
-    基准模拟的特定上下文（目前与基类相同，但预留扩展空间）。
+    基准模拟的特定上下文。目前与基类相同，但预留扩展空间。
+
+    Example:
+        >>> context = BaselineContext(
+        ...     job=simulation_job,
+        ...     idf=idf_object,
+        ...     working_directory=Path("output/baseline"),
+        ... )
+        >>> result = baseline_service.run(context)
     """
     pass
 
 
-@dataclass
 class PVContext(SimulationContext):
     """
     光伏模拟上下文
 
-    包含光伏系统特定的配置。
+    包含光伏系统特定的配置参数。
 
     Attributes:
-        pv_capacity: 光伏容量（kW）
-        pv_efficiency: 光伏效率
-        inverter_efficiency: 逆变器效率
-        tilt_angle: 倾斜角度（度）
-        azimuth: 方位角（度，0=北，90=东）
+        pv_capacity: 光伏系统容量（kW）
+        panel_efficiency: 光伏板效率（0-1之间）
+        inverter_efficiency: 逆变器效率（0-1之间）
+        tilt_angle: 倾斜角度（度，0-90）
+        azimuth: 方位角（度，0-360，0=北，90=东，180=南）
+        min_irradiance_threshold: 最小辐照度阈值（W/m²）
+
+    Example:
+        >>> context = PVContext(
+        ...     job=simulation_job,
+        ...     idf=idf_object,
+        ...     working_directory=Path("output/pv"),
+        ...     pv_capacity=100.0,
+        ...     panel_efficiency=0.20,
+        ...     inverter_efficiency=0.96,
+        ...     tilt_angle=30.0,
+        ...     azimuth=180.0,  # 南向
+        ... )
+        >>> result = pv_service.run(context)
     """
 
-    pv_capacity: float
-    pv_efficiency: float = 0.20
-    inverter_efficiency: float = 0.96
-    tilt_angle: float = 30.0
-    azimuth: float = 180.0  # 南向
+    pv_capacity: float = Field(
+        ...,
+        gt=0.0,
+        description="光伏系统容量（kW），必须为正数"
+    )
+    panel_efficiency: float = Field(
+        default=0.20,
+        gt=0.0,
+        le=1.0,
+        description="光伏板效率（0-1之间），默认20%"
+    )
+    inverter_efficiency: float = Field(
+        default=0.96,
+        gt=0.0,
+        le=1.0,
+        description="逆变器效率（0-1之间），默认96%"
+    )
+    tilt_angle: float = Field(
+        default=30.0,
+        ge=0.0,
+        le=90.0,
+        description="倾斜角度（度，0-90），默认30度"
+    )
+    azimuth: float = Field(
+        default=180.0,
+        ge=0.0,
+        lt=360.0,
+        description="方位角（度，0-360），0=北，90=东，180=南，默认180（南向）"
+    )
+    min_irradiance_threshold: float = Field(
+        default=800.0,
+        ge=0.0,
+        description="最小辐照度阈值（W/m²），用于筛选合适的安装表面"
+    )
 
-    def __post_init__(self) -> None:
-        """验证 PV 参数"""
-        super().__post_init__()
+    @model_validator(mode='after')
+    def validate_pv_configuration(self) -> 'PVContext':
+        """
+        验证光伏配置的整体合理性
 
-        if self.pv_capacity <= 0:
-            raise ValueError(f"PV capacity must be positive: {self.pv_capacity}")
+        可以添加跨字段的验证逻辑。
 
-        if not (0 < self.pv_efficiency <= 1):
-            raise ValueError(f"Invalid PV efficiency: {self.pv_efficiency}")
+        注意：
+            mode='after' 的 model_validator 使用 self（实例），
+            不需要 @classmethod 装饰器。
 
-        if not (0 < self.inverter_efficiency <= 1):
-            raise ValueError(f"Invalid inverter efficiency: {self.inverter_efficiency}")
+        Returns:
+            PVContext: 验证后的上下文
+        """
+        # 示例：可以添加更复杂的验证逻辑
+        # 例如：根据建筑位置验证方位角是否合理
+        return self
 
-        if not (0 <= self.tilt_angle <= 90):
-            raise ValueError(f"Invalid tilt angle: {self.tilt_angle}")
 
-        if not (0 <= self.azimuth < 360):
-            raise ValueError(f"Invalid azimuth: {self.azimuth}")
+class ECMContext(SimulationContext):
+    """
+    能效措施（ECM）模拟上下文
+
+    包含 ECM 参数的模拟上下文。ECM 参数从 job.ecm_parameters 获取。
+
+    Example:
+        >>> from backend.domain.value_objects import ECMParameters
+        >>> ecm_params = ECMParameters(
+        ...     window_u_value=1.5,
+        ...     window_shgc=0.4,
+        ...     cooling_cop=4.0,
+        ... )
+        >>> job.ecm_parameters = ecm_params
+        >>>
+        >>> context = ECMContext(
+        ...     job=simulation_job,
+        ...     idf=idf_object,
+        ...     working_directory=Path("output/ecm"),
+        ... )
+        >>> result = ecm_service.run(context)
+    """
+
+    @model_validator(mode='after')
+    def validate_ecm_parameters_exist(self) -> 'ECMContext':
+        """
+        验证 ECM 参数存在
+
+        ECM 模拟必须提供 ECM 参数。
+
+        注意：
+            mode='after' 的 model_validator 使用 self（实例），
+            可以访问所有已验证的字段。
+
+        Returns:
+            ECMContext: 验证后的上下文
+
+        Raises:
+            ValueError: 如果 job 中没有 ECM 参数
+        """
+        if self.job.ecm_parameters is None:
+            raise ValueError(
+                "ECM simulation requires ecm_parameters in the job. "
+                "Please set job.ecm_parameters before creating ECMContext."
+            )
+        return self
+```
+
+---
+
+### 🎓 **Pydantic V2 验证器装饰器总结**
+
+#### ✅ **正确用法**
+
+```python
+from pydantic import BaseModel, field_validator, model_validator
+
+class MyModel(BaseModel):
+    value: int
+
+    # ✅ field_validator - 不需要 @classmethod
+    @field_validator('value')
+    def check_value(cls, v: int) -> int:
+        """Pydantic 会自动将其转换为 classmethod"""
+        return v
+
+    # ✅ model_validator (mode='before') - 不需要 @classmethod
+    @model_validator(mode='before')
+    def validate_before(cls, values: dict) -> dict:
+        """Pydantic 会自动将其转换为 classmethod"""
+        return values
+
+    # ✅ model_validator (mode='after') - 使用 self
+    @model_validator(mode='after')
+    def validate_after(self) -> 'MyModel':
+        """mode='after' 时使用实例方法"""
+        return self
+```
+
+#### ❌ **错误用法**
+
+```python
+# ❌ 不要显式添加 @classmethod（虽然也能工作，但是冗余）
+@field_validator('value')
+@classmethod  # 不需要！
+def check_value(cls, v: int) -> int:
+    return v
+
+# ❌ 装饰器顺序错误
+@classmethod
+@field_validator('value')  # 这样会导致验证器不工作！
+def check_value(cls, v: int) -> int:
+    return v
+```
+
+#### 📋 **快速参考表**
+
+| 验证器类型 | 装饰器 | 第一个参数 | 需要 @classmethod? |
+|-----------|--------|-----------|-------------------|
+| `@field_validator` | 单字段验证 | `cls` | ❌ 不需要（自动） |
+| `@model_validator(mode='before')` | 模型验证（前） | `cls` | ❌ 不需要（自动） |
+| `@model_validator(mode='after')` | 模型验证（后） | `self` | ❌ 不需要 |
+
+感谢你的纠正！这是 Pydantic V2 的一个重要改进，让代码更简洁。🎉
 ```
 
 ### BaseSimulationService
@@ -1352,6 +1610,383 @@ class OptimizationService:
         )
 
         return optimal_params, optimal_eui
+```
+
+---
+
+## 分析服务
+
+### 敏感性分析服务
+
+敏感性分析服务用于评估不同参数对建筑能耗的影响程度。
+
+```python
+"""
+敏感性分析服务
+
+评估ECM参数对能耗的敏感性。
+"""
+
+from typing import Dict, List, Tuple
+from pathlib import Path
+import numpy as np
+from loguru import logger
+
+from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.domain.value_objects import ECMParameters
+from backend.services.orchestration import SimulationOrchestrator
+
+
+class SensitivityAnalysisService:
+    """
+    敏感性分析服务
+
+    使用单因素分析法(One-at-a-time, OAT)评估参数敏感性。
+
+    Attributes:
+        _orchestrator: 模拟编排器
+        _logger: 日志记录器
+    """
+
+    def __init__(self, orchestrator: SimulationOrchestrator):
+        """
+        初始化敏感性分析服务
+
+        Args:
+            orchestrator: 模拟编排器
+        """
+        self._orchestrator = orchestrator
+        self._logger = logger
+
+    def analyze_parameter_sensitivity(
+        self,
+        building: Building,
+        weather_file: WeatherFile,
+        parameter_ranges: Dict[str, Tuple[float, float, int]],
+        baseline_params: ECMParameters,
+    ) -> Dict[str, List[Tuple[float, float]]]:
+        """
+        分析参数敏感性
+
+        对每个参数在指定范围内进行采样,保持其他参数不变,
+        评估该参数对能耗的影响。
+
+        Args:
+            building: 建筑对象
+            weather_file: 天气文件
+            parameter_ranges: 参数范围 {参数名: (最小值, 最大值, 采样点数)}
+            baseline_params: 基准参数
+
+        Returns:
+            Dict[str, List[Tuple[float, float]]]:
+                {参数名: [(参数值, EUI值), ...]}
+
+        Example:
+            >>> sensitivity_service = SensitivityAnalysisService(orchestrator)
+            >>>
+            >>> baseline = ECMParameters(
+            ...     window_u_value=2.0,
+            ...     cooling_cop=3.5,
+            ...     lighting_reduction_factor=0.2,
+            ... )
+            >>>
+            >>> ranges = {
+            ...     'window_u_value': (1.0, 3.0, 5),  # 5个采样点
+            ...     'cooling_cop': (3.0, 5.0, 5),
+            ...     'lighting_reduction_factor': (0.1, 0.4, 4),
+            ... }
+            >>>
+            >>> results = sensitivity_service.analyze_parameter_sensitivity(
+            ...     building=building,
+            ...     weather_file=weather,
+            ...     parameter_ranges=ranges,
+            ...     baseline_params=baseline,
+            ... )
+            >>>
+            >>> # 绘制敏感性曲线
+            >>> for param_name, data_points in results.items():
+            ...     param_values = [p[0] for p in data_points]
+            ...     eui_values = [p[1] for p in data_points]
+            ...     plt.plot(param_values, eui_values, label=param_name)
+        """
+        self._logger.info(
+            f"Starting sensitivity analysis for {len(parameter_ranges)} parameters"
+        )
+
+        results: Dict[str, List[Tuple[float, float]]] = {}
+
+        for param_name, (min_val, max_val, num_samples) in parameter_ranges.items():
+            self._logger.info(
+                f"Analyzing parameter: {param_name} "
+                f"[{min_val}, {max_val}] with {num_samples} samples"
+            )
+
+            # 生成采样点
+            param_values = np.linspace(min_val, max_val, num_samples)
+
+            # 创建模拟任务
+            jobs = []
+            for value in param_values:
+                # 复制基准参数
+                params_dict = baseline_params.to_dict()
+                # 修改当前参数
+                params_dict[param_name] = value
+                params = ECMParameters(**params_dict)
+
+                job = SimulationJob(
+                    building=building,
+                    weather_file=weather_file,
+                    simulation_type="ecm",
+                    output_directory=Path(f"temp/sensitivity/{param_name}_{value}"),
+                    output_prefix=f"sens_{param_name}",
+                    ecm_parameters=params,
+                )
+                jobs.append(job)
+
+            # 批量执行模拟
+            simulation_results = self._orchestrator.execute_batch(
+                jobs, use_cache=True
+            )
+
+            # 提取结果
+            data_points = []
+            for value, result in zip(param_values, simulation_results):
+                if result.success and result.source_eui is not None:
+                    data_points.append((float(value), result.source_eui))
+                else:
+                    self._logger.warning(
+                        f"Simulation failed for {param_name}={value}"
+                    )
+
+            results[param_name] = data_points
+
+            self._logger.info(
+                f"Completed analysis for {param_name}: "
+                f"{len(data_points)}/{num_samples} successful"
+            )
+
+        return results
+
+    def calculate_sensitivity_indices(
+        self,
+        sensitivity_results: Dict[str, List[Tuple[float, float]]],
+    ) -> Dict[str, float]:
+        """
+        计算敏感性指数
+
+        使用标准化的敏感性指数(Normalized Sensitivity Index):
+        SI = (ΔY / Y_baseline) / (ΔX / X_baseline)
+
+        Args:
+            sensitivity_results: 敏感性分析结果
+
+        Returns:
+            Dict[str, float]: {参数名: 敏感性指数}
+
+        Example:
+            >>> indices = sensitivity_service.calculate_sensitivity_indices(results)
+            >>> # 按敏感性排序
+            >>> sorted_params = sorted(
+            ...     indices.items(),
+            ...     key=lambda x: abs(x[1]),
+            ...     reverse=True
+            ... )
+            >>> print("Most sensitive parameters:")
+            >>> for param, index in sorted_params[:3]:
+            ...     print(f"  {param}: {index:.3f}")
+        """
+        indices = {}
+
+        for param_name, data_points in sensitivity_results.items():
+            if len(data_points) < 2:
+                self._logger.warning(
+                    f"Insufficient data points for {param_name}, skipping"
+                )
+                continue
+
+            # 提取参数值和EUI值
+            param_values = np.array([p[0] for p in data_points])
+            eui_values = np.array([p[1] for p in data_points])
+
+            # 计算基准值(中间点)
+            mid_idx = len(data_points) // 2
+            x_baseline = param_values[mid_idx]
+            y_baseline = eui_values[mid_idx]
+
+            # 计算变化量
+            delta_x = param_values[-1] - param_values[0]
+            delta_y = eui_values[-1] - eui_values[0]
+
+            # 计算标准化敏感性指数
+            if x_baseline != 0 and y_baseline != 0 and delta_x != 0:
+                si = (delta_y / y_baseline) / (delta_x / x_baseline)
+                indices[param_name] = si
+            else:
+                self._logger.warning(
+                    f"Cannot calculate sensitivity index for {param_name}"
+                )
+
+        return indices
+```
+
+### 数据分析服务
+
+```python
+"""
+数据分析服务
+
+提供模拟结果的统计分析和可视化支持。
+"""
+
+from typing import List, Dict, Optional
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from loguru import logger
+
+from backend.domain.models import SimulationResult
+
+
+class DataAnalysisService:
+    """
+    数据分析服务
+
+    提供模拟结果的统计分析、比较和导出功能。
+
+    Attributes:
+        _logger: 日志记录器
+    """
+
+    def __init__(self):
+        """初始化数据分析服务"""
+        self._logger = logger
+
+    def compare_results(
+        self,
+        baseline_result: SimulationResult,
+        ecm_results: List[SimulationResult],
+    ) -> pd.DataFrame:
+        """
+        比较基准和ECM结果
+
+        Args:
+            baseline_result: 基准模拟结果
+            ecm_results: ECM模拟结果列表
+
+        Returns:
+            pd.DataFrame: 比较结果表格
+
+        Example:
+            >>> analysis_service = DataAnalysisService()
+            >>>
+            >>> comparison = analysis_service.compare_results(
+            ...     baseline_result=baseline,
+            ...     ecm_results=[ecm1, ecm2, ecm3],
+            ... )
+            >>>
+            >>> print(comparison)
+            >>> # 输出:
+            >>> #   Scenario    Source_EUI  Site_EUI  Savings(%)  Cost_Savings($)
+            >>> #   Baseline    150.0       140.0     0.0         0.0
+            >>> #   ECM_1       120.0       112.0     20.0        5000.0
+            >>> #   ECM_2       110.0       103.0     26.7        6500.0
+        """
+        data = []
+
+        # 添加基准数据
+        data.append({
+            'Scenario': 'Baseline',
+            'Source_EUI': baseline_result.source_eui,
+            'Site_EUI': baseline_result.site_eui,
+            'Savings_Percent': 0.0,
+            'Absolute_Savings': 0.0,
+        })
+
+        # 添加ECM数据
+        for i, ecm_result in enumerate(ecm_results, 1):
+            if ecm_result.success and ecm_result.source_eui is not None:
+                savings = baseline_result.source_eui - ecm_result.source_eui
+                savings_pct = (savings / baseline_result.source_eui) * 100
+
+                data.append({
+                    'Scenario': f'ECM_{i}',
+                    'Source_EUI': ecm_result.source_eui,
+                    'Site_EUI': ecm_result.site_eui,
+                    'Savings_Percent': savings_pct,
+                    'Absolute_Savings': savings,
+                })
+
+        df = pd.DataFrame(data)
+        return df
+
+    def calculate_statistics(
+        self,
+        results: List[SimulationResult],
+    ) -> Dict[str, float]:
+        """
+        计算结果统计信息
+
+        Args:
+            results: 模拟结果列表
+
+        Returns:
+            Dict[str, float]: 统计信息
+
+        Example:
+            >>> stats = analysis_service.calculate_statistics(results)
+            >>> print(f"Mean EUI: {stats['mean_eui']:.2f}")
+            >>> print(f"Std Dev: {stats['std_eui']:.2f}")
+        """
+        eui_values = [
+            r.source_eui for r in results
+            if r.success and r.source_eui is not None
+        ]
+
+        if not eui_values:
+            return {}
+
+        return {
+            'mean_eui': np.mean(eui_values),
+            'median_eui': np.median(eui_values),
+            'std_eui': np.std(eui_values),
+            'min_eui': np.min(eui_values),
+            'max_eui': np.max(eui_values),
+            'count': len(eui_values),
+        }
+
+    def export_to_csv(
+        self,
+        results: List[SimulationResult],
+        output_path: Path,
+    ) -> None:
+        """
+        导出结果到CSV
+
+        Args:
+            results: 模拟结果列表
+            output_path: 输出文件路径
+
+        Example:
+            >>> analysis_service.export_to_csv(
+            ...     results=all_results,
+            ...     output_path=Path("output/results.csv"),
+            ... )
+        """
+        data = []
+        for result in results:
+            if result.success:
+                data.append({
+                    'Job_ID': str(result.job_id),
+                    'Source_EUI': result.source_eui,
+                    'Site_EUI': result.site_eui,
+                    'Execution_Time': result.execution_time,
+                    'Success': result.success,
+                })
+
+        df = pd.DataFrame(data)
+        df.to_csv(output_path, index=False)
+
+        self._logger.info(f"Exported {len(data)} results to {output_path}")
 ```
 
 ---

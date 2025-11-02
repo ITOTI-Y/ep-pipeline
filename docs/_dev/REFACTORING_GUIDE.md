@@ -1847,52 +1847,205 @@ EP-WebUI/
 
 ### 配置管理
 
+#### 为什么使用Pydantic而不是dataclass
+
+配置类使用Pydantic BaseModel而非dataclass的关键优势：
+
+1. **自动验证**: 运行时类型检查和数据验证，确保配置正确性
+2. **架构一致性**: 与领域层保持一致（领域模型已使用Pydantic）
+3. **更好的错误信息**: 详细的ValidationError，便于调试配置问题
+4. **类型转换**: 自动将字符串转换为Path、int等类型
+5. **字段验证器**: 使用`@field_validator`进行复杂验证（如文件存在性检查）
+6. **模型验证器**: 使用`@model_validator`进行跨字段验证（如年份范围检查）
+
 ```python
-from typing import Optional
+from typing import Optional, Dict, Any
 from pathlib import Path
 from omegaconf import OmegaConf, DictConfig
-from dataclasses import dataclass
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 
 
-@dataclass
-class PathsConfig:
-    """路径配置"""
+class PathsConfig(BaseModel):
+    """
+    路径配置
 
-    prototype_idf: Path
-    tmy_dir: Path
-    ftmy_dir: Path
-    output_dir: Path
-    baseline_dir: Path
-    pv_dir: Path
-    optimization_dir: Path
-    eplus_executable: Path
-    idd_file: Path
+    使用Pydantic提供自动验证和类型安全。
+
+    Attributes:
+        prototype_idf: 原型IDF文件路径
+        tmy_dir: TMY天气文件目录
+        ftmy_dir: 未来TMY天气文件目录
+        output_dir: 输出根目录
+        baseline_dir: 基准模拟输出目录
+        pv_dir: 光伏模拟输出目录
+        optimization_dir: 优化结果输出目录
+        eplus_executable: EnergyPlus可执行文件路径
+        idd_file: IDD文件路径
+    """
+
+    model_config = ConfigDict(
+        validate_assignment=True,  # 赋值时也验证
+        arbitrary_types_allowed=True,  # 允许Path类型
+        frozen=False,  # 允许修改
+    )
+
+    prototype_idf: Path = Field(
+        ...,
+        description="原型IDF文件路径"
+    )
+    tmy_dir: Path = Field(
+        ...,
+        description="TMY天气文件目录"
+    )
+    ftmy_dir: Path = Field(
+        ...,
+        description="未来TMY天气文件目录"
+    )
+    output_dir: Path = Field(
+        ...,
+        description="输出根目录"
+    )
+    baseline_dir: Path = Field(
+        ...,
+        description="基准模拟输出目录"
+    )
+    pv_dir: Path = Field(
+        ...,
+        description="光伏模拟输出目录"
+    )
+    optimization_dir: Path = Field(
+        ...,
+        description="优化结果输出目录"
+    )
+    eplus_executable: Path = Field(
+        ...,
+        description="EnergyPlus可执行文件路径"
+    )
+    idd_file: Path = Field(
+        ...,
+        description="IDD文件路径"
+    )
+
+    @field_validator('eplus_executable', 'idd_file')
+    @classmethod
+    def validate_file_exists(cls, v: Path) -> Path:
+        """验证文件存在"""
+        if not v.exists():
+            raise ValueError(f"文件不存在: {v}")
+        if not v.is_file():
+            raise ValueError(f"路径不是文件: {v}")
+        return v
+
+    @field_validator('prototype_idf')
+    @classmethod
+    def validate_idf_file(cls, v: Path) -> Path:
+        """验证IDF文件"""
+        if not v.exists():
+            raise ValueError(f"IDF文件不存在: {v}")
+        if v.suffix.lower() != '.idf':
+            raise ValueError(f"文件必须是IDF格式，当前为: {v.suffix}")
+        return v
 
 
-@dataclass
-class SimulationConfig:
-    """模拟配置"""
+class SimulationConfig(BaseModel):
+    """
+    模拟配置
 
-    start_year: int
-    end_year: int
-    default_output_suffix: str
-    cleanup_files: list[str]
+    使用Pydantic提供自动验证和类型安全。
+
+    Attributes:
+        start_year: 模拟开始年份
+        end_year: 模拟结束年份
+        default_output_suffix: 默认输出文件后缀
+        cleanup_files: 需要清理的文件扩展名列表
+    """
+
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+    )
+
+    start_year: int = Field(
+        ...,
+        ge=1900,
+        le=2100,
+        description="模拟开始年份"
+    )
+    end_year: int = Field(
+        ...,
+        ge=1900,
+        le=2100,
+        description="模拟结束年份"
+    )
+    default_output_suffix: str = Field(
+        default="L",
+        min_length=1,
+        max_length=10,
+        description="默认输出文件后缀"
+    )
+    cleanup_files: list[str] = Field(
+        default_factory=lambda: ['.audit', '.bnd', '.eio', '.end', '.mdd', '.mtd', '.rdd', '.shd'],
+        description="需要清理的文件扩展名列表"
+    )
+
+    @model_validator(mode='after')
+    def validate_year_range(self) -> 'SimulationConfig':
+        """验证年份范围"""
+        if self.start_year > self.end_year:
+            raise ValueError(
+                f"开始年份({self.start_year})不能大于结束年份({self.end_year})"
+            )
+        return self
 
 
-@dataclass
-class AnalysisConfig:
-    """分析配置"""
+class AnalysisConfig(BaseModel):
+    """
+    分析配置
 
-    sensitivity: dict
-    optimization: dict
-    surrogate_models: dict
+    使用Pydantic提供自动验证和类型安全。
+
+    Attributes:
+        sensitivity: 敏感性分析配置
+        optimization: 优化配置
+        surrogate_models: 代理模型配置
+    """
+
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+    )
+
+    sensitivity: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="敏感性分析配置"
+    )
+    optimization: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="优化配置"
+    )
+    surrogate_models: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="代理模型配置"
+    )
 
 
 class ConfigManager:
     """
     配置管理器
 
-    提供类型安全的配置访问。
+    使用OmegaConf提供类型安全的配置访问。
+
+    OmegaConf特性:
+    - 支持YAML配置文件加载
+    - 支持配置合并和覆盖
+    - 支持变量插值 (e.g., ${paths.output_dir}/baseline)
+    - 类型安全的配置访问
+    - 支持配置验证
+
+    Example:
+        >>> config_mgr = ConfigManager(config_dir=Path("backend/configs"))
+        >>> print(config_mgr.paths.output_dir)
+        >>> print(OmegaConf.to_yaml(config_mgr._raw_config))
     """
 
     def __init__(self, config_dir: Path = Path("backend/configs")):
@@ -1908,54 +2061,103 @@ class ConfigManager:
         self._create_directories()
 
     def _load_config(self) -> DictConfig:
-        """加载所有配置文件"""
-        config_files = list(self._config_dir.glob("*.yaml"))
+        """
+        加载所有配置文件
+
+        使用OmegaConf.load()加载YAML文件，然后使用OmegaConf.merge()合并。
+        后加载的配置会覆盖先加载的配置。
+
+        Returns:
+            DictConfig: 合并后的配置对象
+
+        Example:
+            配置文件结构:
+            - backend/configs/paths.yaml
+            - backend/configs/simulation.yaml
+            - backend/configs/analysis.yaml
+        """
+        config_files = sorted(self._config_dir.glob("*.yaml"))
         configs = []
 
         for file in config_files:
+            # OmegaConf.load() 支持YAML文件加载
             config = OmegaConf.load(file)
             configs.append(config)
 
-        # 合并所有配置
+        # OmegaConf.merge() 合并多个配置，支持深度合并
+        # 后面的配置会覆盖前面的配置
         merged_config = OmegaConf.merge(*configs)
         return merged_config
 
     def _parse_paths_config(self) -> PathsConfig:
-        """解析路径配置"""
-        paths_dict = OmegaConf.to_container(self._raw_config.paths)
+        """
+        解析路径配置
 
-        return PathsConfig(
-            prototype_idf=Path(paths_dict['prototype_idf']),
-            tmy_dir=Path(paths_dict['tmy_dir']),
-            ftmy_dir=Path(paths_dict['ftmy_dir']),
-            output_dir=Path(paths_dict['output_dir']),
-            baseline_dir=Path(paths_dict['baseline_dir']),
-            pv_dir=Path(paths_dict['pv_dir']),
-            optimization_dir=Path(paths_dict['optimization_dir']),
-            eplus_executable=Path(paths_dict['eplus_executable']),
-            idd_file=Path(paths_dict['idd_file']),
+        使用OmegaConf.to_container()将DictConfig转换为普通字典，
+        然后使用Pydantic进行验证和类型转换。
+
+        Returns:
+            PathsConfig: 路径配置对象（Pydantic模型）
+
+        Raises:
+            ValidationError: 当配置验证失败时
+        """
+        # OmegaConf.to_container() 转换为普通Python对象
+        # resolve=True 解析变量插值，如 ${paths.base_dir}/output
+        paths_dict = OmegaConf.to_container(
+            self._raw_config.paths,
+            resolve=True,  # 解析变量插值
+            throw_on_missing=True  # 缺少必需值时抛出异常
         )
+
+        # 使用Pydantic进行验证和类型转换
+        # Pydantic会自动：
+        # 1. 将字符串转换为Path对象
+        # 2. 验证文件是否存在
+        # 3. 验证IDF文件格式
+        return PathsConfig(**paths_dict)
 
     def _parse_simulation_config(self) -> SimulationConfig:
-        """解析模拟配置"""
-        sim_dict = OmegaConf.to_container(self._raw_config.simulation)
+        """
+        解析模拟配置
 
-        return SimulationConfig(
-            start_year=sim_dict['start_year'],
-            end_year=sim_dict['end_year'],
-            default_output_suffix=sim_dict['default_output_suffix'],
-            cleanup_files=sim_dict['cleanup_files'],
+        使用Pydantic进行验证，确保年份范围合理。
+
+        Returns:
+            SimulationConfig: 模拟配置对象（Pydantic模型）
+
+        Raises:
+            ValidationError: 当配置验证失败时（如年份范围不合理）
+        """
+        sim_dict = OmegaConf.to_container(
+            self._raw_config.simulation,
+            resolve=True,
+            throw_on_missing=True
         )
+
+        # Pydantic会自动验证：
+        # 1. start_year <= end_year
+        # 2. 年份在合理范围内（1900-2100）
+        # 3. cleanup_files是列表类型
+        return SimulationConfig(**sim_dict)
 
     def _parse_analysis_config(self) -> AnalysisConfig:
-        """解析分析配置"""
-        analysis_dict = OmegaConf.to_container(self._raw_config.analysis)
+        """
+        解析分析配置
 
-        return AnalysisConfig(
-            sensitivity=analysis_dict.get('sensitivity', {}),
-            optimization=analysis_dict.get('optimization', {}),
-            surrogate_models=analysis_dict.get('surrogate_models', {}),
+        分析配置是可选的，使用默认值。
+
+        Returns:
+            AnalysisConfig: 分析配置对象（Pydantic模型）
+        """
+        analysis_dict = OmegaConf.to_container(
+            self._raw_config.analysis,
+            resolve=True,
+            throw_on_missing=False  # 分析配置可选
         )
+
+        # Pydantic会使用默认值填充缺失的字段
+        return AnalysisConfig(**(analysis_dict or {}))
 
     def _create_directories(self) -> None:
         """创建必要的目录"""
@@ -1972,6 +2174,399 @@ class ConfigManager:
     def get_raw_config(self) -> DictConfig:
         """获取原始配置（用于向后兼容）"""
         return self._raw_config
+
+
+# 配置文件示例
+
+## YAML配置文件结构
+
+### backend/configs/paths.yaml
+
+```yaml
+# 路径配置
+paths:
+  # IDF和天气文件
+  prototype_idf: backend/data/prototypes/Chicago_OfficeLarge.idf
+  tmy_dir: backend/data/tmys
+  ftmy_dir: backend/data/ftmys
+
+  # 输出目录（支持变量插值）
+  output_dir: backend/output
+  baseline_dir: ${paths.output_dir}/baseline
+  pv_dir: ${paths.output_dir}/pv
+  optimization_dir: ${paths.output_dir}/optimization
+
+  # EnergyPlus配置
+  eplus_executable: /usr/local/EnergyPlus-23-2-0/energyplus
+  idd_file: /usr/local/EnergyPlus-23-2-0/Energy+.idd
+```
+
+### backend/configs/simulation.yaml
+
+```yaml
+# 模拟配置
+simulation:
+  start_year: 2040
+  end_year: 2040
+  default_output_suffix: L
+  cleanup_files:
+    - .audit
+    - .bnd
+    - .eio
+    - .end
+    - .mdd
+    - .mtd
+    - .rdd
+    - .shd
+```
+
+### backend/configs/analysis.yaml
+
+```yaml
+# 分析配置
+analysis:
+  sensitivity:
+    method: sobol
+    n_samples: 1000
+
+  optimization:
+    algorithm: nsga2
+    population_size: 100
+    generations: 50
+
+  surrogate_models:
+    enabled: true
+    model_type: gaussian_process
+```
+
+## 使用配置的完整示例
+
+```python
+from pathlib import Path
+from pydantic import ValidationError
+
+# 初始化配置管理器
+try:
+    config_mgr = ConfigManager(config_dir=Path("backend/configs"))
+
+    # 访问配置（类型安全）
+    print(f"IDF文件: {config_mgr.paths.prototype_idf}")
+    print(f"输出目录: {config_mgr.paths.output_dir}")
+    print(f"模拟年份: {config_mgr.simulation.start_year}-{config_mgr.simulation.end_year}")
+
+    # Pydantic自动验证
+    # - 文件路径存在性
+    # - 年份范围合理性
+    # - 类型正确性
+
+except ValidationError as e:
+    # 详细的验证错误信息
+    print("配置验证失败:")
+    for error in e.errors():
+        print(f"  - {error['loc']}: {error['msg']}")
+
+except FileNotFoundError as e:
+    print(f"配置文件未找到: {e}")
+```
+
+
+# OmegaConf使用示例和最佳实践
+
+## 基本用法
+
+```python
+from omegaconf import OmegaConf, DictConfig
+
+# 1. 从YAML文件加载配置
+config = OmegaConf.load("config.yaml")
+
+# 2. 从字典创建配置
+config = OmegaConf.create({
+    "database": {
+        "host": "localhost",
+        "port": 5432
+    }
+})
+
+# 3. 访问配置值
+print(config.database.host)  # localhost
+print(config["database"]["port"])  # 5432
+
+# 4. 转换为YAML字符串
+yaml_str = OmegaConf.to_yaml(config)
+print(yaml_str)
+
+# 5. 转换为普通字典
+plain_dict = OmegaConf.to_container(config, resolve=True)
+```
+
+## 配置合并
+
+```python
+# 基础配置
+base_config = OmegaConf.create({
+    "model": {
+        "name": "resnet",
+        "layers": 50
+    },
+    "training": {
+        "epochs": 100,
+        "batch_size": 32
+    }
+})
+
+# 覆盖配置
+override_config = OmegaConf.create({
+    "model": {
+        "layers": 101  # 覆盖layers
+    },
+    "training": {
+        "epochs": 200  # 覆盖epochs
+    }
+})
+
+# 合并配置（后面的覆盖前面的）
+merged = OmegaConf.merge(base_config, override_config)
+print(merged.model.layers)  # 101
+print(merged.training.batch_size)  # 32 (保留)
+```
+
+## 变量插值
+
+```yaml
+# config.yaml
+paths:
+  base_dir: /data
+  output_dir: ${paths.base_dir}/output  # 引用其他配置值
+  log_dir: ${paths.base_dir}/logs
+
+simulation:
+  output: ${paths.output_dir}/simulation  # 嵌套引用
+```
+
+```python
+config = OmegaConf.load("config.yaml")
+# 自动解析插值
+print(config.paths.output_dir)  # /data/output
+print(config.simulation.output)  # /data/output/simulation
+```
+
+## 配置验证
+
+```python
+from omegaconf import OmegaConf, MissingMandatoryValue
+
+# 使用 ??? 标记必需值
+config = OmegaConf.create({
+    "database": {
+        "host": "???",  # 必需值
+        "port": 5432
+    }
+})
+
+try:
+    # 访问未设置的必需值会抛出异常
+    print(config.database.host)
+except MissingMandatoryValue as e:
+    print(f"Missing required config: {e}")
+
+# 设置必需值
+OmegaConf.update(config, "database.host", "localhost")
+print(config.database.host)  # localhost
+```
+
+## 命令行覆盖
+
+```python
+from omegaconf import OmegaConf
+
+# 从命令行参数覆盖配置
+# python script.py model.layers=101 training.epochs=200
+
+def load_config_with_cli_override(config_file: str, cli_args: list[str]) -> DictConfig:
+    """加载配置并应用命令行覆盖"""
+    # 加载基础配置
+    config = OmegaConf.load(config_file)
+
+    # 从命令行参数创建覆盖配置
+    cli_config = OmegaConf.from_dotlist(cli_args)
+
+    # 合并配置
+    return OmegaConf.merge(config, cli_config)
+
+# 使用示例
+import sys
+config = load_config_with_cli_override(
+    "config.yaml",
+    sys.argv[1:]  # ['model.layers=101', 'training.epochs=200']
+)
+```
+
+## 最佳实践
+
+### 1. 使用resolve=True解析插值
+
+```python
+# ✅ 推荐：解析所有插值
+config_dict = OmegaConf.to_container(config, resolve=True)
+
+# ❌ 不推荐：保留插值字符串
+config_dict = OmegaConf.to_container(config, resolve=False)
+```
+
+### 2. 使用throw_on_missing处理缺失值
+
+```python
+# ✅ 推荐：缺失必需值时抛出异常
+config_dict = OmegaConf.to_container(
+    config,
+    resolve=True,
+    throw_on_missing=True
+)
+
+# ⚠️ 可选配置可以设置为False
+optional_config = OmegaConf.to_container(
+    config.optional_section,
+    resolve=True,
+    throw_on_missing=False
+)
+```
+
+### 3. 配置文件组织
+
+```
+backend/configs/
+├── base.yaml          # 基础配置
+├── paths.yaml         # 路径配置
+├── simulation.yaml    # 模拟配置
+└── analysis.yaml      # 分析配置
+```
+
+```python
+# 加载并合并所有配置
+def load_all_configs(config_dir: Path) -> DictConfig:
+    config_files = sorted(config_dir.glob("*.yaml"))
+    configs = [OmegaConf.load(f) for f in config_files]
+    return OmegaConf.merge(*configs)
+```
+
+### 4. 使用Pydantic进行类型安全的配置访问
+
+```python
+from pydantic import BaseModel, Field, field_validator
+from omegaconf import OmegaConf
+
+class DatabaseConfig(BaseModel):
+    """数据库配置（使用Pydantic）"""
+
+    host: str = Field(..., min_length=1, description="数据库主机")
+    port: int = Field(..., ge=1, le=65535, description="数据库端口")
+    username: str = Field(..., min_length=1, description="用户名")
+    password: str = Field(..., min_length=1, description="密码")
+
+    @field_validator('host')
+    @classmethod
+    def validate_host(cls, v: str) -> str:
+        """验证主机名"""
+        if v == "localhost" or v.startswith("127."):
+            return v
+        # 可以添加更多验证逻辑
+        return v
+
+# 从YAML加载并转换为Pydantic模型
+config_dict = OmegaConf.load("database.yaml")
+db_config = DatabaseConfig(**OmegaConf.to_container(config_dict, resolve=True))
+
+# 现在有完整的类型检查和自动验证
+print(db_config.host)  # IDE会提供自动补全
+print(db_config.model_dump())  # 转换为字典
+```
+
+## Pydantic配置类的优势
+
+### 1. 自动验证
+
+```python
+from pydantic import BaseModel, Field, ValidationError
+
+class PathsConfig(BaseModel):
+    output_dir: Path = Field(..., description="输出目录")
+
+    @field_validator('output_dir')
+    @classmethod
+    def validate_output_dir(cls, v: Path) -> Path:
+        """自动验证并创建目录"""
+        v.mkdir(parents=True, exist_ok=True)
+        return v
+
+try:
+    # Pydantic会自动验证
+    config = PathsConfig(output_dir="/tmp/output")
+except ValidationError as e:
+    print(e.json())  # 详细的错误信息
+```
+
+### 2. 类型转换
+
+```python
+from pydantic import BaseModel
+from pathlib import Path
+
+class Config(BaseModel):
+    path: Path  # 自动将字符串转换为Path
+    count: int  # 自动将字符串转换为int
+
+# 自动类型转换
+config = Config(path="/tmp/data", count="42")
+assert isinstance(config.path, Path)  # True
+assert isinstance(config.count, int)  # True
+```
+
+### 3. 与OmegaConf结合使用
+
+```python
+from omegaconf import OmegaConf
+from pydantic import BaseModel, Field
+
+class SimulationConfig(BaseModel):
+    start_year: int = Field(..., ge=1900, le=2100)
+    end_year: int = Field(..., ge=1900, le=2100)
+
+# 从OmegaConf加载
+omega_config = OmegaConf.load("simulation.yaml")
+config_dict = OmegaConf.to_container(omega_config, resolve=True)
+
+# 使用Pydantic验证
+sim_config = SimulationConfig(**config_dict)
+
+# 获得两者的优势：
+# - OmegaConf: 配置合并、变量插值
+# - Pydantic: 自动验证、类型安全
+```
+
+### 4. 配置序列化
+
+```python
+from pydantic import BaseModel
+
+class Config(BaseModel):
+    name: str
+    value: int
+
+config = Config(name="test", value=42)
+
+# 序列化为字典
+config_dict = config.model_dump()
+
+# 序列化为JSON
+config_json = config.model_dump_json()
+
+# 从字典创建
+new_config = Config(**config_dict)
+
+# 从JSON创建
+new_config = Config.model_validate_json(config_json)
+```
 ```
 
 ### 依赖注入容器
