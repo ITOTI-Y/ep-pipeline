@@ -1258,7 +1258,7 @@ class BayesianOptimizationStrategy(OptimizationStrategy):
         pass
 
 
-class PSO OptimizationStrategy(OptimizationStrategy):
+class PSOOptimizationStrategy(OptimizationStrategy):
     """粒子群优化策略"""
 
     def optimize(

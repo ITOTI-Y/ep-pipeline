@@ -5,8 +5,8 @@ from backend.domain.models import SimulationResult
 
 Tcontext = TypeVar("Tcontext")
 
-class ISimulationService(ABC, Generic[Tcontext]):
 
+class ISimulationService(ABC, Generic[Tcontext]):
     @abstractmethod
     def prepare(self, context: Tcontext) -> None:
         """
@@ -20,7 +20,7 @@ class ISimulationService(ABC, Generic[Tcontext]):
 
         Args:
             context (Tcontext): The simulation context.
-        
+
         Raises:
             ValidationError: If validation fails.
             FileNotFoundError: If required files are missing.
@@ -36,7 +36,6 @@ class ISimulationService(ABC, Generic[Tcontext]):
     def cleanup(self, context: Tcontext) -> None:
         pass
 
-    @abstractmethod
     def run(self, context: Tcontext) -> SimulationResult:
         try:
             self.prepare(context)

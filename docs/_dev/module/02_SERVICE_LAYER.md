@@ -45,7 +45,7 @@
 
 ### 与其他层的关系
 
-```
+```text
 Application Layer (应用层)
     ↓ 使用
 Service Layer (服务层) ← [本文档]
@@ -142,7 +142,7 @@ class BaselineSimulationService:
 
 ## 目录结构
 
-```
+```text
 backend/services/
 ├── __init__.py
 ├── interfaces/                    # 服务接口

@@ -48,9 +48,9 @@ class ECMApplicator(IECMApplicator):
             if parameters.lighting_power_reduction_level is not None:
                 self._apply_lighting_parameters(idf, parameters)
 
-        except Exception:
+        except Exception as e:
             self._logger.exception("Failed to apply ECM parameters")
-            raise RuntimeError("Failed to apply ECM parameters")
+            raise RuntimeError("Failed to apply ECM parameters") from e
 
     def _apply_window_parameters(self, idf: IDF, parameters: ECMParameters) -> None:
         """

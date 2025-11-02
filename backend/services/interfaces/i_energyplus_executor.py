@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from eppy.modeleditor import IDF
 
+
 class ExecutionResult:
     """EnergyPlus execution result"""
+
     def __init__(
-            self,
-            success: bool,
-            return_code: int,
-            stdout: str,
-            stderr: str,
-            output_directory: Path,
+        self,
+        success: bool,
+        return_code: int,
+        stdout: str,
+        stderr: str,
+        output_directory: Path,
     ):
         self.success = success
         self.return_code = return_code
@@ -31,9 +32,11 @@ class ExecutionResult:
         """Add a warning message to the execution result."""
         self.warnings.append(message)
 
+
 class IEnergyPlusExecutor(ABC):
     """EnergyPlus executor interface"""
 
+    @abstractmethod
     @abstractmethod
     def run(
         self,
@@ -42,7 +45,7 @@ class IEnergyPlusExecutor(ABC):
         output_directory: Path,
         output_prefix: str,
         read_variables: bool = True,
-    ):
+    ) -> ExecutionResult:
         """
         running energyplus simulation
 
