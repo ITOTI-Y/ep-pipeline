@@ -2041,6 +2041,7 @@ class ConfigManager:
     - 支持变量插值 (e.g., ${paths.output_dir}/baseline)
     - 类型安全的配置访问
     - 支持配置验证
+    - 完善的异常处理和日志记录
 
     Example:
         >>> config_mgr = ConfigManager(config_dir=Path("backend/configs"))
@@ -2049,6 +2050,7 @@ class ConfigManager:
     """
 
     def __init__(self, config_dir: Path = Path("backend/configs")):
+        self._logger = logger.bind(module=self.__class__.__name__)
         self._config_dir = config_dir
         self._raw_config: DictConfig = self._load_config()
 
@@ -2056,9 +2058,6 @@ class ConfigManager:
         self.paths = self._parse_paths_config()
         self.simulation = self._parse_simulation_config()
         self.analysis = self._parse_analysis_config()
-
-        # 创建必要的目录
-        self._create_directories()
 
     def _load_config(self) -> DictConfig:
         """
@@ -2070,14 +2069,31 @@ class ConfigManager:
         Returns:
             DictConfig: 合并后的配置对象
 
+        Raises:
+            FileNotFoundError: 配置目录不存在或没有配置文件
+            NotADirectoryError: 配置路径不是目录
+
         Example:
             配置文件结构:
             - backend/configs/paths.yaml
             - backend/configs/simulation.yaml
             - backend/configs/analysis.yaml
         """
+        # 验证配置目录存在
+        if not self._config_dir.exists():
+            self._logger.error(f"Config directory not found: {self._config_dir}")
+            raise FileNotFoundError(f"Config directory not found: {self._config_dir}")
+        if not self._config_dir.is_dir():
+            self._logger.error(f"Config path is not a directory: {self._config_dir}")
+            raise NotADirectoryError(f"Config path is not a directory: {self._config_dir}")
+
         config_files = sorted(self._config_dir.glob("*.yaml"))
         configs = []
+
+        # 验证至少有一个配置文件
+        if not config_files:
+            self._logger.error(f"No config files found in {self._config_dir}")
+            raise FileNotFoundError(f"No config files found in {self._config_dir}")
 
         for file in config_files:
             # OmegaConf.load() 支持YAML文件加载
@@ -2100,8 +2116,14 @@ class ConfigManager:
             PathsConfig: 路径配置对象（Pydantic模型）
 
         Raises:
+            ValueError: 配置中缺少paths部分
             ValidationError: 当配置验证失败时
         """
+        # 验证配置中包含paths部分
+        if not self._raw_config.paths:
+            self._logger.error(f"Paths config not found in {self._raw_config}")
+            raise ValueError(f"Paths config not found in {self._raw_config}")
+
         # OmegaConf.to_container() 转换为普通Python对象
         # resolve=True 解析变量插值，如 ${paths.base_dir}/output
         paths_dict = OmegaConf.to_container(
@@ -2115,7 +2137,7 @@ class ConfigManager:
         # 1. 将字符串转换为Path对象
         # 2. 验证文件是否存在
         # 3. 验证IDF文件格式
-        return PathsConfig(**paths_dict)
+        return PathsConfig(**paths_dict)  # type: ignore
 
     def _parse_simulation_config(self) -> SimulationConfig:
         """
@@ -2127,8 +2149,14 @@ class ConfigManager:
             SimulationConfig: 模拟配置对象（Pydantic模型）
 
         Raises:
+            ValueError: 配置中缺少simulation部分
             ValidationError: 当配置验证失败时（如年份范围不合理）
         """
+        # 验证配置中包含simulation部分
+        if not self._raw_config.simulation:
+            self._logger.error(f"Simulation config not found in {self._raw_config}")
+            raise ValueError(f"Simulation config not found in {self._raw_config}")
+
         sim_dict = OmegaConf.to_container(
             self._raw_config.simulation,
             resolve=True,
@@ -2139,7 +2167,7 @@ class ConfigManager:
         # 1. start_year <= end_year
         # 2. 年份在合理范围内（1900-2100）
         # 3. cleanup_files是列表类型
-        return SimulationConfig(**sim_dict)
+        return SimulationConfig(**sim_dict)  # type: ignore
 
     def _parse_analysis_config(self) -> AnalysisConfig:
         """
@@ -2149,7 +2177,15 @@ class ConfigManager:
 
         Returns:
             AnalysisConfig: 分析配置对象（Pydantic模型）
+
+        Raises:
+            ValueError: 配置中缺少analysis部分
         """
+        # 验证配置中包含analysis部分
+        if not self._raw_config.analysis:
+            self._logger.error(f"Analysis config not found in {self._raw_config}")
+            raise ValueError(f"Analysis config not found in {self._raw_config}")
+
         analysis_dict = OmegaConf.to_container(
             self._raw_config.analysis,
             resolve=True,
@@ -2157,7 +2193,7 @@ class ConfigManager:
         )
 
         # Pydantic会使用默认值填充缺失的字段
-        return AnalysisConfig(**(analysis_dict or {}))
+        return AnalysisConfig(**(analysis_dict or {}))  # type: ignore
 
     def _create_directories(self) -> None:
         """创建必要的目录"""

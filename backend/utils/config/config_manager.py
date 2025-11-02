@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from omegaconf import DictConfig, ListConfig, OmegaConf
 from loguru import logger
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .config_models import AnalysisConfig, PathsConfig, SimulationConfig
 
@@ -22,8 +22,10 @@ class ConfigManager:
             raise FileNotFoundError(f"Config directory not found: {self._config_dir}")
         if not self._config_dir.is_dir():
             self._logger.error(f"Config path is not a directory: {self._config_dir}")
-            raise NotADirectoryError(f"Config path is not a directory: {self._config_dir}")
-        
+            raise NotADirectoryError(
+                f"Config path is not a directory: {self._config_dir}"
+            )
+
         config_files = sorted(self._config_dir.glob("*.yaml"))
         configs = []
 
@@ -39,12 +41,13 @@ class ConfigManager:
         return merged_config
 
     def _parse_paths_config(self) -> PathsConfig:
-        if not self._raw_config.paths:
+        paths_config = OmegaConf.select(self._raw_config, "paths")
+        if paths_config is None:
             self._logger.error(f"Paths config not found in {self._raw_config}")
             raise ValueError(f"Paths config not found in {self._raw_config}")
-        
+
         paths_dict = OmegaConf.to_container(
-            self._raw_config.paths,
+            paths_config,
             resolve=True,
             throw_on_missing=True,
         )
@@ -52,12 +55,13 @@ class ConfigManager:
         return PathsConfig(**paths_dict)  # type: ignore
 
     def _parse_simulation_config(self) -> SimulationConfig:
-        if not self._raw_config.simulation:
+        simulation_config = OmegaConf.select(self._raw_config, "simulation")
+        if simulation_config is None:
             self._logger.error(f"Simulation config not found in {self._raw_config}")
             raise ValueError(f"Simulation config not found in {self._raw_config}")
-        
+
         sim_dict = OmegaConf.to_container(
-            self._raw_config.simulation,
+            simulation_config,
             resolve=True,
             throw_on_missing=True,
         )
@@ -65,12 +69,13 @@ class ConfigManager:
         return SimulationConfig(**sim_dict)  # type: ignore
 
     def _parse_analysis_config(self) -> AnalysisConfig:
-        if not self._raw_config.analysis:
+        analysis_config = OmegaConf.select(self._raw_config, "analysis")
+        if analysis_config is None:
             self._logger.error(f"Analysis config not found in {self._raw_config}")
             raise ValueError(f"Analysis config not found in {self._raw_config}")
-        
+
         analysis_dict = OmegaConf.to_container(
-            self._raw_config.analysis,
+            analysis_config,
             resolve=True,
             throw_on_missing=False,
         )

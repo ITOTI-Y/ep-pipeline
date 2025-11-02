@@ -37,7 +37,6 @@ class IEnergyPlusExecutor(ABC):
     """EnergyPlus executor interface"""
 
     @abstractmethod
-    @abstractmethod
     def run(
         self,
         idf: IDF,
