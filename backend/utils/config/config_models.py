@@ -61,7 +61,7 @@ class SimulationConfig(BaseModel):
     start_year: int = Field(..., ge=1900, le=2100, description="Simulation start year")
     end_year: int = Field(..., ge=1900, le=2100, description="Simulation end year")
     default_output_suffix: str = Field(
-        default=...,
+        ...,
         min_length=1,
         max_length=10,
         description="Default output file suffix",
