@@ -1,0 +1,11 @@
+analysis:
+  sensitivity:
+    method: sobol
+    n_samples: 1000
+  optimization:
+    algorithm: nsga2
+    population_size: 100
+    generations: 50
+  surrogate_models:
+    enabled: true
+    model_type: xgboost

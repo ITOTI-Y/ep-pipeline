@@ -1,5 +1,6 @@
-from eppy.modeleditor import IDF
 from abc import ABC, abstractmethod
+
+from eppy.modeleditor import IDF
 from loguru import logger
 
 from ..value_objects.ecm_parameters import ECMParameters
@@ -47,9 +48,9 @@ class ECMApplicator(IECMApplicator):
             if parameters.lighting_power_reduction_level is not None:
                 self._apply_lighting_parameters(idf, parameters)
 
-        except Exception:
+        except Exception as e:
             self._logger.exception("Failed to apply ECM parameters")
-            raise RuntimeError("Failed to apply ECM parameters")
+            raise RuntimeError("Failed to apply ECM parameters") from e
 
     def _apply_window_parameters(self, idf: IDF, parameters: ECMParameters) -> None:
         """
@@ -110,7 +111,9 @@ class ECMApplicator(IECMApplicator):
             idf (IDF): IDF object
             parameters (ECMParameters): ECM parameters
         """
-        insulation_materials_name = "UserDefined Insulation Material" + f"_{parameters.wall_insulation:.2f}"
+        insulation_materials_name = (
+            "UserDefined Insulation Material" + f"_{parameters.wall_insulation:.2f}"
+        )
 
         idf.newidfobject(
             "Material:NoMass",
@@ -232,9 +235,7 @@ class ECMApplicator(IECMApplicator):
                             )
                             modified_count += 1
             except Exception:
-                self._logger.exception(
-                    f"Failed to process {equipment_type} objects"
-                )
+                self._logger.exception(f"Failed to process {equipment_type} objects")
                 continue
 
         self._logger.info(f"Modified {modified_count} coil and chiller objects")
@@ -285,7 +286,9 @@ class ECMApplicator(IECMApplicator):
                 light.Watts_per_Person = original_power * lighting_power_reduction
                 modified_count += 1
             else:
-                self._logger.warning(f"Unsupported lighting calculation method: {calc_method}")
+                self._logger.warning(
+                    f"Unsupported lighting calculation method: {calc_method}"
+                )
                 continue
 
         self._logger.info(f"Modified {modified_count} lighting objects")

@@ -421,12 +421,11 @@ def batch(
     console.print(f"  缓存: {'启用' if cache else '禁用'}\n")
 
     try:
-        # 加载任务
-        import yaml
-        with open(input_file, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f)
+        # 加载任务 - 使用OmegaConf
+        from omegaconf import OmegaConf
 
-        job_configs = data.get('jobs', [])
+        config = OmegaConf.load(input_file)
+        job_configs = config.get('jobs', [])
         console.print(f"加载了 {len(job_configs)} 个任务\n")
 
         # 创建任务列表
@@ -1109,73 +1108,149 @@ class EventBus:
 
 ### 命令行配置
 
+**注意**: 这是用于CLI的简化版ConfigManager。完整的ConfigManager实现（包含Pydantic配置类）
+请参考`REFACTORING_GUIDE.md`中的"配置管理"章节。
+
 ```python
 """
 命令行配置管理
+
+使用OmegaConf实现层次化配置管理。
+
+这是一个简化版本，主要用于CLI场景。
+完整版本使用Pydantic进行配置验证，参见REFACTORING_GUIDE.md。
 """
 
 import click
 from pathlib import Path
 from typing import Optional
 
+from omegaconf import OmegaConf, DictConfig
 from backend.utils.config import get_settings
 
 
 class ConfigManager:
     """
-    配置管理器
+    配置管理器（CLI简化版）
 
-    处理命令行参数和配置文件的加载。
+    使用OmegaConf处理命令行参数和配置文件的加载。
+
+    注意：
+        这是简化版本，仅用于CLI快速配置加载。
+        生产环境建议使用完整版ConfigManager（带Pydantic验证）。
+
+    Example:
+        >>> config_mgr = ConfigManager()
+        >>> config = config_mgr.load_from_file(Path("config.yaml"))
+        >>> print(config.paths.output_dir)
     """
 
     @staticmethod
-    def load_from_file(config_path: Path) -> dict:
-        """从文件加载配置"""
-        import yaml
+    def load_from_file(config_path: Path) -> DictConfig:
+        """
+        从文件加载配置
 
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return yaml.safe_load(f)
+        使用OmegaConf.load()加载YAML配置文件。
+
+        Args:
+            config_path: 配置文件路径
+
+        Returns:
+            DictConfig: OmegaConf配置对象
+
+        Example:
+            >>> config = ConfigManager.load_from_file(Path("config.yaml"))
+            >>> print(OmegaConf.to_yaml(config))
+        """
+        return OmegaConf.load(config_path)
 
     @staticmethod
-    def merge_configs(base: dict, override: dict) -> dict:
-        """合并配置"""
-        result = base.copy()
-        result.update(override)
-        return result
+    def merge_configs(base: DictConfig, override: DictConfig) -> DictConfig:
+        """
+        合并配置
+
+        使用OmegaConf.merge()合并多个配置，后面的配置会覆盖前面的。
+
+        Args:
+            base: 基础配置
+            override: 覆盖配置
+
+        Returns:
+            DictConfig: 合并后的配置
+
+        Example:
+            >>> base = OmegaConf.create({"a": 1, "b": 2})
+            >>> override = OmegaConf.create({"b": 3, "c": 4})
+            >>> merged = ConfigManager.merge_configs(base, override)
+            >>> print(merged)  # {"a": 1, "b": 3, "c": 4}
+        """
+        return OmegaConf.merge(base, override)
 
     @staticmethod
-    def validate_config(config: dict) -> bool:
-        """验证配置"""
+    def validate_config(config: DictConfig) -> bool:
+        """
+        验证配置
+
+        检查必需的配置键是否存在。
+
+        Args:
+            config: 配置对象
+
+        Returns:
+            bool: 配置是否有效
+        """
         required_keys = ['paths', 'simulation']
         return all(key in config for key in required_keys)
+
+    @staticmethod
+    def to_dict(config: DictConfig) -> dict:
+        """
+        将OmegaConf配置转换为普通字典
+
+        Args:
+            config: OmegaConf配置对象
+
+        Returns:
+            dict: 普通Python字典
+        """
+        return OmegaConf.to_container(config, resolve=True)
 
 
 def load_config_from_cli(
     ctx: click.Context,
     config_file: Optional[Path] = None,
-) -> dict:
+) -> DictConfig:
     """
     从CLI加载配置
+
+    支持从文件加载配置并与默认设置合并。
 
     Args:
         ctx: Click上下文
         config_file: 配置文件路径
 
     Returns:
-        配置字典
+        DictConfig: 合并后的配置对象
+
+    Example:
+        >>> config = load_config_from_cli(ctx, Path("custom.yaml"))
+        >>> print(config.paths.output_dir)
     """
     settings = get_settings()
+
+    # 创建基础配置
+    base_config = OmegaConf.create({
+        'paths': OmegaConf.to_container(settings.paths),
+        'simulation': OmegaConf.to_container(settings.simulation),
+        'max_workers': settings.max_workers,
+    })
 
     # 如果提供了配置文件，加载并合并
     if config_file:
         file_config = ConfigManager.load_from_file(config_file)
-        # 这里可以实现配置合并逻辑
+        return ConfigManager.merge_configs(base_config, file_config)
 
-    return {
-        'paths': settings.paths,
-        'simulation': settings.simulation,
-        'max_workers': settings.max_workers,
-    }
+    return base_config
 ```
 
 ---

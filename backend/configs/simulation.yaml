@@ -1,0 +1,13 @@
+simulation:
+  start_year: 2040
+  end_year: 2040
+  default_output_suffix: L
+  cleanup_files:
+    - .audit
+    - .bnd
+    - .eio
+    - .end
+    - .mdd
+    - .mtd
+    - .rdd
+    - .shd

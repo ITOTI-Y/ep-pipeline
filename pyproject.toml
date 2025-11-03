@@ -7,6 +7,20 @@ requires-python = ">=3.12"
 dependencies = [
     "eppy>=0.5.63",
     "loguru>=0.7.3",
+    "omegaconf>=2.3.0",
+    "pandas>=2.3.3",
     "pydantic>=2.12.3",
     "pytest>=8.4.2",
+    "xgboost>=3.1.1",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

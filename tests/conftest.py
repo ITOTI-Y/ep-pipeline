@@ -1,9 +1,11 @@
 """
 Shared pytest fixtures for the test suite.
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, MagicMock
+
 from backend.domain.models.enums import BuildingType
 
 
