@@ -11,6 +11,14 @@
             ],
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "single_building_simulation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/single_building.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

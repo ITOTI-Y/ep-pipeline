@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import SimulationStatus, SimulationType
 
 if TYPE_CHECKING:
     from .building import Building
-    from .weather_file import WeatherFile
+    from .ecm_parameters import ECMParameters
     from .simulation_result import SimulationResult
-    from ..value_objects.ecm_parameters import ECMParameters
+    from .weather_file import WeatherFile
+
 
 class SimulationJob(BaseModel):
     model_config = ConfigDict(
@@ -20,10 +23,10 @@ class SimulationJob(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    building: "Building" = Field(
+    building: Building = Field(
         ..., description="The building object associated with the simulation job."
     )
-    weather_file: "WeatherFile" = Field(
+    weather_file: WeatherFile = Field(
         ..., description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
@@ -51,26 +54,34 @@ class SimulationJob(BaseModel):
         default=True,
         description="Whether to read variables from the EnergyPlus simulation.",
     )
-    ecm_parameters: Optional["ECMParameters"] = Field(
+    ecm_parameters: ECMParameters | None = Field(
         default=None,
         description="Energy Conservation Measures parameters for the simulation.",
     )
-    started_at: Optional[datetime] = Field(
+    started_at: datetime | None = Field(
         default=None,
         description="Timestamp when the simulation job started.",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: datetime | None = Field(
         default=None,
         description="Timestamp when the simulation job completed.",
     )
-    result: Optional["SimulationResult"] = Field(
+    result: SimulationResult | None = Field(
         default=None,
         description="The result of the simulation job.",
     )
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         default=None,
         description="Error message if the simulation job failed.",
     )
+
+    @field_validator("output_directory")
+    def validate_output_directory(cls, v: Path) -> Path:
+        if not v.exists():
+            v.mkdir(parents=True, exist_ok=True)
+        if not v.is_dir():
+            raise ValueError(f"Output directory is not a directory: {v}")
+        return v
 
     def start(self) -> None:
         """Mark the simulation job as started."""
@@ -83,7 +94,7 @@ class SimulationJob(BaseModel):
         self.status = SimulationStatus.RUNNING
         self.started_at = datetime.now()
 
-    def complete(self, result: "SimulationResult") -> None:
+    def complete(self, result: SimulationResult) -> None:
         """Mark the simulation job as completed."""
         if self.status != SimulationStatus.RUNNING:
             raise ValueError(
@@ -128,7 +139,7 @@ class SimulationJob(BaseModel):
             f"{building_id}_{weather_file_id}_{self.simulation_type.value}_{ecm_hash}"
         )
 
-    def get_duration(self) -> Optional[float]:
+    def get_duration(self) -> float | None:
         """Get the duration of the simulation job in seconds."""
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()

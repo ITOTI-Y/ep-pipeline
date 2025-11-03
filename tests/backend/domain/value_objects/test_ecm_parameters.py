@@ -10,10 +10,11 @@ Tests cover:
 - Dictionary conversion
 - String representation
 """
+
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.value_objects.ecm_parameters import ECMParameters
+from backend.domain.models.ecm_parameters import ECMParameters
 from backend.domain.models.enums import BuildingType
 
 
@@ -23,7 +24,7 @@ class TestECMParametersCreation:
     def test_create_with_building_type_only(self):
         """Test creating ECMParameters with only required building_type."""
         params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
-        
+
         assert params.building_type == BuildingType.OFFICE_LARGE
         assert params.window_u_value is None
         assert params.window_shgc is None
@@ -49,7 +50,7 @@ class TestECMParametersCreation:
             cooling_air_temperature=13.0,
             lighting_power_reduction_level=2,
         )
-        
+
         assert params.building_type == BuildingType.OFFICE_MEDIUM
         assert params.window_u_value == 1.5
         assert params.window_shgc == 0.4
@@ -99,7 +100,7 @@ class TestECMParametersValidation:
             window_shgc=0.0,
         )
         assert params_zero.window_shgc == 0.0
-        
+
         params_one = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=1.0,
@@ -287,7 +288,7 @@ class TestECMParametersImmutability:
         """Test that new attributes cannot be added."""
         params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
         with pytest.raises(ValidationError):
-            params.new_attribute = "value" # type: ignore
+            params.new_attribute = "value"  # type: ignore
 
 
 class TestECMParametersToDictMethod:
@@ -300,7 +301,7 @@ class TestECMParametersToDictMethod:
             window_u_value=1.5,
         )
         result = params.to_dict()
-        
+
         assert "building_type" in result
         assert "window_u_value" in result
         assert "window_shgc" not in result
@@ -315,7 +316,7 @@ class TestECMParametersToDictMethod:
             cop=4.0,
         )
         result = params.to_dict()
-        
+
         assert result == {
             "building_type": "OfficeLarge",
             "window_u_value": 1.5,
@@ -330,7 +331,7 @@ class TestECMParametersToDictMethod:
             lighting_power_reduction_level=2,
         )
         result = params.to_dict()
-        
+
         assert result["lighting_power_reduction_level"] == 2
         # The calculated property is not included in to_dict
         assert "lighting_power_reduction" not in result
@@ -349,9 +350,9 @@ class TestECMParametersMergeMethod:
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
         )
-        
+
         merged = params1.merge(params2)
-        
+
         assert merged.building_type == BuildingType.OFFICE_LARGE
         assert merged.window_u_value == 1.5
         assert merged.window_shgc == 0.4
@@ -367,9 +368,9 @@ class TestECMParametersMergeMethod:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
+
         merged = params1.merge(params2)
-        
+
         assert merged.cop == 4.0
         assert merged.window_u_value == 1.5
 
@@ -377,8 +378,10 @@ class TestECMParametersMergeMethod:
         """Test that merging different building types raises ValueError."""
         params1 = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
         params2 = ECMParameters(building_type=BuildingType.OFFICE_MEDIUM)
-        
-        with pytest.raises(ValueError, match="Cannot merge ECMParameters with different building types"):
+
+        with pytest.raises(
+            ValueError, match="Cannot merge ECMParameters with different building types"
+        ):
             params1.merge(params2)
 
     def test_merge_preserves_immutability(self):
@@ -391,13 +394,13 @@ class TestECMParametersMergeMethod:
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
         )
-        
+
         merged = params1.merge(params2)
-        
+
         # Original parameters should be unchanged
         assert params1.window_shgc is None
         assert params2.window_u_value is None
-        
+
         # Merged should have both
         assert merged.window_u_value == 1.5
         assert merged.window_shgc == 0.4
@@ -416,7 +419,7 @@ class TestECMParametersHashAndEquality:
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        
+
         assert params1 == params2
         assert hash(params1) == hash(params2)
 
@@ -430,7 +433,7 @@ class TestECMParametersHashAndEquality:
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=2.0,
         )
-        
+
         assert params1 != params2
 
     def test_parameters_can_be_used_in_set(self):
@@ -447,14 +450,14 @@ class TestECMParametersHashAndEquality:
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=2.0,
         )
-        
+
         param_set = {params1, params2, params3}
         assert len(param_set) == 2  # params1 and params2 are equal
 
     def test_equality_with_non_ecmparameters(self):
         """Test equality comparison with non-ECMParameters object."""
         params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
-        
+
         assert params != "not an ECMParameters"
         assert params != 42
         assert params is not None
@@ -470,7 +473,7 @@ class TestECMParametersStringRepresentation:
             window_u_value=1.5,
         )
         result = str(params)
-        
+
         assert "ECMParameters(" in result
         assert "building_type=OfficeLarge" in result
         assert "window_u_value=1.5" in result
@@ -484,7 +487,7 @@ class TestECMParametersStringRepresentation:
             cop=4.0,
         )
         result = str(params)
-        
+
         assert "ECMParameters(" in result
         assert "building_type=OfficeLarge" in result
         assert "window_u_value=1.5" in result
@@ -498,6 +501,6 @@ class TestECMParametersStringRepresentation:
             window_u_value=1.5,
         )
         result = str(params)
-        
+
         assert "window_shgc" not in result
         assert "wall_insulation" not in result

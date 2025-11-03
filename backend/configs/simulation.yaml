@@ -1,6 +1,10 @@
 simulation:
-  start_year: 2040
+  begin_year: 2040
   end_year: 2040
+  begin_month: 1
+  end_month: 12
+  begin_day: 1
+  end_day: 31
   default_output_suffix: L
   cleanup_files:
     - .audit

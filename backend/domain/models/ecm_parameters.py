@@ -1,6 +1,6 @@
-from typing import Dict, Optional, Any
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.enums import BuildingType
 
@@ -15,48 +15,48 @@ class ECMParameters(BaseModel):
         ..., description="Type of the building (e.g., Residential, Commercial, etc.)"
     )
 
-    window_u_value: Optional[float] = Field(
+    window_u_value: float | None = Field(
         default=None,
         ge=0.0,
         description="U-value of the windows in W/m²K",
     )
-    window_shgc: Optional[float] = Field(
+    window_shgc: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="Solar Heat Gain Coefficient (SHGC) of the windows",
     )
-    visible_transmittance: Optional[float] = Field(
+    visible_transmittance: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="Visible transmittance of the windows",
     )
-    wall_insulation: Optional[float] = Field(
+    wall_insulation: float | None = Field(
         default=None,
         ge=0.0,
         description="R-value of the wall insulation in m²K/W",
     )
-    infiltration_rate: Optional[float] = Field(
+    infiltration_rate: float | None = Field(
         default=None,
         ge=0.0,
         description="Infiltration rate in air changes per hour (ACH)",
     )
-    natural_ventilation_area: Optional[float] = Field(
+    natural_ventilation_area: float | None = Field(
         default=None,
         ge=0.0,
         description="Area available for natural ventilation in m²",
     )
-    cop: Optional[float] = Field(
+    cop: float | None = Field(
         default=None,
         ge=1.0,
         description="Coefficient of Performance (COP) of the cooling or heating system",
     )
-    cooling_air_temperature: Optional[float] = Field(
+    cooling_air_temperature: float | None = Field(
         default=None,
         description="Cooling air temperature in °C",
     )
-    lighting_power_reduction_level: Optional[int] = Field(
+    lighting_power_reduction_level: int | None = Field(
         default=None,
         ge=1,
         le=3,
@@ -64,7 +64,7 @@ class ECMParameters(BaseModel):
     )
 
     @property
-    def lighting_power_reduction(self) -> Optional[float]:
+    def lighting_power_reduction(self) -> float | None:
         if (
             self.lighting_power_reduction_level is None
             or self.building_type not in self._lighting_power_reduction_map
@@ -74,7 +74,7 @@ class ECMParameters(BaseModel):
         level_map = self._lighting_power_reduction_map[self.building_type]
         return level_map.get(self.lighting_power_reduction_level, None)
 
-    _lighting_power_reduction_map: Dict[BuildingType, Dict[int, float]] = {
+    _lighting_power_reduction_map: dict[BuildingType, dict[int, float]] = {
         BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.OFFICE_MEDIUM: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.APARTMENT_HIGH_RISE: {1: 0.35, 2: 0.45, 3: 0.55},
@@ -82,7 +82,7 @@ class ECMParameters(BaseModel):
         BuildingType.MULTI_FAMILY_RESIDENTIAL: {1: 0.35, 2: 0.45, 3: 0.55},
     }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json", exclude_none=True)
 
     def merge(self, other: "ECMParameters") -> "ECMParameters":

@@ -1,9 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SimulationResult(BaseModel):
@@ -27,47 +27,47 @@ class SimulationResult(BaseModel):
         default_factory=datetime.now,
         description="Timestamp when the simulation result was created.",
     )
-    error_messages: List[str] = Field(
+    error_messages: list[str] = Field(
         default_factory=list,
         description="List of error messages encountered during the simulation.",
     )
-    warning_messages: List[str] = Field(
+    warning_messages: list[str] = Field(
         default_factory=list,
         description="List of warning messages encountered during the simulation.",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata related to the simulation result.",
     )
 
-    table_csv_path: Optional[Path] = Field(
+    table_csv_path: Path | None = Field(
         default=None,
         description="Path to the CSV file containing tabular simulation results.",
     )
-    meter_csv_path: Optional[Path] = Field(
+    meter_csv_path: Path | None = Field(
         default=None,
         description="Path to the CSV file containing meter simulation results.",
     )
-    sql_path: Optional[Path] = Field(
+    sql_path: Path | None = Field(
         default=None,
         description="Path to the SQL file containing detailed simulation data.",
     )
-    source_eui: Optional[float] = Field(
+    source_eui: float | None = Field(
         default=None,
         ge=0,
         description="Source energy intensity (kWh/m²/yr) - calculated by ResultParser",
     )
-    site_eui: Optional[float] = Field(
+    site_eui: float | None = Field(
         default=None,
         ge=0,
         description="Site energy intensity (kWh/m²/yr) - calculated by ResultParser",
     )
-    total_energy_kwh: Optional[float] = Field(
+    total_energy_kwh: float | None = Field(
         default=None,
         ge=0,
         description="Total energy consumption (kWh) - calculated by ResultParser",
     )
-    execution_time: Optional[float] = Field(
+    execution_time: float | None = Field(
         default=None,
         ge=0,
         description="Total execution time of the simulation (seconds).",
@@ -98,12 +98,9 @@ class SimulationResult(BaseModel):
         if self.has_errors():
             return False
 
-        if self.source_eui is None:
-            return False
+        return self.source_eui is not None
 
-        return True
-
-    def get_eui_summary(self) -> Dict[str, Optional[float]]:
+    def get_eui_summary(self) -> dict[str, float | None]:
         """Get a summary of energy use intensities."""
         return {
             "source_eui": self.source_eui,

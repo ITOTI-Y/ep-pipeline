@@ -1,6 +1,4 @@
-from typing import Tuple, Optional
-
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Location(BaseModel):
@@ -24,7 +22,7 @@ class Location(BaseModel):
         description="Longitude of the location in decimal degrees.",
     )
 
-    def get_coordinates(self) -> Optional[Tuple[float, float]]:
+    def get_coordinates(self) -> tuple[float, float] | None:
         return (self.latitude, self.longitude)
 
     def __str__(self) -> str:

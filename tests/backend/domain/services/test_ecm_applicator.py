@@ -13,13 +13,15 @@ Tests cover:
 - Lighting parameter application
 - Error handling and edge cases
 """
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 from loguru import logger
 
-from backend.domain.services.ecm_applicator import ECMApplicator, IECMApplicator
-from backend.domain.value_objects.ecm_parameters import ECMParameters
+from backend.domain.models.ecm_parameters import ECMParameters
 from backend.domain.models.enums import BuildingType
+from backend.domain.services.ecm_applicator import ECMApplicator, IECMApplicator
 
 
 class TestIECMApplicatorInterface:
@@ -28,15 +30,16 @@ class TestIECMApplicatorInterface:
     def test_interface_cannot_be_instantiated(self):
         """Test that the abstract interface cannot be instantiated."""
         with pytest.raises(TypeError):
-            IECMApplicator() # type: ignore
+            IECMApplicator()  # type: ignore
 
     def test_interface_requires_apply_method(self):
         """Test that implementing class must provide apply method."""
+
         class IncompleteApplicator(IECMApplicator):
             pass
-        
+
         with pytest.raises(TypeError):
-            IncompleteApplicator() # type: ignore
+            IncompleteApplicator()  # type: ignore
 
 
 class TestECMApplicatorInitialization:
@@ -45,17 +48,17 @@ class TestECMApplicatorInitialization:
     def test_initialization_creates_logger(self):
         """Test that initialization creates a bound logger."""
         applicator = ECMApplicator()
-        
-        assert hasattr(applicator, '_logger')
+
+        assert hasattr(applicator, "_logger")
         assert applicator._logger is not None
 
     def test_initialization_binds_service_name(self):
         """Test that logger is bound with service name."""
-        with patch.object(logger, 'bind') as mock_bind:
+        with patch.object(logger, "bind") as mock_bind:
             mock_bind.return_value = logger
             ECMApplicator()
-            
-            mock_bind.assert_called_once_with(service='ECMApplicator')
+
+            mock_bind.assert_called_once_with(service="ECMApplicator")
 
 
 class TestECMApplicatorMainApplyMethod:
@@ -76,24 +79,28 @@ class TestECMApplicatorMainApplyMethod:
     def test_apply_with_no_parameters_does_nothing(self, applicator, mock_idf):
         """Test that apply with no ECM parameters set does nothing."""
         params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
-        
+
         applicator.apply(mock_idf, params)
-        
+
         # Should complete without errors
         assert True
 
-    def test_apply_does_not_call_window_parameters_with_only_u_value(self, applicator, mock_idf):
+    def test_apply_does_not_call_window_parameters_with_only_u_value(
+        self, applicator, mock_idf
+    ):
         """Test that apply does NOT call window parameter method when only U-value is set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_window_parameters") as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_not_called()
 
-    def test_apply_calls_window_parameters_with_shgc_all_three_parameters_set(self, applicator, mock_idf):
+    def test_apply_calls_window_parameters_with_shgc_all_three_parameters_set(
+        self, applicator, mock_idf
+    ):
         """Test window parameters are applied when only SHGC is set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
@@ -101,19 +108,21 @@ class TestECMApplicatorMainApplyMethod:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_window_parameters") as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
-    def test_apply_does_not_call_window_parameters_with_partial_params(self, applicator, mock_idf):
+    def test_apply_does_not_call_window_parameters_with_partial_params(
+        self, applicator, mock_idf
+    ):
         """Test window parameters are NOT applied when only some parameters are set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
         )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_window_parameters") as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_not_called()
 
@@ -123,8 +132,10 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
-        with patch.object(applicator, '_apply_wall_insulation_parameters') as mock_method:
+
+        with patch.object(
+            applicator, "_apply_wall_insulation_parameters"
+        ) as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
@@ -134,8 +145,8 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             infiltration_rate=0.5,
         )
-        
-        with patch.object(applicator, '_apply_infiltration_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_infiltration_parameters") as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
@@ -145,8 +156,10 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             natural_ventilation_area=10.0,
         )
-        
-        with patch.object(applicator, '_apply_natural_ventilation_parameters') as mock_method:
+
+        with patch.object(
+            applicator, "_apply_natural_ventilation_parameters"
+        ) as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
@@ -156,8 +169,10 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
-        with patch.object(applicator, '_apply_coil_and_chiller_parameters') as mock_method:
+
+        with patch.object(
+            applicator, "_apply_coil_and_chiller_parameters"
+        ) as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
@@ -167,8 +182,10 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             cooling_air_temperature=13.0,
         )
-        
-        with patch.object(applicator, '_apply_cooling_air_temperature_parameters') as mock_method:
+
+        with patch.object(
+            applicator, "_apply_cooling_air_temperature_parameters"
+        ) as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
@@ -178,12 +195,14 @@ class TestECMApplicatorMainApplyMethod:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
-        
-        with patch.object(applicator, '_apply_lighting_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_lighting_parameters") as mock_method:
             applicator.apply(mock_idf, params)
             mock_method.assert_called_once_with(mock_idf, params)
 
-    def test_apply_calls_multiple_methods_when_multiple_params_set(self, applicator, mock_idf):
+    def test_apply_calls_multiple_methods_when_multiple_params_set(
+        self, applicator, mock_idf
+    ):
         """Test that apply calls multiple methods when multiple params are set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
@@ -193,13 +212,14 @@ class TestECMApplicatorMainApplyMethod:
             wall_insulation=2.5,
             cop=4.0,
         )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_window, \
-             patch.object(applicator, '_apply_wall_insulation_parameters') as mock_wall, \
-             patch.object(applicator, '_apply_coil_and_chiller_parameters') as mock_cop:
-            
+
+        with (
+            patch.object(applicator, "_apply_window_parameters") as mock_window,
+            patch.object(applicator, "_apply_wall_insulation_parameters") as mock_wall,
+            patch.object(applicator, "_apply_coil_and_chiller_parameters") as mock_cop,
+        ):
             applicator.apply(mock_idf, params)
-            
+
             mock_window.assert_called_once_with(mock_idf, params)
             mock_wall.assert_called_once_with(mock_idf, params)
             mock_cop.assert_called_once_with(mock_idf, params)
@@ -212,10 +232,10 @@ class TestECMApplicatorMainApplyMethod:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
-        with patch.object(applicator, '_apply_window_parameters') as mock_method:
+
+        with patch.object(applicator, "_apply_window_parameters") as mock_method:
             mock_method.side_effect = Exception("Test error")
-            
+
             with pytest.raises(RuntimeError, match="Failed to apply ECM parameters"):
                 applicator.apply(mock_idf, params)
 
@@ -245,9 +265,9 @@ class TestApplyWindowParameters:
             window_shgc=0.40,
             visible_transmittance=0.70,
         )
-        
+
         applicator._apply_window_parameters(mock_idf, params)
-        
+
         # Check that newidfobject was called with correct material name
         calls = mock_idf.newidfobject.call_args_list
         material_call = calls[0]
@@ -262,12 +282,12 @@ class TestApplyWindowParameters:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
+
         # Mock getobject to return an existing material
         mock_idf.getobject = MagicMock(return_value=MagicMock())
-        
+
         applicator._apply_window_parameters(mock_idf, params)
-        
+
         # newidfobject should not be called
         mock_idf.newidfobject.assert_not_called()
 
@@ -279,9 +299,9 @@ class TestApplyWindowParameters:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
+
         applicator._apply_window_parameters(mock_idf, params)
-        
+
         # Check that CONSTRUCTION was created
         calls = mock_idf.newidfobject.call_args_list
         construction_call = calls[1]
@@ -295,31 +315,31 @@ class TestApplyWindowParameters:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
+
         # Create mock fenestration surfaces
         mock_window1 = MagicMock()
         mock_window1.Surface_Type = "WINDOW"
         mock_window1.Name = "Window1"
-        
+
         mock_window2 = MagicMock()
         mock_window2.Surface_Type = "WINDOW"
         mock_window2.Name = "Window2"
-        
+
         mock_door = MagicMock()
         mock_door.Surface_Type = "DOOR"
         mock_door.Name = "Door1"
-        
+
         mock_idf.idfobjects.get = MagicMock(
             return_value=[mock_window1, mock_window2, mock_door]
         )
-        
+
         applicator._apply_window_parameters(mock_idf, params)
-        
+
         # Check that only windows were modified
-        assert 'Construction_Name' in mock_window1.__dict__
-        assert 'Construction_Name' in mock_window2.__dict__
+        assert "Construction_Name" in mock_window1.__dict__
+        assert "Construction_Name" in mock_window2.__dict__
         # Door should not be modified
-        assert 'Construction_Name' not in mock_door.__dict__
+        assert "Construction_Name" not in mock_door.__dict__
 
     def test_handles_empty_fenestration_surfaces_list(self, applicator, mock_idf):
         """Test that method handles empty fenestration surfaces list."""
@@ -329,9 +349,9 @@ class TestApplyWindowParameters:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_window_parameters(mock_idf, params)
 
@@ -343,27 +363,27 @@ class TestApplyWindowParameters:
             window_shgc=0.4,
             visible_transmittance=0.7,
         )
-        
+
         # Create windows with different case types
         mock_window_lower = MagicMock()
         mock_window_lower.Surface_Type = "window"
-        
+
         mock_window_upper = MagicMock()
         mock_window_upper.Surface_Type = "WINDOW"
-        
+
         mock_window_mixed = MagicMock()
         mock_window_mixed.Surface_Type = "Window"
-        
+
         mock_idf.idfobjects.get = MagicMock(
             return_value=[mock_window_lower, mock_window_upper, mock_window_mixed]
         )
-        
+
         applicator._apply_window_parameters(mock_idf, params)
-        
+
         # All should be modified
-        assert hasattr(mock_window_lower, 'Construction_Name')
-        assert hasattr(mock_window_upper, 'Construction_Name')
-        assert hasattr(mock_window_mixed, 'Construction_Name')
+        assert hasattr(mock_window_lower, "Construction_Name")
+        assert hasattr(mock_window_upper, "Construction_Name")
+        assert hasattr(mock_window_mixed, "Construction_Name")
 
 
 class TestApplyWallInsulationParameters:
@@ -389,9 +409,9 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.50,
         )
-        
+
         applicator._apply_wall_insulation_parameters(mock_idf, params)
-        
+
         # Check Material:NoMass was created
         calls = mock_idf.newidfobject.call_args_list
         material_call = calls[0]
@@ -404,9 +424,9 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
+
         applicator._apply_wall_insulation_parameters(mock_idf, params)
-        
+
         # Check Schedule:Constant was created
         calls = mock_idf.newidfobject.call_args_list
         schedule_call = calls[1]
@@ -418,10 +438,12 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
+
         applicator._apply_wall_insulation_parameters(mock_idf, params)
-        
-        mock_idf.removeallidfobjects.assert_called_once_with("SurfaceControl:MoveableInsulation")
+
+        mock_idf.removeallidfobjects.assert_called_once_with(
+            "SurfaceControl:MoveableInsulation"
+        )
 
     def test_applies_to_outdoor_walls_only(self, applicator, mock_idf):
         """Test that insulation is only applied to outdoor walls."""
@@ -429,32 +451,33 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
+
         # Create mock surfaces
         outdoor_wall = MagicMock()
         outdoor_wall.Outside_Boundary_Condition = "Outdoors"
         outdoor_wall.Surface_Type = "WALL"
         outdoor_wall.Name = "OutdoorWall1"
-        
+
         indoor_wall = MagicMock()
         indoor_wall.Outside_Boundary_Condition = "Adiabatic"
         indoor_wall.Surface_Type = "WALL"
         indoor_wall.Name = "IndoorWall1"
-        
+
         floor = MagicMock()
         floor.Outside_Boundary_Condition = "Outdoors"
         floor.Surface_Type = "FLOOR"
         floor.Name = "Floor1"
-        
+
         mock_idf.idfobjects.get = MagicMock(
             return_value=[outdoor_wall, indoor_wall, floor]
         )
-        
+
         applicator._apply_wall_insulation_parameters(mock_idf, params)
-        
+
         # Count SurfaceControl:MoveableInsulation creations (after schedule and material)
         moveable_insulation_calls = [
-            call_item for call_item in mock_idf.newidfobject.call_args_list
+            call_item
+            for call_item in mock_idf.newidfobject.call_args_list
             if call_item[0][0] == "SurfaceControl:MoveableInsulation"
         ]
         assert len(moveable_insulation_calls) == 1
@@ -465,20 +488,21 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
+
         # Create mock roof surface
         outdoor_roof = MagicMock()
         outdoor_roof.Outside_Boundary_Condition = "Outdoors"
         outdoor_roof.Surface_Type = "ROOF"
         outdoor_roof.Name = "Roof1"
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[outdoor_roof])
-        
+
         applicator._apply_wall_insulation_parameters(mock_idf, params)
-        
+
         # Should create moveable insulation for roof
         moveable_insulation_calls = [
-            call_item for call_item in mock_idf.newidfobject.call_args_list
+            call_item
+            for call_item in mock_idf.newidfobject.call_args_list
             if call_item[0][0] == "SurfaceControl:MoveableInsulation"
         ]
         assert len(moveable_insulation_calls) == 1
@@ -489,9 +513,9 @@ class TestApplyWallInsulationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             wall_insulation=2.5,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_wall_insulation_parameters(mock_idf, params)
 
@@ -517,20 +541,18 @@ class TestApplyInfiltrationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             infiltration_rate=0.5,
         )
-        
+
         # Create mock infiltration objects
         infiltration1 = MagicMock()
         infiltration1.Name = "Infiltration1"
-        
+
         infiltration2 = MagicMock()
         infiltration2.Name = "Infiltration2"
-        
-        mock_idf.idfobjects.get = MagicMock(
-            return_value=[infiltration1, infiltration2]
-        )
-        
+
+        mock_idf.idfobjects.get = MagicMock(return_value=[infiltration1, infiltration2])
+
         applicator._apply_infiltration_parameters(mock_idf, params)
-        
+
         # Check both were modified
         assert infiltration1.Design_Flow_Rate_Calculation_Method == "AirChanges/Hour"
         assert infiltration1.Air_Changes_per_Hour == 0.5
@@ -543,9 +565,9 @@ class TestApplyInfiltrationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             infiltration_rate=0.5,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_infiltration_parameters(mock_idf, params)
 
@@ -555,12 +577,12 @@ class TestApplyInfiltrationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             infiltration_rate=1.2,
         )
-        
+
         infiltration = MagicMock()
         mock_idf.idfobjects.get = MagicMock(return_value=[infiltration])
-        
+
         applicator._apply_infiltration_parameters(mock_idf, params)
-        
+
         assert infiltration.Air_Changes_per_Hour == 1.2
 
 
@@ -585,20 +607,18 @@ class TestApplyNaturalVentilationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             natural_ventilation_area=10.0,
         )
-        
+
         # Create mock ventilation objects
         ventilation1 = MagicMock()
         ventilation1.Name = "Ventilation1"
-        
+
         ventilation2 = MagicMock()
         ventilation2.Name = "Ventilation2"
-        
-        mock_idf.idfobjects.get = MagicMock(
-            return_value=[ventilation1, ventilation2]
-        )
-        
+
+        mock_idf.idfobjects.get = MagicMock(return_value=[ventilation1, ventilation2])
+
         applicator._apply_natural_ventilation_parameters(mock_idf, params)
-        
+
         # Check both were modified
         assert ventilation1.Open_Area == 10.0
         assert ventilation2.Open_Area == 10.0
@@ -609,9 +629,9 @@ class TestApplyNaturalVentilationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             natural_ventilation_area=10.0,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_natural_ventilation_parameters(mock_idf, params)
 
@@ -621,12 +641,12 @@ class TestApplyNaturalVentilationParameters:
             building_type=BuildingType.OFFICE_LARGE,
             natural_ventilation_area=15.5,
         )
-        
+
         ventilation = MagicMock()
         mock_idf.idfobjects.get = MagicMock(return_value=[ventilation])
-        
+
         applicator._apply_natural_ventilation_parameters(mock_idf, params)
-        
+
         assert ventilation.Open_Area == 15.5
 
 
@@ -651,17 +671,17 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
+
         # Create mock coil with COP field
         coil = MagicMock()
         coil.Name = "Coil1"
         coil.Rated_COP = 3.0
-        
+
         mock_idf.idfobjects.keys = MagicMock(return_value=["COIL:COOLING:DX"])
         mock_idf.idfobjects.get = MagicMock(return_value=[coil])
-        
+
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
-        
+
         assert coil.Rated_COP == 4.0
 
     def test_modifies_chiller_objects(self, applicator, mock_idf):
@@ -670,17 +690,17 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=5.0,
         )
-        
+
         # Create mock chiller with COP field
         chiller = MagicMock()
         chiller.Name = "Chiller1"
         chiller.Reference_COP = 4.0
-        
+
         mock_idf.idfobjects.keys = MagicMock(return_value=["CHILLER:ELECTRIC:EIR"])
         mock_idf.idfobjects.get = MagicMock(return_value=[chiller])
-        
+
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
-        
+
         assert chiller.Reference_COP == 5.0
 
     def test_handles_multiple_cop_fields(self, applicator, mock_idf):
@@ -689,18 +709,20 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.5,
         )
-        
+
         # Create equipment with multiple COP fields
         equipment = MagicMock()
         equipment.Name = "Equipment1"
         equipment.Gross_Rated_Cooling_COP = 3.0
         equipment.High_Speed_Gross_Rated_Cooling_COP = 3.2
-        
-        mock_idf.idfobjects.keys = MagicMock(return_value=["COIL:COOLING:DX:MULTISPEED"])
+
+        mock_idf.idfobjects.keys = MagicMock(
+            return_value=["COIL:COOLING:DX:MULTISPEED"]
+        )
         mock_idf.idfobjects.get = MagicMock(return_value=[equipment])
-        
+
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
-        
+
         assert equipment.Gross_Rated_Cooling_COP == 4.5
         assert equipment.High_Speed_Gross_Rated_Cooling_COP == 4.5
 
@@ -710,11 +732,11 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
+
         mock_idf.idfobjects.keys = MagicMock(
             return_value=["ZONE", "BUILDING", "COIL:COOLING:DX"]
         )
-        
+
         # Setup different returns for different object types
         def get_side_effect(obj_type, _default=None):
             if obj_type == "COIL:COOLING:DX":
@@ -722,9 +744,9 @@ class TestApplyCoilAndChillerParameters:
                 coil.Rated_COP = 3.0
                 return [coil]
             return _default or []
-        
+
         mock_idf.idfobjects.get = MagicMock(side_effect=get_side_effect)
-        
+
         # Should not raise an error
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
 
@@ -734,14 +756,14 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
+
         # Create equipment without any COP fields
-        equipment = MagicMock(spec=['Name'])
+        equipment = MagicMock(spec=["Name"])
         equipment.Name = "Equipment1"
-        
+
         mock_idf.idfobjects.keys = MagicMock(return_value=["COIL:COOLING:WATER"])
         mock_idf.idfobjects.get = MagicMock(return_value=[equipment])
-        
+
         # Should not raise an error
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
 
@@ -751,13 +773,14 @@ class TestApplyCoilAndChillerParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cop=4.0,
         )
-        
+
         mock_idf.idfobjects.keys = MagicMock(
             return_value=["COIL:COOLING:DX", "CHILLER:ELECTRIC:EIR"]
         )
-        
+
         # Setup to raise exception for first type but succeed for second
         call_count = [0]
+
         def get_side_effect(_obj_type, _default=None):
             call_count[0] += 1
             if call_count[0] == 1:
@@ -766,9 +789,9 @@ class TestApplyCoilAndChillerParameters:
                 chiller = MagicMock()
                 chiller.Reference_COP = 3.0
                 return [chiller]
-        
+
         mock_idf.idfobjects.get = MagicMock(side_effect=get_side_effect)
-        
+
         # Should not raise an error and should process second type
         applicator._apply_coil_and_chiller_parameters(mock_idf, params)
 
@@ -794,20 +817,18 @@ class TestApplyCoolingAirTemperatureParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cooling_air_temperature=13.0,
         )
-        
+
         # Create mock sizing zone objects
         sizing_zone1 = MagicMock()
         sizing_zone1.Name = "Zone1"
-        
+
         sizing_zone2 = MagicMock()
         sizing_zone2.Name = "Zone2"
-        
-        mock_idf.idfobjects.get = MagicMock(
-            return_value=[sizing_zone1, sizing_zone2]
-        )
-        
+
+        mock_idf.idfobjects.get = MagicMock(return_value=[sizing_zone1, sizing_zone2])
+
         applicator._apply_cooling_air_temperature_parameters(mock_idf, params)
-        
+
         # Check both were modified
         assert sizing_zone1.Zone_Cooling_Design_Supply_Air_Temperature == 13.0
         assert sizing_zone2.Zone_Cooling_Design_Supply_Air_Temperature == 13.0
@@ -818,9 +839,9 @@ class TestApplyCoolingAirTemperatureParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cooling_air_temperature=13.0,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_cooling_air_temperature_parameters(mock_idf, params)
 
@@ -830,12 +851,12 @@ class TestApplyCoolingAirTemperatureParameters:
             building_type=BuildingType.OFFICE_LARGE,
             cooling_air_temperature=12.5,
         )
-        
+
         sizing_zone = MagicMock()
         mock_idf.idfobjects.get = MagicMock(return_value=[sizing_zone])
-        
+
         applicator._apply_cooling_air_temperature_parameters(mock_idf, params)
-        
+
         assert sizing_zone.Zone_Cooling_Design_Supply_Air_Temperature == 12.5
 
 
@@ -860,16 +881,16 @@ class TestApplyLightingParameters:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
-        
+
         # Create mock light with LIGHTINGLEVEL method
         light = MagicMock()
         light.Design_Level_Calculation_Method = "LIGHTINGLEVEL"
         light.Lighting_Level = 1000.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light])
-        
+
         applicator._apply_lighting_parameters(mock_idf, params)
-        
+
         # Should be reduced by 0.47 (level 2 for OFFICE_LARGE)
         assert light.Lighting_Level == 1000.0 * 0.47
 
@@ -879,16 +900,16 @@ class TestApplyLightingParameters:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=1,
         )
-        
+
         # Create mock light with WATTS/AREA method
         light = MagicMock()
         light.Design_Level_Calculation_Method = "WATTS/AREA"
         light.Watts_per_Floor_Area = 10.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light])
-        
+
         applicator._apply_lighting_parameters(mock_idf, params)
-        
+
         # Should be reduced by 0.2 (level 1 for OFFICE_LARGE)
         assert light.Watts_per_Floor_Area == 10.0 * 0.2
 
@@ -898,16 +919,16 @@ class TestApplyLightingParameters:
             building_type=BuildingType.SINGLE_FAMILY_RESIDENTIAL,
             lighting_power_reduction_level=3,
         )
-        
+
         # Create mock light with WATTS/PERSON method
         light = MagicMock()
         light.Design_Level_Calculation_Method = "WATTS/PERSON"
         light.Watts_per_Person = 5.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light])
-        
+
         applicator._apply_lighting_parameters(mock_idf, params)
-        
+
         # Should be reduced by 0.64 (level 3 for SINGLE_FAMILY_RESIDENTIAL)
         assert light.Watts_per_Person == 5.0 * 0.64
 
@@ -917,17 +938,17 @@ class TestApplyLightingParameters:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
-        
+
         # Create light with unsupported method
         light = MagicMock()
         light.Design_Level_Calculation_Method = "UNKNOWN_METHOD"
         light.Original_Power = 100.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light])
-        
+
         # Should not raise an error
         applicator._apply_lighting_parameters(mock_idf, params)
-        
+
         # Original power should not be modified
         assert light.Original_Power == 100.0
 
@@ -937,9 +958,9 @@ class TestApplyLightingParameters:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[])
-        
+
         # Should not raise an error
         applicator._apply_lighting_parameters(mock_idf, params)
 
@@ -949,39 +970,41 @@ class TestApplyLightingParameters:
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
-        
+
         # Create multiple lights with different methods
         light1 = MagicMock()
         light1.Design_Level_Calculation_Method = "LIGHTINGLEVEL"
         light1.Lighting_Level = 1000.0
-        
+
         light2 = MagicMock()
         light2.Design_Level_Calculation_Method = "WATTS/AREA"
         light2.Watts_per_Floor_Area = 10.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light1, light2])
-        
+
         applicator._apply_lighting_parameters(mock_idf, params)
-        
+
         # Both should be reduced
         assert light1.Lighting_Level == 1000.0 * 0.47
         assert light2.Watts_per_Floor_Area == 10.0 * 0.47
 
-    def test_different_building_types_have_different_reductions(self, applicator, mock_idf):
+    def test_different_building_types_have_different_reductions(
+        self, applicator, mock_idf
+    ):
         """Test that different building types have different reduction factors."""
         # Test APARTMENT_HIGH_RISE
         params_apartment = ECMParameters(
             building_type=BuildingType.APARTMENT_HIGH_RISE,
             lighting_power_reduction_level=2,
         )
-        
+
         light = MagicMock()
         light.Design_Level_Calculation_Method = "LIGHTINGLEVEL"
         light.Lighting_Level = 1000.0
-        
+
         mock_idf.idfobjects.get = MagicMock(return_value=[light])
-        
+
         applicator._apply_lighting_parameters(mock_idf, params_apartment)
-        
+
         # Should be reduced by 0.45 (level 2 for APARTMENT_HIGH_RISE)
         assert light.Lighting_Level == 1000.0 * 0.45

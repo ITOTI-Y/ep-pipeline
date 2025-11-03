@@ -1,9 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import BuildingType
 
@@ -34,15 +34,15 @@ class Building(BaseModel):
         default_factory=datetime.now,
         description="The timestamp when the building was last modified.",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata for the building."
     )
-    num_floors: Optional[int] = Field(
-        None, description="The number of floors in the building."
+    num_floors: int | None = Field(
+        default=None, description="The number of floors in the building."
     )
-    floor_area: Optional[float] = Field(
-        None,
-        gt=0.0,
+    floor_area: float | None = Field(
+        default=None,
+        ge=0.0,
         description="The total floor area of the building in square meters.",
     )
 
@@ -55,6 +55,14 @@ class Building(BaseModel):
         if v.suffix.lower() != ".idf":
             raise ValueError(f"The file '{v}' is not an IDF file.")
         return v
+
+    def update_floor_area(self, floor_area: float) -> None:
+        self.floor_area = floor_area
+        self.modified_at = datetime.now()
+
+    def update_num_floors(self, num_floors: int) -> None:
+        self.num_floors = num_floors
+        self.modified_at = datetime.now()
 
     def get_identifier(self) -> str:
         """Returns a string identifier for the building."""
