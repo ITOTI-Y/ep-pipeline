@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
+
+from backend.domain.models import SimulationContext
+from backend.utils.config import ConfigManager
 
 
 class IFileCleaner(ABC):
     @abstractmethod
     def clean(
         self,
-        directory: Path,
-        cleanup_patterns: list[str],
+        context: SimulationContext,
+        config: ConfigManager,
     ):
         pass

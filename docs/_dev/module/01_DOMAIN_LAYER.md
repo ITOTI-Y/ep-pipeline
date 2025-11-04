@@ -1033,7 +1033,7 @@ ECM 参数值对象 - 使用Pydantic实现
 表示能效措施（Energy Conservation Measures）的参数。
 """
 
-from typing import Optional, Dict
+from typing import Optional, Any
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
@@ -1158,7 +1158,7 @@ class ECMParameters(BaseModel):
         level_map = self._lighting_power_reduction_map[self.building_type]
         return level_map.get(self.lighting_power_reduction_level, None)
 
-    _lighting_power_reduction_map: Dict[BuildingType, Dict[int, float]] = {
+    _lighting_power_reduction_map: dict[BuildingType, dict[int, float]] = {
         BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.OFFICE_MEDIUM: {1: 0.2, 2: 0.47, 3: 0.53},
         BuildingType.APARTMENT_HIGH_RISE: {1: 0.35, 2: 0.45, 3: 0.55},
@@ -1167,7 +1167,7 @@ class ECMParameters(BaseModel):
     }
 
     # 业务方法
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         转换为字典，只包含非 None 值
 

@@ -1,11 +1,12 @@
 import re
 from pathlib import Path
+from typing import Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class WeatherFile(BaseModel):
+class Weather(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -15,7 +16,7 @@ class WeatherFile(BaseModel):
 
     file_path: Path = Field(..., description="Path to the weather file")
     location: str = Field(..., description="Location name of the weather data")
-    scenario: str | None  = Field(
+    scenario: str | None = Field(
         default=None,
         description="Scenario associated with the weather data (e.g., TMY, FTMY, SSP etc.)",
     )
@@ -36,7 +37,7 @@ class WeatherFile(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def get_scenario_description(self) -> "WeatherFile":
+    def get_scenario_description(self) -> Self:
         """Return a human-readable description of the weather file scenario."""
         if not self.scenario:
             raw = self.file_path.stem.strip().upper().replace(" ", "")

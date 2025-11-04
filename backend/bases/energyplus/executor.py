@@ -4,7 +4,8 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.services.interfaces import ExecutionResult, IEnergyPlusExecutor
+from backend.domain.models import SimulationContext, SimulationResult
+from backend.services.interfaces import IEnergyPlusExecutor
 
 
 class EnergyPlusExecutor(IEnergyPlusExecutor):
@@ -26,24 +27,25 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
 
     def run(
         self,
-        idf: IDF,
-        weather_file: Path,
-        output_directory: Path,
-        output_prefix: str,
-        read_variables: bool = True,
-    ) -> ExecutionResult:
+        context: SimulationContext,
+    ) -> SimulationResult:
+        idf = context.idf
+        output_prefix = context.job.output_prefix
+        weather_file = context.job.weather.file_path
+        output_directory = context.job.output_directory
+        read_variables = context.job.read_variables
+        job_id = context.job.id
+
         self._logger.info(f"Running EnergyPlus simulation: {output_prefix}")
         self._logger.debug(f"Weather file: {weather_file}")
         self._logger.debug(f"Output directory: {output_directory}")
         self._logger.debug(f"Output prefix: {output_prefix}")
         self._logger.debug(f"Read variables: {read_variables}")
 
-        result = ExecutionResult(
-            success=True,
-            return_code=0,
-            stdout="",
-            stderr="",
-            output_directory=output_directory,
+        output_directory.mkdir(parents=True, exist_ok=True)
+
+        result = SimulationResult(
+            job_id=job_id,
         )
 
         try:
@@ -55,6 +57,8 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 readvars=read_variables,
                 verbose="v",
             )
+
+            result.success = True
 
             err_file = output_directory / f"{output_prefix}out.err"
             if err_file.exists():
@@ -68,27 +72,19 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 self._logger.error(
                     f"EnergyPlus simulation completed with errors: {output_prefix}"
                 )
-                for error in result.errors:
-                    self._logger.error(f"  - {error}")
-            return result
 
         except Exception as e:
             self._logger.exception("Failed to run EnergyPlus: ")
 
-            result = ExecutionResult(
-                success=False,
-                return_code=1,
-                stdout="",
-                stderr=str(e),
-                output_directory=output_directory,
-            )
+            result.success = False
             result.add_error(f"Failed to run EnergyPlus: {e}")
-            return result
+
+        return result
 
     def _parse_error_file(
         self,
         err_file: Path,
-        result: ExecutionResult,
+        result: SimulationResult,
     ) -> None:
         try:
             content = err_file.read_text(encoding="utf-8", errors="ignore")

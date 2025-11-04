@@ -1,18 +1,17 @@
 from .building import Building
-from .context import BaselineContext
+from .context import BaselineContext, SimulationContext
 from .ecm_parameters import ECMParameters
 from .enums import BuildingType, SimulationStatus, SimulationType
-from .execution_result import ExecutionResult
 from .simulation_job import SimulationJob
 from .simulation_result import SimulationResult
-from .weather_file import WeatherFile
+from .weather_file import Weather
 
 __all__ = [
     "BaselineContext",
     "Building",
     "BuildingType",
     "ECMParameters",
-    "ExecutionResult",
+    "SimulationContext",
     "SimulationJob",
     "SimulationResult",
     "SimulationStatus",

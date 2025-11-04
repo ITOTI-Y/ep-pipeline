@@ -42,7 +42,7 @@ class Building(BaseModel):
     )
     floor_area: float | None = Field(
         default=None,
-        ge=0.0,
+        gt=0.0,
         description="The total floor area of the building in square meters.",
     )
 

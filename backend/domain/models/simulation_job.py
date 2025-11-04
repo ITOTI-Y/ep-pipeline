@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .building import Building
     from .ecm_parameters import ECMParameters
     from .simulation_result import SimulationResult
-    from .weather_file import WeatherFile
+    from .weather_file import Weather
 
 
 class SimulationJob(BaseModel):
@@ -26,7 +26,7 @@ class SimulationJob(BaseModel):
     building: Building = Field(
         ..., description="The building object associated with the simulation job."
     )
-    weather_file: WeatherFile = Field(
+    weather: Weather = Field(
         ..., description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
@@ -77,10 +77,8 @@ class SimulationJob(BaseModel):
 
     @field_validator("output_directory")
     def validate_output_directory(cls, v: Path) -> Path:
-        if not v.exists():
-            v.mkdir(parents=True, exist_ok=True)
-        if not v.is_dir():
-            raise ValueError(f"Output directory is not a directory: {v}")
+        if v.exists() and not v.is_dir():
+            raise ValueError(f"Output path '{v}' exists but is not a directory.")
         return v
 
     def start(self) -> None:
@@ -133,7 +131,7 @@ class SimulationJob(BaseModel):
 
     def get_cache_key(self) -> str:
         building_id = self.building.get_identifier()
-        weather_file_id = self.weather_file.get_identifier()
+        weather_file_id = self.weather.get_identifier()
         ecm_hash = hash(self.ecm_parameters) if self.ecm_parameters else 0
         return (
             f"{building_id}_{weather_file_id}_{self.simulation_type.value}_{ecm_hash}"

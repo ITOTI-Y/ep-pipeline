@@ -8,7 +8,7 @@ from backend.domain.models import (
     Building,
     BuildingType,
     SimulationJob,
-    WeatherFile,
+    Weather,
 )
 from backend.domain.models.enums import SimulationType
 from backend.services.simulation import BaselineService, FileCleaner, ResultParser
@@ -18,24 +18,27 @@ from backend.utils.config import ConfigManager
 def run_single_building_simulation():
     config = ConfigManager(Path("backend/configs"))
 
+    idf_file_path = config.paths.idf_files[0]
+
     building = Building(
-        name=config.paths.idf_files[0].stem,
+        name=idf_file_path.stem,
         building_type=BuildingType.OFFICE_LARGE,
         location="Chicago",
-        idf_file_path=config.paths.idf_files[0],
+        idf_file_path=idf_file_path,
     )
 
-    weather_file = WeatherFile(
+    weather = Weather(
         file_path=config.paths.ftmy_files[0],
         location="Chicago",
     )
 
     job = SimulationJob(
         building=building,
-        weather_file=weather_file,
+        weather=weather,
         simulation_type=SimulationType.BASELINE,
         output_directory=config.paths.baseline_dir / building.name,
         output_prefix="baseline_",
+        read_variables=True,
     )
 
     IDF.setiddname(str(config.paths.idd_file))
@@ -44,21 +47,19 @@ def run_single_building_simulation():
     context = BaselineContext(
         job=job,
         idf=idf,
-        working_directory=job.output_directory,
     )
 
-    excutor = EnergyPlusExecutor()
+    executor = EnergyPlusExecutor()
     result_parser = ResultParser()
     file_cleaner = FileCleaner()
 
     service = BaselineService(
-        executor=excutor,
+        executor=executor,
         result_parser=result_parser,
         file_cleaner=file_cleaner,
         config=config,
     )
     result = service.run(context)
-
 
 if __name__ == "__main__":
     run_single_building_simulation()

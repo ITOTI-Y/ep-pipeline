@@ -26,41 +26,62 @@ class BaselineService(ISimulationService[BaselineContext]):
         self._logger = logger.bind(service=self.__class__.__name__)
 
     def prepare(self, context: BaselineContext) -> None:
-        self._add_output_variables(context.idf)
-
+        self._configure_output_control_file(context.idf)
+        self._configure_output_meter(context.idf)
+        self._configure_output_variables(context.idf)
         self._configure_output_controls(context.idf)
-
         self._configure_simulation_period(context.idf)
-
         self._logger.info("Preparation completed successfully")
 
     def execute(self, context: BaselineContext) -> SimulationResult:
         self._logger.info(f"Executing baseline simulation for job {context.job.id}")
 
-        result = SimulationResult(
-            job_id=context.job.id,
-            output_directory=context.job.output_directory,
-        )
-
         try:
-            execution_result = self._executor.run(
-                idf=context.idf,
-                weather_file=context.job.weather_file.file_path,
-                output_directory=context.job.output_directory,
-                output_prefix=context.job.output_prefix,
-                read_variables=True,
+            result = self._executor.run(
+                context=context,
             )
 
+            result = self._result_parser.parse(
+                result=result,
+                context=context,
+            )
             return result
-
-        except Exception:
+        except Exception as e:
             self._logger.exception("Failed to execute baseline simulation")
+            result.add_error(str(e))
             return result
 
     def cleanup(self, context: BaselineContext) -> None:
-        return  # TODO: Implement
+        self._file_cleaner.clean(
+            context=context,
+            config=self._config,
+        )
 
-    def _add_output_variables(self, idf: IDF) -> None:
+    def _configure_output_control_file(self, idf: IDF) -> None:
+        self._remove_objects(idf, "OUTPUTCONTROL:FILES")
+
+        idf.newidfobject(
+            "OUTPUTCONTROL:FILES",
+            Output_CSV="Yes",
+            Output_MTR="Yes",
+            Output_Tabular="Yes",
+            Output_SQLite="Yes",
+        )
+
+        self._logger.success("Output control file configured successfully")
+
+    def _configure_output_meter(self, idf: IDF) -> None:
+        self._remove_objects(idf, "OUTPUT:METER")
+
+        idf.newidfobject(
+            "OUTPUT:METER",
+            Key_Name="Electricity:Facility",
+            Reporting_Frequency="Hourly",
+        )
+
+        self._logger.success("Output meter configured successfully")
+
+    def _configure_output_variables(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUT:VARIABLE")
 
         required_variables = [
@@ -68,6 +89,7 @@ class BaselineService(ISimulationService[BaselineContext]):
             ("Zone Mean Air Temperature", "Hourly"),
             ("Facility Total Electric Demand Power", "Hourly"),
             ("Facility Total Natural Gas Demand Rate", "Hourly"),
+            ("Surface Outside Face Incident Solar Radiation Rate per Area", "Hourly"),
             ("Facility Total Purchased Electric Energy", "Monthly"),
             ("Facility Total Natural Gas Energy", "Monthly"),
         ]

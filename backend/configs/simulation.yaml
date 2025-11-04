@@ -5,13 +5,17 @@ simulation:
   end_month: 12
   begin_day: 1
   end_day: 31
-  default_output_suffix: L
+  default_output_suffix: Default
   cleanup_files:
-    - .audit
-    - .bnd
-    - .eio
-    - .end
-    - .mdd
-    - .mtd
-    - .rdd
-    - .shd
+    - "*.audit"
+    - "*.bnd"
+    - "*.csv"
+    - "*.dxf"
+    - "*.eio"
+    - "*.end"
+    - "*.mdd"
+    - "*.mtd"
+    - "*.rdd"
+    - "*.shd"
+    - "*.eso"
+    - "*.rvaudit"
