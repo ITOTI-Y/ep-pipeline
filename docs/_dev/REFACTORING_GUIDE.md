@@ -2233,8 +2233,10 @@ paths:
   optimization_dir: ${paths.output_dir}/optimization
 
   # EnergyPlus配置
-  eplus_executable: /usr/local/EnergyPlus-23-2-0/energyplus
+  # 注意：使用 eppy API 后，eplus_executable 是可选的
+  # eppy 会自动查找 EnergyPlus 安装，只需要提供 IDD 文件路径
   idd_file: /usr/local/EnergyPlus-23-2-0/Energy+.idd
+  # eplus_executable: /usr/local/EnergyPlus-23-2-0/energyplus  # 可选，仅在 eppy 无法自动找到时需要
 ```
 
 ### backend/configs/simulation.yaml
@@ -2305,8 +2307,1832 @@ except FileNotFoundError as e:
     print(f"配置文件未找到: {e}")
 ```
 
+---
 
-# OmegaConf使用示例和最佳实践
+## Baseline 模拟完整实现示例
+
+本章节提供一个完整的、可运行的 Baseline 模拟功能实现示例，展示如何将所有组件整合在一起。
+
+### 1. 核心服务实现
+
+#### 1.1 EnergyPlus 执行器实现
+
+```python
+"""
+backend/infrastructure/energyplus/executor.py
+
+EnergyPlus 执行器的完整实现 - 使用 eppy API
+"""
+import io
+import time
+from pathlib import Path
+from typing import Optional
+
+from eppy.modeleditor import IDF
+from loguru import logger
+
+from backend.services.interfaces import IEnergyPlusExecutor, ExecutionResult
+
+
+class EnergyPlusExecutor(IEnergyPlusExecutor):
+    """
+    EnergyPlus 执行器
+
+    使用 eppy 库的 API 执行建筑能耗模拟。
+
+    Args:
+        idd_path: Energy+.idd 文件路径
+        energyplus_path: EnergyPlus 可执行文件路径（可选，eppy 会自动查找）
+
+    Note:
+        相比直接使用 subprocess 调用 EnergyPlus，使用 eppy API 的优势：
+        1. 更简洁的代码，无需手动构建命令行参数
+        2. eppy 自动处理路径和参数转换
+        3. 更好的错误处理和异常管理
+        4. 支持并行运行（通过 eppy.runner.run_functions.runIDFs）
+    """
+
+    def __init__(
+        self,
+        idd_path: Path,
+        energyplus_path: Optional[Path] = None,
+    ):
+        self._idd_path = idd_path
+        self._energyplus_path = energyplus_path
+        self._logger = logger.bind(module=self.__class__.__name__)
+
+        # 设置 IDD 文件（eppy 要求在创建 IDF 对象前设置）
+        IDF.setiddname(str(idd_path))
+
+        # 验证安装
+        if not self.validate_installation():
+            raise RuntimeError("EnergyPlus installation validation failed")
+
+    def validate_installation(self) -> bool:
+        """验证 EnergyPlus 安装"""
+        try:
+            # 检查 IDD 文件
+            if not self._idd_path.exists():
+                self._logger.error(f"IDD file not found: {self._idd_path}")
+                return False
+
+            # 尝试创建一个空 IDF 来测试 eppy 设置
+            test_idf = IDF(io.StringIO("VERSION,23.1;"))
+
+            self._logger.info("EnergyPlus installation validated")
+            return True
+
+        except Exception as e:
+            self._logger.error(f"EnergyPlus validation failed: {e}")
+            return False
+
+    def run(
+        self,
+        idf: IDF,
+        weather_file: Path,
+        output_directory: Path,
+        output_prefix: str,
+        read_variables: bool = True,
+    ) -> ExecutionResult:
+        """
+        运行 EnergyPlus 模拟
+
+        使用 eppy 的 idf.run() 方法执行模拟，而不是直接调用 subprocess。
+
+        Args:
+            idf: IDF 对象
+            weather_file: 天气文件路径
+            output_directory: 输出目录
+            output_prefix: 输出文件前缀
+            read_variables: 是否读取输出变量
+
+        Returns:
+            ExecutionResult: 执行结果
+
+        Raises:
+            FileNotFoundError: 天气文件不存在
+
+        Example:
+            >>> executor = EnergyPlusExecutor(idd_path=Path("Energy+.idd"))
+            >>> idf = IDF("building.idf")
+            >>> result = executor.run(
+            ...     idf=idf,
+            ...     weather_file=Path("chicago.epw"),
+            ...     output_directory=Path("output"),
+            ...     output_prefix="baseline",
+            ... )
+            >>> assert result.success
+        """
+        # 验证天气文件
+        if not weather_file.exists():
+            raise FileNotFoundError(f"Weather file not found: {weather_file}")
+
+        # 创建输出目录
+        output_directory.mkdir(parents=True, exist_ok=True)
+
+        self._logger.info(f"Starting EnergyPlus simulation: {output_prefix}")
+        self._logger.debug(f"Weather: {weather_file}")
+        self._logger.debug(f"Output: {output_directory}")
+
+        start_time = time.time()
+
+        try:
+            # 使用 eppy API 执行模拟
+            # eppy 会自动处理命令行参数和路径转换
+            idf.run(
+                weather=str(weather_file),
+                output_directory=str(output_directory),
+                output_prefix=output_prefix,
+                readvars=read_variables,
+                verbose='q',  # 安静模式，减少输出
+                # 如果指定了 EnergyPlus 路径，可以传递 ep_version 参数
+                # ep_version=str(self._energyplus_path) if self._energyplus_path else None,
+            )
+
+            execution_time = time.time() - start_time
+
+            # 创建执行结果
+            result = ExecutionResult(
+                success=True,
+                return_code=0,
+                stdout="",
+                stderr="",
+                output_directory=output_directory,
+            )
+
+            # 检查并解析错误文件
+            err_file = output_directory / f"{output_prefix}out.err"
+            if err_file.exists():
+                self._parse_error_file(err_file, result)
+
+            if result.success:
+                self._logger.info(
+                    f"Simulation completed successfully in {execution_time:.2f}s"
+                )
+            else:
+                self._logger.error("Simulation completed with errors")
+                for error in result.errors:
+                    self._logger.error(f"  - {error}")
+
+            return result
+
+        except Exception as e:
+            self._logger.error(f"EnergyPlus execution failed: {e}")
+
+            result = ExecutionResult(
+                success=False,
+                return_code=1,
+                stdout="",
+                stderr=str(e),
+                output_directory=output_directory,
+            )
+            result.add_error(f"Execution failed: {e}")
+
+            return result
+
+    def _parse_error_file(
+        self,
+        err_file: Path,
+        result: ExecutionResult,
+    ) -> None:
+        """
+        解析 EnergyPlus 错误文件
+
+        Args:
+            err_file: 错误文件路径
+            result: 执行结果对象
+        """
+        try:
+            with open(err_file, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+                # 查找严重错误
+                if "** Severe  **" in content:
+                    severe_errors = [
+                        line for line in content.split('\n')
+                        if "** Severe  **" in line
+                    ]
+                    for error in severe_errors:
+                        result.add_error(error.strip())
+
+                # 查找致命错误
+                if "**  Fatal  **" in content:
+                    fatal_errors = [
+                        line for line in content.split('\n')
+                        if "**  Fatal  **" in line
+                    ]
+                    for error in fatal_errors:
+                        result.add_error(error.strip())
+
+                # 查找警告（限制数量以避免过多输出）
+                if "** Warning **" in content:
+                    warnings = [
+                        line for line in content.split('\n')
+                        if "** Warning **" in line
+                    ]
+                    for warning in warnings[:10]:  # 只保留前 10 个警告
+                        result.add_warning(warning.strip())
+
+        except Exception as e:
+            self._logger.warning(f"Failed to parse error file: {e}")
+```
+
+#### 1.1.1 并行运行多个模拟（可选）
+
+如果需要并行运行多个 EnergyPlus 模拟，可以使用 eppy 的 `runIDFs` 函数结合 `joblib`：
+
+```python
+"""
+backend/infrastructure/energyplus/parallel_executor.py
+
+并行执行多个 EnergyPlus 模拟
+"""
+from pathlib import Path
+from typing import List, Tuple
+
+from eppy.runner.run_functions import runIDFs
+from loguru import logger
+
+
+class ParallelEnergyPlusExecutor:
+    """
+    并行 EnergyPlus 执行器
+
+    使用 eppy 的 runIDFs 函数并行运行多个模拟。
+
+    Note:
+        runIDFs 内部使用 multiprocessing 实现并行化，
+        比手动使用 joblib 更高效且更稳定。
+    """
+
+    def __init__(self, idd_path: Path, num_workers: int = -1):
+        """
+        初始化并行执行器
+
+        Args:
+            idd_path: IDD 文件路径
+            num_workers: 并行工作进程数，-1 表示使用所有 CPU 核心
+        """
+        self._idd_path = idd_path
+        self._num_workers = num_workers
+        self._logger = logger.bind(module=self.__class__.__name__)
+
+    def run_parallel(
+        self,
+        idf_weather_pairs: List[Tuple[Path, Path]],
+        output_directory: Path,
+    ) -> List[Path]:
+        """
+        并行运行多个模拟
+
+        Args:
+            idf_weather_pairs: (IDF文件路径, 天气文件路径) 的列表
+            output_directory: 输出目录
+
+        Returns:
+            输出目录列表
+
+        Example:
+            >>> executor = ParallelEnergyPlusExecutor(idd_path=Path("Energy+.idd"))
+            >>> pairs = [
+            ...     (Path("building1.idf"), Path("chicago.epw")),
+            ...     (Path("building2.idf"), Path("chicago.epw")),
+            ...     (Path("building3.idf"), Path("chicago.epw")),
+            ... ]
+            >>> results = executor.run_parallel(pairs, Path("output"))
+        """
+        self._logger.info(f"Starting parallel execution of {len(idf_weather_pairs)} simulations")
+
+        # 创建输出目录
+        output_directory.mkdir(parents=True, exist_ok=True)
+
+        # 准备 runIDFs 的输入参数
+        idf_files = [str(idf) for idf, _ in idf_weather_pairs]
+        weather_files = [str(epw) for _, epw in idf_weather_pairs]
+
+        # 使用 runIDFs 并行运行
+        # processors: 并行进程数，-1 表示使用所有核心
+        # verbose: 'q' 表示安静模式
+        runIDFs(
+            idf_files,
+            weather_files,
+            output_directory=str(output_directory),
+            processors=self._num_workers,
+            verbose='q',
+        )
+
+        self._logger.info("Parallel execution completed")
+
+        # 返回输出目录列表
+        return [
+            output_directory / Path(idf).stem
+            for idf, _ in idf_weather_pairs
+        ]
+```
+
+**使用 joblib 的替代方案**（如果需要更细粒度的控制）：
+
+```python
+"""
+使用 joblib 实现并行执行的替代方案
+"""
+from joblib import Parallel, delayed
+from pathlib import Path
+from typing import List
+
+from backend.infrastructure.energyplus.executor import EnergyPlusExecutor
+from backend.services.interfaces import ExecutionResult
+
+
+def run_single_simulation(
+    executor: EnergyPlusExecutor,
+    idf_path: Path,
+    weather_file: Path,
+    output_directory: Path,
+    output_prefix: str,
+) -> ExecutionResult:
+    """运行单个模拟的辅助函数"""
+    from eppy.modeleditor import IDF
+
+    idf = IDF(str(idf_path))
+    return executor.run(
+        idf=idf,
+        weather_file=weather_file,
+        output_directory=output_directory,
+        output_prefix=output_prefix,
+    )
+
+
+def run_simulations_parallel_joblib(
+    executor: EnergyPlusExecutor,
+    simulation_configs: List[dict],
+    n_jobs: int = -1,
+) -> List[ExecutionResult]:
+    """
+    使用 joblib 并行运行多个模拟
+
+    Args:
+        executor: EnergyPlus 执行器
+        simulation_configs: 模拟配置列表，每个配置包含 idf_path, weather_file 等
+        n_jobs: 并行任务数，-1 表示使用所有核心
+
+    Returns:
+        执行结果列表
+    """
+    results = Parallel(n_jobs=n_jobs, verbose=10)(
+        delayed(run_single_simulation)(
+            executor,
+            config['idf_path'],
+            config['weather_file'],
+            config['output_directory'],
+            config['output_prefix'],
+        )
+        for config in simulation_configs
+    )
+
+    return results
+```
+
+#### 1.2 结果解析器实现
+
+```python
+"""
+backend/infrastructure/parsers/result_parser.py
+
+模拟结果解析器的完整实现
+"""
+import sqlite3
+from pathlib import Path
+from typing import Optional
+from uuid import UUID
+
+import pandas as pd
+from loguru import logger
+
+from backend.domain.models import SimulationResult
+
+
+class ResultParser:
+    """
+    模拟结果解析器
+
+    从 EnergyPlus 输出文件中解析能耗数据和其他指标。
+    """
+
+    def __init__(self):
+        self._logger = logger.bind(module=self.__class__.__name__)
+
+    def parse(
+        self,
+        job_id: UUID,
+        output_directory: Path,
+        output_prefix: str = "eplus",
+    ) -> SimulationResult:
+        """
+        解析模拟结果
+
+        Args:
+            job_id: 模拟任务 ID
+            output_directory: 输出目录
+            output_prefix: 输出文件前缀
+
+        Returns:
+            SimulationResult: 解析后的模拟结果
+        """
+        self._logger.info(f"Parsing simulation results for job {job_id}")
+
+        # 创建结果对象
+        result = SimulationResult(
+            job_id=job_id,
+            output_directory=output_directory,
+        )
+
+        # 查找输出文件
+        table_csv = output_directory / f"{output_prefix}tbl.csv"
+        meter_csv = output_directory / f"{output_prefix}out.csv"
+        sql_file = output_directory / f"{output_prefix}out.sql"
+
+        # 设置文件路径
+        if table_csv.exists():
+            result.table_csv_path = table_csv
+        if meter_csv.exists():
+            result.meter_csv_path = meter_csv
+        if sql_file.exists():
+            result.sql_path = sql_file
+
+        # 解析能耗数据
+        try:
+            if sql_file.exists():
+                self._parse_from_sql(result, sql_file)
+            elif table_csv.exists():
+                self._parse_from_table_csv(result, table_csv)
+            else:
+                result.add_error("No output files found for parsing")
+                return result
+
+            result.success = True
+            self._logger.info(
+                f"Parsing completed. Source EUI: {result.source_eui:.2f} kWh/m²/yr"
+            )
+
+        except Exception as e:
+            self._logger.error(f"Failed to parse results: {e}")
+            result.add_error(f"Parsing error: {str(e)}")
+
+        return result
+
+    def _parse_from_sql(self, result: SimulationResult, sql_file: Path) -> None:
+        """从 SQL 文件解析数据"""
+        conn = sqlite3.connect(str(sql_file))
+
+        try:
+            # 查询年度能耗数据
+            query = """
+            SELECT
+                Value
+            FROM
+                TabularDataWithStrings
+            WHERE
+                ReportName = 'AnnualBuildingUtilityPerformanceSummary'
+                AND TableName = 'Site and Source Energy'
+                AND RowName = 'Total Site Energy'
+                AND ColumnName = 'Total Energy'
+                AND Units = 'GJ'
+            """
+
+            df = pd.read_sql_query(query, conn)
+
+            if not df.empty:
+                # 转换 GJ 到 kWh
+                total_energy_kwh = float(df.iloc[0]['Value']) * 277.778
+
+                # 获取建筑面积
+                area_query = """
+                SELECT
+                    Value
+                FROM
+                    TabularDataWithStrings
+                WHERE
+                    ReportName = 'AnnualBuildingUtilityPerformanceSummary'
+                    AND TableName = 'Building Area'
+                    AND RowName = 'Total Building Area'
+                    AND Units = 'm2'
+                """
+
+                area_df = pd.read_sql_query(area_query, conn)
+
+                if not area_df.empty:
+                    building_area = float(area_df.iloc[0]['Value'])
+                    result.source_eui = total_energy_kwh / building_area
+                    result.total_energy_kwh = total_energy_kwh
+
+                    # 存储到元数据
+                    result.metadata['building_area_m2'] = building_area
+
+            # 查询电力和天然气消耗
+            self._parse_energy_breakdown(result, conn)
+
+        finally:
+            conn.close()
+
+    def _parse_energy_breakdown(
+        self,
+        result: SimulationResult,
+        conn: sqlite3.Connection,
+    ) -> None:
+        """解析能源分项数据"""
+        # 查询电力消耗
+        elec_query = """
+        SELECT
+            Value
+        FROM
+            TabularDataWithStrings
+        WHERE
+            ReportName = 'AnnualBuildingUtilityPerformanceSummary'
+            AND TableName = 'End Uses'
+            AND RowName = 'Total End Uses'
+            AND ColumnName = 'Electricity'
+            AND Units = 'GJ'
+        """
+
+        elec_df = pd.read_sql_query(elec_query, conn)
+        if not elec_df.empty:
+            elec_kwh = float(elec_df.iloc[0]['Value']) * 277.778
+            result.metadata['electricity_kwh'] = elec_kwh
+
+        # 查询天然气消耗
+        gas_query = """
+        SELECT
+            Value
+        FROM
+            TabularDataWithStrings
+        WHERE
+            ReportName = 'AnnualBuildingUtilityPerformanceSummary'
+            AND TableName = 'End Uses'
+            AND RowName = 'Total End Uses'
+            AND ColumnName = 'Natural Gas'
+            AND Units = 'GJ'
+        """
+
+        gas_df = pd.read_sql_query(gas_query, conn)
+        if not gas_df.empty:
+            gas_kwh = float(gas_df.iloc[0]['Value']) * 277.778
+            result.metadata['natural_gas_kwh'] = gas_kwh
+
+    def _parse_from_table_csv(
+        self,
+        result: SimulationResult,
+        table_csv: Path,
+    ) -> None:
+        """从表格 CSV 文件解析数据（备用方法）"""
+        # 简化实现，实际应该解析 CSV 文件
+        self._logger.warning("CSV parsing not fully implemented, using SQL instead")
+        result.add_warning("Parsed from CSV (limited data)")
+```
+
+#### 1.3 文件清理器实现
+
+```python
+"""
+backend/infrastructure/file_cleaner.py
+
+临时文件清理器实现
+"""
+from pathlib import Path
+from typing import List
+
+from loguru import logger
+
+
+class FileCleaner:
+    """
+    文件清理器
+
+    清理模拟过程中产生的临时文件，保留重要的输出文件。
+    """
+
+    def __init__(self):
+        self._logger = logger.bind(module=self.__class__.__name__)
+
+    def clean(
+        self,
+        directory: Path,
+        keep_extensions: List[str] = None,
+        cleanup_patterns: List[str] = None,
+    ) -> None:
+        """
+        清理目录中的临时文件
+
+        Args:
+            directory: 要清理的目录
+            keep_extensions: 要保留的文件扩展名列表（如 ['.csv', '.sql']）
+            cleanup_patterns: 要删除的文件模式列表（如 ['*.audit', '*.bnd']）
+        """
+        if not directory.exists():
+            self._logger.warning(f"Directory does not exist: {directory}")
+            return
+
+        keep_extensions = keep_extensions or ['.csv', '.sql', '.idf', '.epw']
+        cleanup_patterns = cleanup_patterns or [
+            '*.audit', '*.bnd', '*.eio', '*.mtd', '*.mdd',
+            '*.rdd', '*.shd', '*.dxf', '*.end', '*.eso',
+        ]
+
+        deleted_count = 0
+
+        # 删除匹配模式的文件
+        for pattern in cleanup_patterns:
+            for file in directory.glob(pattern):
+                try:
+                    file.unlink()
+                    deleted_count += 1
+                    self._logger.debug(f"Deleted: {file.name}")
+                except Exception as e:
+                    self._logger.warning(f"Failed to delete {file.name}: {e}")
+
+        self._logger.info(f"Cleaned up {deleted_count} temporary files from {directory}")
+```
+
+### 2. BaselineSimulationService 完整实现
+
+```python
+"""
+backend/services/simulation/baseline_service.py
+
+Baseline 模拟服务的完整实现
+"""
+import time
+from pathlib import Path
+from typing import Optional
+
+from eppy.modeleditor import IDF
+from loguru import logger
+
+from backend.domain.models import SimulationResult
+from backend.services.interfaces import ISimulationService, IEnergyPlusExecutor
+from backend.services.simulation import BaselineContext
+from backend.infrastructure.parsers import ResultParser
+from backend.infrastructure.file_cleaner import FileCleaner
+from backend.utils.config import ConfigManager
+
+
+class BaselineSimulationService(ISimulationService[BaselineContext]):
+    """
+    Baseline 模拟服务
+
+    执行建筑的基准能耗模拟，不应用任何节能措施（ECM）。
+    这是所有其他模拟类型的基础，用于建立性能基准。
+
+    Args:
+        executor: EnergyPlus 执行器
+        result_parser: 结果解析器
+        file_cleaner: 文件清理器
+        config: 配置管理器
+
+    Example:
+        >>> config = ConfigManager()
+        >>> executor = EnergyPlusExecutor(
+        ...     executable_path=config.paths.eplus_executable,
+        ...     idd_path=config.paths.idd_file,
+        ... )
+        >>> parser = ResultParser()
+        >>> cleaner = FileCleaner()
+        >>> service = BaselineSimulationService(executor, parser, cleaner, config)
+        >>>
+        >>> # 创建上下文并运行
+        >>> context = BaselineContext(job=job, idf=idf, working_directory=output_dir)
+        >>> result = service.run(context)
+    """
+
+    def __init__(
+        self,
+        executor: IEnergyPlusExecutor,
+        result_parser: ResultParser,
+        file_cleaner: FileCleaner,
+        config: ConfigManager,
+    ):
+        self._executor = executor
+        self._result_parser = result_parser
+        self._file_cleaner = file_cleaner
+        self._config = config
+        self._logger = logger.bind(service=self.__class__.__name__)
+
+    def prepare(self, context: BaselineContext) -> None:
+        """
+        准备 Baseline 模拟
+
+        执行以下步骤：
+        1. 创建输出目录
+        2. 验证 IDF 和天气文件存在
+        3. 添加必要的输出变量到 IDF
+        4. 设置模拟控制参数
+
+        Args:
+            context: Baseline 模拟上下文
+
+        Raises:
+            FileNotFoundError: 如果必需的文件不存在
+            ValueError: 如果配置无效
+        """
+        self._logger.info(
+            f"Preparing baseline simulation for job {context.job.id}"
+        )
+
+        # 1. 创建输出目录
+        context.job.output_directory.mkdir(parents=True, exist_ok=True)
+        self._logger.debug(f"Output directory: {context.job.output_directory}")
+
+        # 2. 验证文件存在
+        if not context.job.building.idf_file_path.exists():
+            raise FileNotFoundError(
+                f"IDF file not found: {context.job.building.idf_file_path}"
+            )
+
+        if not context.job.weather_file.file_path.exists():
+            raise FileNotFoundError(
+                f"Weather file not found: {context.job.weather_file.file_path}"
+            )
+
+        self._logger.debug(f"IDF file: {context.job.building.idf_file_path}")
+        self._logger.debug(f"Weather file: {context.job.weather_file.file_path}")
+
+        # 3. 添加输出变量
+        self._add_output_variables(context.idf)
+
+        # 4. 配置输出控制
+        self._configure_output_controls(context.idf)
+
+        # 5. 设置模拟周期（如果需要）
+        self._configure_simulation_period(context.idf)
+
+        self._logger.info("Preparation completed successfully")
+
+    def execute(self, context: BaselineContext) -> SimulationResult:
+        """
+        执行 Baseline 模拟
+
+        执行以下步骤：
+        1. 调用 EnergyPlus 执行器运行模拟
+        2. 检查执行结果
+        3. 解析输出文件
+        4. 返回模拟结果
+
+        Args:
+            context: Baseline 模拟上下文
+
+        Returns:
+            SimulationResult: 模拟结果对象
+        """
+        self._logger.info(
+            f"Executing baseline simulation for job {context.job.id}"
+        )
+
+        start_time = time.time()
+
+        try:
+            # 1. 执行 EnergyPlus
+            execution_result = self._executor.run(
+                idf=context.idf,
+                weather_file=context.job.weather_file.file_path,
+                output_directory=context.job.output_directory,
+                output_prefix=context.job.output_prefix,
+                read_variables=context.job.read_variables,
+            )
+
+            # 2. 检查执行是否成功
+            if not execution_result.success:
+                self._logger.error(
+                    f"EnergyPlus execution failed with return code "
+                    f"{execution_result.return_code}"
+                )
+
+                # 创建失败结果
+                result = SimulationResult(
+                    job_id=context.job.id,
+                    output_directory=context.job.output_directory,
+                )
+                result.success = False
+
+                # 添加错误信息
+                for error in execution_result.errors:
+                    result.add_error(error)
+
+                # 添加警告信息
+                for warning in execution_result.warnings:
+                    result.add_warning(warning)
+
+                return result
+
+            # 3. 解析结果
+            self._logger.info("Parsing simulation results...")
+            result = self._result_parser.parse(
+                job_id=context.job.id,
+                output_directory=context.job.output_directory,
+                output_prefix=context.job.output_prefix,
+            )
+
+            # 4. 添加执行信息
+            execution_time = time.time() - start_time
+            result.metadata['execution_time_seconds'] = execution_time
+            result.metadata['building_name'] = context.job.building.name
+            result.metadata['building_type'] = context.job.building.building_type.value
+            result.metadata['location'] = context.job.building.location
+            result.metadata['weather_scenario'] = context.job.weather_file.scenario
+
+            # 添加警告（如果有）
+            for warning in execution_result.warnings:
+                result.add_warning(warning)
+
+            # 5. 记录结果
+            if result.is_valid():
+                self._logger.info(
+                    f"Simulation completed successfully in {execution_time:.2f}s. "
+                    f"Source EUI: {result.source_eui:.2f} kWh/m²/yr"
+                )
+            else:
+                self._logger.warning(
+                    f"Simulation completed with errors in {execution_time:.2f}s"
+                )
+
+            return result
+
+        except Exception as e:
+            # 处理未预期的异常
+            self._logger.error(f"Unexpected error during simulation: {e}", exc_info=True)
+
+            result = SimulationResult(
+                job_id=context.job.id,
+                output_directory=context.job.output_directory,
+            )
+            result.add_error(f"Unexpected error: {str(e)}")
+            result.metadata['execution_time_seconds'] = time.time() - start_time
+
+            return result
+
+    def cleanup(self, context: BaselineContext) -> None:
+        """
+        清理临时文件
+
+        删除模拟过程中产生的临时文件，保留重要的输出文件。
+
+        Args:
+            context: Baseline 模拟上下文
+        """
+        self._logger.info("Cleaning up temporary files...")
+
+        try:
+            self._file_cleaner.clean(
+                directory=context.job.output_directory,
+                keep_extensions=['.csv', '.sql', '.idf', '.epw'],
+                cleanup_patterns=self._config.simulation.cleanup_files,
+            )
+            self._logger.info("Cleanup completed")
+
+        except Exception as e:
+            # 清理失败不应该影响整体流程
+            self._logger.warning(f"Cleanup failed: {e}")
+
+    def _add_output_variables(self, idf: IDF) -> None:
+        """
+        添加必要的输出变量到 IDF
+
+        Args:
+            idf: IDF 对象
+        """
+        # 定义需要的输出变量
+        required_variables = [
+            ("Site Outdoor Air Drybulb Temperature", "Hourly"),
+            ("Zone Mean Air Temperature", "Hourly"),
+            ("Facility Total Electric Demand Power", "Hourly"),
+            ("Facility Total Natural Gas Demand Rate", "Hourly"),
+            ("Facility Total Purchased Electric Energy", "Monthly"),
+            ("Facility Total Natural Gas Energy", "Monthly"),
+        ]
+
+        added_count = 0
+
+        for var_name, frequency in required_variables:
+            # 检查变量是否已存在
+            exists = any(
+                ov.Variable_Name == var_name
+                for ov in idf.idfobjects.get("OUTPUT:VARIABLE", [])
+            )
+
+            if not exists:
+                idf.newidfobject(
+                    "OUTPUT:VARIABLE",
+                    Key_Value="*",
+                    Variable_Name=var_name,
+                    Reporting_Frequency=frequency,
+                )
+                added_count += 1
+                self._logger.debug(f"Added output variable: {var_name}")
+
+        if added_count > 0:
+            self._logger.info(f"Added {added_count} output variables to IDF")
+
+    def _configure_output_controls(self, idf: IDF) -> None:
+        """
+        配置输出控制参数
+
+        Args:
+            idf: IDF 对象
+        """
+        # 确保有 Output:Table:SummaryReports 对象
+        summary_reports = idf.idfobjects.get("OUTPUT:TABLE:SUMMARYREPORTS", [])
+
+        if not summary_reports:
+            idf.newidfobject(
+                "OUTPUT:TABLE:SUMMARYREPORTS",
+                Report_1_Name="AllSummary",
+            )
+            self._logger.debug("Added AllSummary report")
+
+        # 配置 SQLite 输出
+        sqlite_outputs = idf.idfobjects.get("OUTPUT:SQLITE", [])
+
+        if not sqlite_outputs:
+            idf.newidfobject(
+                "OUTPUT:SQLITE",
+                Option_Type="SimpleAndTabular",
+            )
+            self._logger.debug("Enabled SQLite output")
+
+    def _configure_simulation_period(self, idf: IDF) -> None:
+        """
+        配置模拟周期（可选）
+
+        Args:
+            idf: IDF 对象
+        """
+        # 这里可以根据需要修改模拟周期
+        # 默认使用 IDF 文件中的设置
+        run_periods = idf.idfobjects.get("RUNPERIOD", [])
+
+        if run_periods:
+            self._logger.debug(
+                f"Using existing run period: {run_periods[0].Name}"
+            )
+        else:
+            self._logger.warning("No run period defined in IDF")
+```
+
+### 3. 完整使用示例
+
+#### 3.1 简单工厂函数
+
+```python
+"""
+backend/utils/factory.py
+
+简单工厂函数，用于创建服务实例
+"""
+from pathlib import Path
+
+from backend.utils.config import ConfigManager
+from backend.infrastructure.energyplus import EnergyPlusExecutor
+from backend.infrastructure.parsers import ResultParser
+from backend.infrastructure.file_cleaner import FileCleaner
+from backend.services.simulation import BaselineSimulationService
+
+
+def create_baseline_service(config: ConfigManager) -> BaselineSimulationService:
+    """
+    创建 Baseline 模拟服务
+
+    使用工厂函数集中管理依赖关系，便于测试和维护。
+
+    Args:
+        config: 配置管理器
+
+    Returns:
+        BaselineSimulationService: 配置好的服务实例
+    """
+    # 创建依赖组件
+    executor = EnergyPlusExecutor(
+        executable_path=config.paths.eplus_executable,
+        idd_path=config.paths.idd_file,
+        timeout=3600,
+    )
+
+    result_parser = ResultParser()
+    file_cleaner = FileCleaner()
+
+    # 创建服务
+    return BaselineSimulationService(
+        executor=executor,
+        result_parser=result_parser,
+        file_cleaner=file_cleaner,
+        config=config,
+    )
+```
+
+#### 3.2 单个建筑模拟示例
+
+```python
+"""
+示例 1: 运行单个建筑的 Baseline 模拟
+"""
+from pathlib import Path
+from eppy.modeleditor import IDF
+
+from backend.utils.config import ConfigManager
+from backend.utils.factory import create_baseline_service
+from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.domain.models.enums import BuildingType, SimulationType
+from backend.services.simulation import BaselineContext
+
+
+def run_single_baseline_simulation():
+    """运行单个 Baseline 模拟的完整示例"""
+
+    # 1. 初始化配置
+    config = ConfigManager(config_dir=Path("backend/configs"))
+
+    # 2. 创建 Building 对象
+    building = Building(
+        name="Chicago_OfficeLarge",
+        building_type=BuildingType.OFFICE_LARGE,
+        location="Chicago",
+        idf_file_path=Path("data/prototypes/Chicago_OfficeLarge.idf"),
+        floor_area=46320.0,  # m²
+        num_floors=12,
+    )
+
+    # 3. 创建 WeatherFile 对象
+    weather_file = WeatherFile(
+        file_path=Path("data/tmys/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"),
+        location="Chicago",
+        scenario="TMY3",
+    )
+
+    # 4. 创建 SimulationJob 对象
+    job = SimulationJob(
+        building=building,
+        weather_file=weather_file,
+        simulation_type=SimulationType.BASELINE,
+        output_directory=Path("output/baseline/chicago_office"),
+        output_prefix="baseline",
+        read_variables=True,
+    )
+
+    # 5. 加载 IDF 文件
+    IDF.setiddname(str(config.paths.idd_file))
+    idf = IDF(str(building.idf_file_path))
+
+    # 6. 创建模拟上下文
+    context = BaselineContext(
+        job=job,
+        idf=idf,
+        working_directory=job.output_directory,
+    )
+
+    # 7. 创建服务并运行模拟
+    service = create_baseline_service(config)
+
+    print(f"Starting baseline simulation for {building.name}...")
+    job.start()
+
+    try:
+        result = service.run(context)
+
+        if result.is_valid():
+            job.complete(result)
+            print(f"✓ Simulation completed successfully!")
+            print(f"  Source EUI: {result.source_eui:.2f} kWh/m²/yr")
+            print(f"  Total Energy: {result.total_energy_kwh:.2f} kWh")
+            print(f"  Execution Time: {result.metadata.get('execution_time_seconds', 0):.2f}s")
+
+            # 显示能源分项
+            if 'electricity_kwh' in result.metadata:
+                print(f"  Electricity: {result.metadata['electricity_kwh']:.2f} kWh")
+            if 'natural_gas_kwh' in result.metadata:
+                print(f"  Natural Gas: {result.metadata['natural_gas_kwh']:.2f} kWh")
+        else:
+            job.fail("Simulation validation failed")
+            print(f"✗ Simulation failed or produced invalid results")
+            print(f"  Errors: {len(result.error_messages)}")
+            for error in result.error_messages[:5]:  # 显示前5个错误
+                print(f"    - {error}")
+
+    except Exception as e:
+        job.fail(str(e))
+        print(f"✗ Simulation error: {e}")
+        raise
+
+    return result
+
+
+if __name__ == "__main__":
+    result = run_single_baseline_simulation()
+```
+
+#### 3.3 批量模拟示例
+
+```python
+"""
+示例 2: 批量运行多个建筑的 Baseline 模拟
+"""
+from pathlib import Path
+from typing import List
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from eppy.modeleditor import IDF
+from loguru import logger
+
+from backend.utils.config import ConfigManager
+from backend.utils.factory import create_baseline_service
+from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.domain.models.enums import BuildingType, SimulationType
+from backend.services.simulation import BaselineContext
+
+
+def create_simulation_jobs(
+    config: ConfigManager,
+) -> List[SimulationJob]:
+    """
+    创建批量模拟任务
+
+    Returns:
+        模拟任务列表
+    """
+    jobs = []
+
+    # 定义要模拟的建筑和城市
+    building_types = [
+        BuildingType.OFFICE_LARGE,
+        BuildingType.OFFICE_MEDIUM,
+        BuildingType.OFFICE_SMALL,
+    ]
+
+    cities = ["Chicago", "Miami", "Phoenix"]
+
+    # 为每个组合创建任务
+    for city in cities:
+        for building_type in building_types:
+            # 构建文件路径
+            idf_filename = f"{city}_{building_type.value}.idf"
+            idf_path = config.paths.prototype_dir / idf_filename
+
+            epw_filename = f"{city}_TMY3.epw"
+            epw_path = config.paths.tmy_dir / epw_filename
+
+            # 检查文件是否存在
+            if not idf_path.exists() or not epw_path.exists():
+                logger.warning(f"Skipping {city} {building_type.value}: files not found")
+                continue
+
+            # 创建 Building 对象
+            building = Building(
+                name=f"{city}_{building_type.value}",
+                building_type=building_type,
+                location=city,
+                idf_file_path=idf_path,
+            )
+
+            # 创建 WeatherFile 对象
+            weather_file = WeatherFile(
+                file_path=epw_path,
+                location=city,
+                scenario="TMY3",
+            )
+
+            # 创建 SimulationJob 对象
+            output_dir = config.paths.baseline_dir / city / building_type.value
+            job = SimulationJob(
+                building=building,
+                weather_file=weather_file,
+                simulation_type=SimulationType.BASELINE,
+                output_directory=output_dir,
+                output_prefix="baseline",
+            )
+
+            jobs.append(job)
+
+    return jobs
+
+
+def run_batch_simulations(
+    jobs: List[SimulationJob],
+    config: ConfigManager,
+    max_workers: int = 4,
+) -> List[SimulationResult]:
+    """
+    并行运行批量模拟
+
+    Args:
+        jobs: 模拟任务列表
+        config: 配置管理器
+        max_workers: 最大并行工作线程数
+
+    Returns:
+        模拟结果列表
+    """
+    logger.info(f"Starting batch simulation of {len(jobs)} jobs with {max_workers} workers")
+
+    # 创建服务
+    service = create_baseline_service(config)
+
+    # 设置 IDD 文件（全局设置，只需一次）
+    IDF.setiddname(str(config.paths.idd_file))
+
+    results = []
+    completed = 0
+    total = len(jobs)
+
+    def run_single_job(job: SimulationJob):
+        """运行单个任务"""
+        try:
+            # 加载 IDF
+            idf = IDF(str(job.building.idf_file_path))
+
+            # 创建上下文
+            context = BaselineContext(
+                job=job,
+                idf=idf,
+                working_directory=job.output_directory,
+            )
+
+            # 运行模拟
+            job.start()
+            result = service.run(context)
+
+            if result.is_valid():
+                job.complete(result)
+            else:
+                job.fail("Validation failed")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Job {job.id} failed: {e}")
+            job.fail(str(e))
+
+            # 返回失败结果
+            from backend.domain.models import SimulationResult
+            result = SimulationResult(
+                job_id=job.id,
+                output_directory=job.output_directory,
+            )
+            result.add_error(str(e))
+            return result
+
+    # 并行执行
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # 提交所有任务
+        future_to_job = {
+            executor.submit(run_single_job, job): job
+            for job in jobs
+        }
+
+        # 收集结果
+        for future in as_completed(future_to_job):
+            job = future_to_job[future]
+
+            try:
+                result = future.result()
+                results.append(result)
+
+                completed += 1
+
+                # 显示进度
+                if result.is_valid():
+                    logger.info(
+                        f"[{completed}/{total}] ✓ {job.building.name}: "
+                        f"EUI = {result.source_eui:.2f} kWh/m²/yr"
+                    )
+                else:
+                    logger.warning(
+                        f"[{completed}/{total}] ✗ {job.building.name}: Failed"
+                    )
+
+            except Exception as e:
+                logger.error(f"Error processing result for {job.building.name}: {e}")
+
+    # 统计结果
+    success_count = sum(1 for r in results if r.is_valid())
+    logger.info(
+        f"Batch simulation completed: {success_count}/{total} successful"
+    )
+
+    return results
+
+
+def main():
+    """主函数"""
+    # 初始化配置
+    config = ConfigManager(config_dir=Path("backend/configs"))
+
+    # 创建任务
+    jobs = create_simulation_jobs(config)
+    print(f"Created {len(jobs)} simulation jobs")
+
+    # 运行批量模拟
+    results = run_batch_simulations(
+        jobs=jobs,
+        config=config,
+        max_workers=4,  # 根据 CPU 核心数调整
+    )
+
+    # 分析结果
+    print("\n" + "="*60)
+    print("SIMULATION SUMMARY")
+    print("="*60)
+
+    for result in results:
+        if result.is_valid():
+            building_name = result.metadata.get('building_name', 'Unknown')
+            print(f"{building_name:30s} {result.source_eui:8.2f} kWh/m²/yr")
+
+    print("="*60)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+#### 3.4 使用缓存的示例
+
+```python
+"""
+示例 3: 使用缓存避免重复模拟
+"""
+import hashlib
+import pickle
+from pathlib import Path
+from typing import Optional
+
+from backend.domain.models import SimulationJob, SimulationResult
+
+
+class SimpleCache:
+    """简单的文件缓存实现"""
+
+    def __init__(self, cache_dir: Path):
+        self.cache_dir = cache_dir
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def get(self, key: str) -> Optional[SimulationResult]:
+        """获取缓存的结果"""
+        cache_file = self.cache_dir / f"{key}.pkl"
+
+        if cache_file.exists():
+            try:
+                with open(cache_file, 'rb') as f:
+                    return pickle.load(f)
+            except Exception:
+                return None
+
+        return None
+
+    def set(self, key: str, result: SimulationResult) -> None:
+        """保存结果到缓存"""
+        cache_file = self.cache_dir / f"{key}.pkl"
+
+        try:
+            with open(cache_file, 'wb') as f:
+                pickle.dump(result, f)
+        except Exception as e:
+            logger.warning(f"Failed to cache result: {e}")
+
+
+def run_with_cache(
+    job: SimulationJob,
+    service: BaselineSimulationService,
+    cache: SimpleCache,
+) -> SimulationResult:
+    """
+    运行模拟，使用缓存避免重复计算
+
+    Args:
+        job: 模拟任务
+        service: 模拟服务
+        cache: 缓存对象
+
+    Returns:
+        模拟结果（可能来自缓存）
+    """
+    # 生成缓存键
+    cache_key = job.get_cache_key()
+
+    # 检查缓存
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        logger.info(f"Using cached result for {job.building.name}")
+        return cached_result
+
+    # 运行模拟
+    logger.info(f"Running simulation for {job.building.name}")
+
+    from eppy.modeleditor import IDF
+    idf = IDF(str(job.building.idf_file_path))
+
+    context = BaselineContext(
+        job=job,
+        idf=idf,
+        working_directory=job.output_directory,
+    )
+
+    result = service.run(context)
+
+    # 保存到缓存
+    if result.is_valid():
+        cache.set(cache_key, result)
+
+    return result
+```
+
+### 4. 测试示例
+
+#### 4.1 单元测试
+
+```python
+"""
+tests/services/test_baseline_service.py
+
+BaselineSimulationService 的单元测试
+"""
+import pytest
+from pathlib import Path
+from unittest.mock import Mock, MagicMock, patch
+
+from backend.services.simulation import BaselineSimulationService, BaselineContext
+from backend.domain.models import Building, WeatherFile, SimulationJob, SimulationResult
+from backend.domain.models.enums import BuildingType, SimulationType
+
+
+@pytest.fixture
+def mock_config():
+    """模拟配置对象"""
+    config = Mock()
+    config.paths.eplus_executable = Path("/usr/local/EnergyPlus/energyplus")
+    config.paths.idd_file = Path("/usr/local/EnergyPlus/Energy+.idd")
+    config.simulation.cleanup_files = ['*.audit', '*.bnd']
+    return config
+
+
+@pytest.fixture
+def mock_executor():
+    """模拟 EnergyPlus 执行器"""
+    executor = Mock()
+
+    # 模拟成功的执行结果
+    from backend.services.interfaces import ExecutionResult
+    result = ExecutionResult(
+        success=True,
+        return_code=0,
+        stdout="Simulation completed",
+        stderr="",
+        output_directory=Path("output/test"),
+    )
+
+    executor.run.return_value = result
+    return executor
+
+
+@pytest.fixture
+def mock_parser():
+    """模拟结果解析器"""
+    parser = Mock()
+
+    # 模拟解析结果
+    result = SimulationResult(
+        job_id="test-job-id",
+        output_directory=Path("output/test"),
+    )
+    result.success = True
+    result.source_eui = 150.5
+    result.total_energy_kwh = 500000.0
+
+    parser.parse.return_value = result
+    return parser
+
+
+@pytest.fixture
+def mock_cleaner():
+    """模拟文件清理器"""
+    return Mock()
+
+
+@pytest.fixture
+def baseline_service(mock_executor, mock_parser, mock_cleaner, mock_config):
+    """创建 BaselineSimulationService 实例"""
+    return BaselineSimulationService(
+        executor=mock_executor,
+        result_parser=mock_parser,
+        file_cleaner=mock_cleaner,
+        config=mock_config,
+    )
+
+
+@pytest.fixture
+def sample_job(tmp_path):
+    """创建示例模拟任务"""
+    # 创建临时 IDF 和 EPW 文件
+    idf_file = tmp_path / "test.idf"
+    idf_file.write_text("Version,9.3;")
+
+    epw_file = tmp_path / "test.epw"
+    epw_file.write_text("LOCATION,Chicago,IL,USA")
+
+    building = Building(
+        name="TestBuilding",
+        building_type=BuildingType.OFFICE_LARGE,
+        location="Chicago",
+        idf_file_path=idf_file,
+    )
+
+    weather_file = WeatherFile(
+        file_path=epw_file,
+        location="Chicago",
+        scenario="TMY3",
+    )
+
+    return SimulationJob(
+        building=building,
+        weather_file=weather_file,
+        simulation_type=SimulationType.BASELINE,
+        output_directory=tmp_path / "output",
+        output_prefix="test",
+    )
+
+
+@pytest.fixture
+def sample_context(sample_job):
+    """创建示例模拟上下文"""
+    # 模拟 IDF 对象
+    mock_idf = MagicMock()
+    mock_idf.idfobjects.get.return_value = []
+
+    return BaselineContext(
+        job=sample_job,
+        idf=mock_idf,
+        working_directory=sample_job.output_directory,
+    )
+
+
+class TestBaselineSimulationService:
+    """BaselineSimulationService 测试类"""
+
+    def test_prepare_creates_output_directory(
+        self,
+        baseline_service,
+        sample_context,
+    ):
+        """测试 prepare 方法创建输出目录"""
+        # 执行
+        baseline_service.prepare(sample_context)
+
+        # 验证
+        assert sample_context.job.output_directory.exists()
+
+    def test_prepare_validates_files(
+        self,
+        baseline_service,
+        sample_context,
+        tmp_path,
+    ):
+        """测试 prepare 方法验证文件存在"""
+        # 删除 IDF 文件
+        sample_context.job.building.idf_file_path.unlink()
+
+        # 执行并验证抛出异常
+        with pytest.raises(FileNotFoundError, match="IDF file not found"):
+            baseline_service.prepare(sample_context)
+
+    def test_prepare_adds_output_variables(
+        self,
+        baseline_service,
+        sample_context,
+    ):
+        """测试 prepare 方法添加输出变量"""
+        # 执行
+        baseline_service.prepare(sample_context)
+
+        # 验证调用了 newidfobject
+        assert sample_context.idf.newidfobject.called
+
+    def test_execute_calls_energyplus(
+        self,
+        baseline_service,
+        sample_context,
+        mock_executor,
+    ):
+        """测试 execute 方法调用 EnergyPlus"""
+        # 执行
+        result = baseline_service.execute(sample_context)
+
+        # 验证
+        mock_executor.run.assert_called_once()
+        assert result.success
+        assert result.source_eui == 150.5
+
+    def test_execute_handles_energyplus_failure(
+        self,
+        baseline_service,
+        sample_context,
+        mock_executor,
+    ):
+        """测试 execute 方法处理 EnergyPlus 失败"""
+        # 模拟失败
+        from backend.services.interfaces import ExecutionResult
+        mock_executor.run.return_value = ExecutionResult(
+            success=False,
+            return_code=1,
+            stdout="",
+            stderr="Error",
+            output_directory=sample_context.job.output_directory,
+        )
+        mock_executor.run.return_value.errors = ["Fatal error"]
+
+        # 执行
+        result = baseline_service.execute(sample_context)
+
+        # 验证
+        assert not result.success
+        assert len(result.error_messages) > 0
+
+    def test_cleanup_removes_temp_files(
+        self,
+        baseline_service,
+        sample_context,
+        mock_cleaner,
+    ):
+        """测试 cleanup 方法清理临时文件"""
+        # 执行
+        baseline_service.cleanup(sample_context)
+
+        # 验证
+        mock_cleaner.clean.assert_called_once()
+
+    def test_run_executes_full_workflow(
+        self,
+        baseline_service,
+        sample_context,
+        mock_executor,
+        mock_parser,
+        mock_cleaner,
+    ):
+        """测试 run 方法执行完整流程"""
+        # 执行
+        result = baseline_service.run(sample_context)
+
+        # 验证所有步骤都被调用
+        assert sample_context.job.output_directory.exists()  # prepare
+        mock_executor.run.assert_called_once()  # execute
+        mock_parser.parse.assert_called_once()  # execute
+        mock_cleaner.clean.assert_called_once()  # cleanup
+
+        # 验证结果
+        assert result.success
+        assert result.source_eui == 150.5
+```
+
+#### 4.2 集成测试
+
+```python
+"""
+tests/integration/test_baseline_integration.py
+
+Baseline 模拟的集成测试（需要真实的 EnergyPlus 安装）
+"""
+import pytest
+from pathlib import Path
+
+from eppy.modeleditor import IDF
+
+from backend.utils.config import ConfigManager
+from backend.utils.factory import create_baseline_service
+from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.domain.models.enums import BuildingType, SimulationType
+from backend.services.simulation import BaselineContext
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(
+    not Path("/usr/local/EnergyPlus/energyplus").exists(),
+    reason="EnergyPlus not installed"
+)
+class TestBaselineIntegration:
+    """Baseline 模拟集成测试"""
+
+    def test_full_baseline_simulation(self, tmp_path):
+        """测试完整的 Baseline 模拟流程"""
+        # 1. 初始化配置
+        config = ConfigManager(config_dir=Path("backend/configs"))
+
+        # 2. 创建测试数据（假设测试数据存在）
+        building = Building(
+            name="TestOffice",
+            building_type=BuildingType.OFFICE_SMALL,
+            location="Chicago",
+            idf_file_path=Path("tests/fixtures/test_office.idf"),
+        )
+
+        weather_file = WeatherFile(
+            file_path=Path("tests/fixtures/test_weather.epw"),
+            location="Chicago",
+            scenario="TMY3",
+        )
+
+        job = SimulationJob(
+            building=building,
+            weather_file=weather_file,
+            simulation_type=SimulationType.BASELINE,
+            output_directory=tmp_path / "output",
+            output_prefix="test",
+        )
+
+        # 3. 加载 IDF
+        IDF.setiddname(str(config.paths.idd_file))
+        idf = IDF(str(building.idf_file_path))
+
+        # 4. 创建上下文
+        context = BaselineContext(
+            job=job,
+            idf=idf,
+            working_directory=job.output_directory,
+        )
+
+        # 5. 运行模拟
+        service = create_baseline_service(config)
+        result = service.run(context)
+
+        # 6. 验证结果
+        assert result.is_valid()
+        assert result.source_eui > 0
+        assert result.total_energy_kwh > 0
+        assert result.table_csv_path.exists()
+        assert result.sql_path.exists()
+```
+
+### 5. 关键要点总结
+
+#### 5.1 设计原则
+
+本实现遵循以下设计原则：
+
+1. **依赖注入**: 所有依赖通过构造函数注入，便于测试和替换
+2. **单一职责**: 每个类只负责一个明确的功能
+3. **接口隔离**: 使用抽象基类定义清晰的接口
+4. **错误处理**: 完善的异常处理和日志记录
+5. **类型安全**: 使用 Pydantic 和类型注解确保类型安全
+
+#### 5.2 代码组织
+
+```
+backend/
+├── domain/                    # 领域层
+│   ├── models/               # 实体和值对象
+│   └── services/             # 领域服务
+├── services/                  # 应用服务层
+│   ├── interfaces/           # 服务接口
+│   └── simulation/           # 模拟服务实现
+├── infrastructure/            # 基础设施层
+│   ├── energyplus/           # EnergyPlus 集成
+│   ├── parsers/              # 结果解析器
+│   └── file_cleaner.py       # 文件清理器
+└── utils/                     # 工具层
+    ├── config/               # 配置管理
+    └── factory.py            # 工厂函数
+```
+
+#### 5.3 使用流程
+
+完整的 Baseline 模拟流程：
+
+```
+1. 初始化配置 (ConfigManager)
+   ↓
+2. 创建领域对象 (Building, WeatherFile, SimulationJob)
+   ↓
+3. 加载 IDF 文件 (eppy.IDF)
+   ↓
+4. 创建模拟上下文 (BaselineContext)
+   ↓
+5. 创建服务实例 (create_baseline_service)
+   ↓
+6. 运行模拟 (service.run)
+   ├── prepare: 准备环境和配置
+   ├── execute: 执行 EnergyPlus 并解析结果
+   └── cleanup: 清理临时文件
+   ↓
+7. 处理结果 (SimulationResult)
+```
+
+#### 5.4 扩展建议
+
+基于此实现，可以轻松扩展：
+
+1. **PV 模拟服务**: 继承 `ISimulationService`，实现光伏系统模拟
+2. **ECM 模拟服务**: 应用节能措施后的模拟
+3. **优化服务**: 集成优化算法
+4. **缓存服务**: 添加 Redis 或数据库缓存
+5. **并行执行**: 使用进程池而非线程池提高性能
+6. **进度跟踪**: 添加 WebSocket 实时进度推送
+7. **结果可视化**: 集成图表生成功能
+
+---
 
 ## 基本用法
 
@@ -2707,11 +4533,13 @@ def setup_container(config: ConfigManager) -> DependencyContainer:
     container.register_singleton(ICacheService, cache)
 
     # 注册 EnergyPlus 执行器
+    # 注意：使用 eppy API 后，不再需要 executable_path 参数
+    # eppy 会自动查找 EnergyPlus 安装路径
     from backend.infrastructure.energyplus.executor import EnergyPlusExecutor
     executor = EnergyPlusExecutor(
-        executable_path=config.paths.eplus_executable,
         idd_path=config.paths.idd_file,
-        logger=logger,
+        # energyplus_path 是可选的，如果 eppy 无法自动找到可以手动指定
+        # energyplus_path=config.paths.eplus_executable,
     )
     container.register_singleton('IEnergyPlusExecutor', executor)
 
@@ -3809,12 +5637,170 @@ class LegacyAdapter:
 - [ ] 是否有代码重复？
 - [ ] 是否有性能问题？
 
-### C. 参考资源
+### C. 从 subprocess 迁移到 eppy API 的指南
+
+#### 迁移概述
+
+本次重构将 EnergyPlus 执行方式从直接使用 `subprocess` 调用改为使用 `eppy` 库的 API。这带来了以下优势:
+
+**优势**:
+1. **更简洁的代码**: 无需手动构建命令行参数
+2. **更好的错误处理**: eppy 提供了更友好的异常处理
+3. **自动路径管理**: eppy 自动处理文件路径转换
+4. **并行运行支持**: 通过 `runIDFs` 函数轻松实现并行化
+5. **更好的跨平台兼容性**: eppy 自动处理不同操作系统的差异
+
+#### 迁移步骤
+
+**步骤 1: 更新构造函数**
+
+```python
+# 旧代码 (使用 subprocess)
+class EnergyPlusExecutor:
+    def __init__(self, executable_path: Path, idd_path: Path, timeout: int = 3600):
+        self._executable_path = executable_path
+        self._idd_path = idd_path
+        self._timeout = timeout
+
+# 新代码 (使用 eppy API)
+class EnergyPlusExecutor:
+    def __init__(self, idd_path: Path, energyplus_path: Optional[Path] = None):
+        self._idd_path = idd_path
+        self._energyplus_path = energyplus_path
+        # 设置 IDD 文件（eppy 要求）
+        IDF.setiddname(str(idd_path))
+```
+
+**步骤 2: 更新 run 方法**
+
+```python
+# 旧代码 (使用 subprocess)
+def run(self, idf, weather_file, output_directory, output_prefix, read_variables=True):
+    # 构建命令
+    cmd = [
+        str(self._executable_path),
+        "-w", str(weather_file),
+        "-d", str(output_directory),
+        "-p", output_prefix,
+        "-i", str(self._idd_path),
+        str(temp_idf_path),
+    ]
+
+    # 执行
+    process = subprocess.run(cmd, capture_output=True, text=True, timeout=self._timeout)
+
+    # 处理结果
+    result = ExecutionResult(
+        success=process.returncode == 0,
+        return_code=process.returncode,
+        stdout=process.stdout,
+        stderr=process.stderr,
+        output_directory=output_directory,
+    )
+
+# 新代码 (使用 eppy API)
+def run(self, idf, weather_file, output_directory, output_prefix, read_variables=True):
+    # 使用 eppy API 执行
+    idf.run(
+        weather=str(weather_file),
+        output_directory=str(output_directory),
+        output_prefix=output_prefix,
+        readvars=read_variables,
+        verbose='q',  # 安静模式
+    )
+
+    # 创建结果对象
+    result = ExecutionResult(
+        success=True,
+        return_code=0,
+        stdout="",
+        stderr="",
+        output_directory=output_directory,
+    )
+```
+
+**步骤 3: 更新配置文件**
+
+```yaml
+# 旧配置
+paths:
+  eplus_executable: /usr/local/EnergyPlus-23-2-0/energyplus  # 必需
+  idd_file: /usr/local/EnergyPlus-23-2-0/Energy+.idd
+
+# 新配置
+paths:
+  idd_file: /usr/local/EnergyPlus-23-2-0/Energy+.idd  # 必需
+  # eplus_executable: /usr/local/EnergyPlus-23-2-0/energyplus  # 可选，仅在 eppy 无法自动找到时需要
+```
+
+**步骤 4: 更新依赖注入**
+
+```python
+# 旧代码
+executor = EnergyPlusExecutor(
+    executable_path=config.paths.eplus_executable,
+    idd_path=config.paths.idd_file,
+)
+
+# 新代码
+executor = EnergyPlusExecutor(
+    idd_path=config.paths.idd_file,
+    # energyplus_path=config.paths.eplus_executable,  # 可选
+)
+```
+
+**步骤 5: 并行运行（可选）**
+
+如果需要并行运行多个模拟，可以使用 eppy 的 `runIDFs` 函数:
+
+```python
+from eppy.runner.run_functions import runIDFs
+
+# 准备输入
+idf_files = [str(idf1), str(idf2), str(idf3)]
+weather_files = [str(epw1), str(epw2), str(epw3)]
+
+# 并行运行
+runIDFs(
+    idf_files,
+    weather_files,
+    output_directory=str(output_dir),
+    processors=-1,  # 使用所有 CPU 核心
+    verbose='q',
+)
+```
+
+#### 注意事项
+
+1. **IDD 文件设置**: 必须在创建任何 IDF 对象之前调用 `IDF.setiddname()`
+2. **路径转换**: eppy 需要字符串路径，使用 `str()` 转换 Path 对象
+3. **错误处理**: eppy 的错误信息在 `.err` 文件中，需要手动解析
+4. **超时控制**: eppy 不直接支持超时，如需要可以使用 `signal` 模块或 `multiprocessing.Pool` 的 timeout 参数
+
+#### 测试迁移
+
+确保更新相关的单元测试:
+
+```python
+# 旧测试
+def test_executor_with_subprocess(mock_subprocess):
+    executor = EnergyPlusExecutor(Path("energyplus"), Path("Energy+.idd"))
+    # ...
+
+# 新测试
+def test_executor_with_eppy_api(mock_idf):
+    executor = EnergyPlusExecutor(Path("Energy+.idd"))
+    # ...
+```
+
+### D. 参考资源
 
 - [Python Type Hints](https://docs.python.org/3/library/typing.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [Design Patterns](https://refactoring.guru/design-patterns)
 - [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [eppy Documentation](https://eppy.readthedocs.io/)
+- [eppy GitHub Repository](https://github.com/santoshphilip/eppy)
 
 ---
 

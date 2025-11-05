@@ -1,10 +1,9 @@
-from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from eppy.modeleditor import IDF
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-from backend.domain.models import SimulationJob
+from .simulation_job import SimulationJob
 
 
 class SimulationContext(BaseModel):
@@ -26,25 +25,9 @@ class SimulationContext(BaseModel):
 
     job: SimulationJob = Field(..., description="The simulation job object.")
     idf: IDF = Field(..., description="The IDF object.")
-    working_directory: Path = Field(..., description="The working directory.")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata."
     )
-
-    @field_validator("working_directory")
-    def validate_working_directory(cls, v: Path) -> Path:
-        """
-        Validate the working directory
-
-        Args:
-            v (Path): The working directory.
-
-        Returns:
-            Path: The validated working directory.
-        """
-        if not v.exists():
-            v.mkdir(parents=True, exist_ok=True)
-        return v
 
 
 class BaselineContext(SimulationContext):

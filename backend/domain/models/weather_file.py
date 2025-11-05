@@ -1,12 +1,12 @@
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class WeatherFile(BaseModel):
+class Weather(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -16,15 +16,15 @@ class WeatherFile(BaseModel):
 
     file_path: Path = Field(..., description="Path to the weather file")
     location: str = Field(..., description="Location name of the weather data")
-    scenario: str = Field(
-        ...,
+    scenario: str | None = Field(
+        default=None,
         description="Scenario associated with the weather data (e.g., TMY, FTMY, SSP etc.)",
     )
     id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the weather file"
     )
-    is_future: Optional[bool] = Field(
-        False,
+    is_future: bool | None = Field(
+        default=False,
         description="Indicates if the weather file represents future climate data",
     )
 
@@ -36,31 +36,26 @@ class WeatherFile(BaseModel):
             raise ValueError(f"File {v} is not an EPW weather file.")
         return v
 
-    def get_identifier(self) -> str:
-        """Generate a unique identifier for the weather file based on location and scenario."""
-        return f"{self.location}_{self.scenario}"
-
-    def is_typical_meteorological_year(self) -> bool:
-        """Check if the weather file scenario indicates a Typical Meteorological Year (TMY)."""
-        return self.scenario.upper() == "TMY" and not self.is_future
-
-    def get_scenario_description(self) -> str:
+    @model_validator(mode="after")
+    def _derive_scenario_from_path(self) -> Self:
         """Return a human-readable description of the weather file scenario."""
-        if self.is_typical_meteorological_year():
-            return "Typical Meteorological Year (TMY)"
-        if self.is_future:
-            raw = self.scenario.strip().upper().replace(" ", "")
+        if self.scenario is None:
+            raw = self.file_path.stem.strip().upper().replace(" ", "")
             digits = re.sub(r"[^0-9]", "", raw.replace("SSP", ""))
-            scenario_map: Dict[str, str] = {
+            scenario_map: dict[str, str] = {
                 "126": "SSP1-2.6 (Low Emissions)",
                 "245": "SSP2-4.5 (Intermediate Emissions)",
                 "370": "SSP3-7.0 (Medium High Emissions)",
                 "434": "SSP4-3.4 (Intermediate Emissions, low overshoot)",
                 "585": "SSP5-8.5 (High Emissions)",
             }
-            return scenario_map.get(digits, f"Future Scenario {self.scenario}")
+            self.scenario = scenario_map.get(digits, f"Future Scenario {digits}")
 
-        return self.scenario
+        return self
+
+    def get_identifier(self) -> str:
+        """Generate a unique identifier for the weather file based on location and scenario."""
+        return f"{self.location}_{self.scenario}"
 
     def __str__(self) -> str:
-        return f"WeatherFile(location='{self.location}', scenario='{self.scenario}')"
+        return f"Weather(location='{self.location}', scenario='{self.scenario}')"

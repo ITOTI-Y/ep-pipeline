@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from ..value_objects.ecm_parameters import ECMParameters
+from ..models.ecm_parameters import ECMParameters
 
 
 class IECMApplicator(ABC):

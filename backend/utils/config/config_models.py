@@ -1,5 +1,6 @@
+from datetime import date
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -23,6 +24,11 @@ class PathsConfig(BaseModel):
     eplus_executable: Path = Field(..., description="EnergyPlus executable path")
     idd_file: Path = Field(..., description="IDD file path")
     temp_dir: Path = Field(..., description="Temporary directory")
+    idf_files: list[Path] = Field(default_factory=list, description="IDF files")
+    tmy_files: list[Path] = Field(default_factory=list, description="TMY weather files")
+    ftmy_files: list[Path] = Field(
+        default_factory=list, description="Future TMY weather files"
+    )
 
     @field_validator("eplus_executable", "idd_file")
     def validate_file_exists(cls, v: Path) -> Path:
@@ -51,6 +57,19 @@ class PathsConfig(BaseModel):
             raise ValueError(f"Path is not a directory: {v}")
         return v
 
+    @model_validator(mode="after")
+    def initialize_idf_and_weather_files(self) -> "PathsConfig":
+        """Initialize idf and weather files"""
+        if not self.idf_files:
+            object.__setattr__(
+                self, "idf_files", list(self.prototype_dir.glob("*.idf"))
+            )
+        if not self.tmy_files:
+            object.__setattr__(self, "tmy_files", list(self.tmy_dir.glob("*.epw")))
+        if not self.ftmy_files:
+            object.__setattr__(self, "ftmy_files", list(self.ftmy_dir.glob("*.epw")))
+        return self
+
 
 class SimulationConfig(BaseModel):
     model_config = ConfigDict(
@@ -58,8 +77,12 @@ class SimulationConfig(BaseModel):
         frozen=False,
     )
 
-    start_year: int = Field(..., ge=1900, le=2100, description="Simulation start year")
+    begin_year: int = Field(..., ge=1900, le=2100, description="Simulation start year")
     end_year: int = Field(..., ge=1900, le=2100, description="Simulation end year")
+    begin_month: int = Field(..., ge=1, le=12, description="Simulation start month")
+    end_month: int = Field(..., ge=1, le=12, description="Simulation end month")
+    begin_day: int = Field(..., ge=1, le=31, description="Simulation start day")
+    end_day: int = Field(..., ge=1, le=31, description="Simulation end day")
     default_output_suffix: str = Field(
         ...,
         min_length=1,
@@ -72,11 +95,43 @@ class SimulationConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_years(self) -> "SimulationConfig":
-        """Validate start year <= end year"""
-        if self.start_year > self.end_year:
-            raise ValueError("Start year must be <= end year")
+    def validate_period(self):
+        if self.begin_year > self.end_year:
+            raise ValueError("start_year must be less than or equal to end_year")
+        if self.begin_year == self.end_year:
+            if self.begin_month > self.end_month:
+                raise ValueError(
+                    "start_month must be less than or equal to end_month when start_year equals end_year"
+                )
+            if self.begin_month == self.end_month and self.begin_day > self.end_day:
+                raise ValueError(
+                    "start_day must be less than or equal to end_day when start_year and start_month equal end_year and end_month"
+                )
+        try:
+            _ = date(self.begin_year, self.begin_month, self.begin_day)
+            _ = date(self.end_year, self.end_month, self.end_day)
+        except ValueError as e:
+            raise ValueError(f"Invalid date in simulation period: {e}") from e
         return self
+
+    def get_duration_years(self) -> int:
+        return self.end_year - self.begin_year + 1
+
+    def is_full_year(self) -> bool:
+        return (
+            self.begin_month == 1
+            and self.begin_day == 1
+            and self.end_month == 12
+            and self.end_day == 31
+        )
+
+    def __str__(self) -> str:
+        if self.is_full_year() and self.begin_year == self.end_year:
+            return f"Year {self.begin_year}"
+
+        start = f"{self.begin_year}-{self.begin_month:02d}-{self.begin_day:02d}"
+        end = f"{self.end_year}-{self.end_month:02d}-{self.end_day:02d}"
+        return f"{start} to {end}"
 
 
 class AnalysisConfig(BaseModel):
@@ -85,12 +140,12 @@ class AnalysisConfig(BaseModel):
         frozen=False,
     )
 
-    sensitivity: Dict[str, Any] = Field(
+    sensitivity: dict[str, Any] = Field(
         default_factory=dict, description="Sensitivity analysis configuration"
     )
-    optimization: Dict[str, Any] = Field(
+    optimization: dict[str, Any] = Field(
         default_factory=dict, description="Optimization configuration"
     )
-    surrogate_models: Dict[str, Any] = Field(
+    surrogate_models: dict[str, Any] = Field(
         default_factory=dict, description="Surrogate models configuration"
     )

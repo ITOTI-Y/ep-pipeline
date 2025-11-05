@@ -1,13 +1,21 @@
 simulation:
-  start_year: 2040
+  begin_year: 2040
   end_year: 2040
-  default_output_suffix: L
+  begin_month: 1
+  end_month: 12
+  begin_day: 1
+  end_day: 31
+  default_output_suffix: Default
   cleanup_files:
-    - .audit
-    - .bnd
-    - .eio
-    - .end
-    - .mdd
-    - .mtd
-    - .rdd
-    - .shd
+    - "*.audit"
+    - "*.bnd"
+    - "*.csv"
+    - "*.dxf"
+    - "*.eio"
+    - "*.end"
+    - "*.mdd"
+    - "*.mtd"
+    - "*.rdd"
+    - "*.shd"
+    - "*.eso"
+    - "*.rvaudit"

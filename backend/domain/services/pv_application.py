@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from eppy.modeleditor import IDF
 from loguru import logger
@@ -14,7 +14,7 @@ class IPVApplicator(ABC):
         idf: IDF,
         baseline_result: SimulationResult,
         min_irradiance_threshold: float = 800.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -71,5 +71,5 @@ class PVApplicator(IPVApplicator):  # TODO
         idf: IDF,
         baseline_result: SimulationResult,
         min_irradiance_threshold: float = 800.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         raise NotImplementedError
