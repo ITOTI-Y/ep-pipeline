@@ -3,7 +3,7 @@ from .context import BaselineContext, SimulationContext
 from .ecm_parameters import ECMParameters
 from .enums import BuildingType, SimulationStatus, SimulationType
 from .simulation_job import SimulationJob
-from .simulation_result import SimulationResult
+from .simulation_result import SimulationResult, Surface
 from .weather_file import Weather
 
 __all__ = [
@@ -16,6 +16,7 @@ __all__ = [
     "SimulationResult",
     "SimulationStatus",
     "SimulationType",
+    "Surface",
     "Weather",
 ]
 SimulationJob.model_rebuild()

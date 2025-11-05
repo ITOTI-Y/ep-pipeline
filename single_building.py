@@ -18,7 +18,7 @@ from backend.utils.config import ConfigManager
 def run_single_building_simulation():
     config = ConfigManager(Path("backend/configs"))
 
-    idf_file_path = config.paths.idf_files[0]
+    idf_file_path = config.paths.idf_files[1]
 
     building = Building(
         name=idf_file_path.stem,

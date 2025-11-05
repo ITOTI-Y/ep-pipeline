@@ -120,12 +120,13 @@ class BaselineService(ISimulationService[BaselineContext]):
 
         idf.newidfobject(
             "OUTPUT:TABLE:SUMMARYREPORTS",
-            Report_1_Name="AllSummary",
+            Report_1_Name="AllSummaryAndMonthly",
         )
 
         idf.newidfobject(
             "OUTPUT:SQLITE",
             Option_Type="SimpleAndTabular",
+            Unit_Conversion_for_Tabular_Data="JtoKWH",
         )
 
         self._logger.success("Output controls configured successfully")

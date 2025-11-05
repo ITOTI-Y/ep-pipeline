@@ -8,6 +8,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logger.bind(module=__name__)
 
+class Surface(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+        arbitrary_types_allowed=True,
+    )
+    name: str = Field(..., description="The name of the surface.")
+    hour_count: int = Field(..., description="The number of hours the surface simulation was run.")
+    sum_irradiation: float = Field(..., description="The sum of the irradiation on the surface in kWh/m².")
+    unit: str = Field(..., description="The unit of the irradiation.")
+    type: str = Field(..., description="The type of the surface.")
 
 class SimulationResult(BaseModel):
     model_config = ConfigDict(
@@ -106,10 +117,9 @@ class SimulationResult(BaseModel):
         ge=0,
         description="Net site energy intensity (kWh/m²/yr) - calculated by ResultParser",
     )
-    execution_time: float | None = Field(
-        default=None,
-        ge=0,
-        description="Total execution time of the simulation (seconds).",
+    surfaces: list[Surface] = Field(
+        default_factory=list,
+        description="The list of surfaces in the simulation.",
     )
     success: bool = Field(
         default=False,
