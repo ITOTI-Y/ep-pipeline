@@ -61,6 +61,6 @@ def run_single_building_simulation():
     )
     result = service.run(context)
 
-
+    print(result)
 if __name__ == "__main__":
     run_single_building_simulation()

@@ -41,10 +41,14 @@ class ECMApplicator(IECMApplicator):
                 self._apply_infiltration_parameters(idf, parameters)
             if parameters.natural_ventilation_area is not None:
                 self._apply_natural_ventilation_parameters(idf, parameters)
-            if parameters.cop is not None:
-                self._apply_coil_and_chiller_parameters(idf, parameters)
+            if parameters.cooling_cop is not None:
+                self._apply_cooling_coil_and_chiller_parameters(idf, parameters)
+            if parameters.heating_cop is not None:
+                self._apply_heating_coil_and_chiller_parameters(idf, parameters)
             if parameters.cooling_air_temperature is not None:
                 self._apply_cooling_air_temperature_parameters(idf, parameters)
+            if parameters.heating_air_temperature is not None:
+                self._apply_heating_air_temperature_parameters(idf, parameters)
             if parameters.lighting_power_reduction_level is not None:
                 self._apply_lighting_parameters(idf, parameters)
 
@@ -199,7 +203,7 @@ class ECMApplicator(IECMApplicator):
 
         self._logger.info(f"Modified {modified_count} ventilation objects")
 
-    def _apply_coil_and_chiller_parameters(
+    def _apply_cooling_coil_and_chiller_parameters(
         self, idf: IDF, parameters: ECMParameters
     ) -> None:
         modified_count = 0
@@ -219,7 +223,7 @@ class ECMApplicator(IECMApplicator):
         cooling_equipment_types = [
             obj_type
             for obj_type in all_object_types
-            if obj_type.startswith("COIL:") or obj_type.startswith("CHILLER:")
+            if obj_type.startswith("COIL:COOLING") or obj_type.startswith("CHILLER:")
         ]
 
         for equipment_type in cooling_equipment_types:
@@ -229,9 +233,9 @@ class ECMApplicator(IECMApplicator):
                 for equipment in equipment_list:
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
-                            setattr(equipment, cop_field_name, parameters.cop)
+                            setattr(equipment, cop_field_name, parameters.cooling_cop)
                             self._logger.debug(
-                                f"Set {cop_field_name} to {parameters.cop} for {equipment.Name}"
+                                f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.Name}"
                             )
                             modified_count += 1
             except Exception:
@@ -239,6 +243,45 @@ class ECMApplicator(IECMApplicator):
                 continue
 
         self._logger.info(f"Modified {modified_count} coil and chiller objects")
+
+    def _apply_heating_coil_and_chiller_parameters(
+        self, idf: IDF, parameters: ECMParameters
+    ) -> None:
+        modified_count = 0
+
+        cop_field_names = [
+            "Gross_Rated_Heating_COP",
+            "Reference_COP",
+            "Rated_COP",
+            "High_Speed_Gross_Rated_Heating_COP",
+            "Low_Speed_Gross_Rated_Heating_COP",
+            "Rated_COP_at_Speed_1",
+            "Rated_COP_at_Speed_2",
+        ]
+
+        all_object_types = idf.idfobjects.keys()
+
+        heating_equipment_types = [
+            obj_type
+            for obj_type in all_object_types
+            if obj_type.startswith("COIL:HEATING") or obj_type.startswith("CHILLER:")
+        ]
+
+        for equipment_type in heating_equipment_types:
+            try:
+                equipment_list = idf.idfobjects.get(equipment_type, [])
+
+                for equipment in equipment_list:
+                    for cop_field_name in cop_field_names:
+                        if hasattr(equipment, cop_field_name):
+                            setattr(equipment, cop_field_name, parameters.heating_cop)
+                            self._logger.debug(
+                                f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.Name}"
+                            )
+                            modified_count += 1
+            except Exception:
+                self._logger.exception(f"Failed to process {equipment_type} objects")
+                continue
 
     def _apply_cooling_air_temperature_parameters(
         self, idf: IDF, parameters: ECMParameters
@@ -252,6 +295,23 @@ class ECMApplicator(IECMApplicator):
             )
             self._logger.debug(
                 f"Set cooling air temperature to {parameters.cooling_air_temperature}°C for {sizing_zone.Name}"
+            )
+            modified_count += 1
+
+        self._logger.info(f"Modified {modified_count} sizing zone objects")
+
+    def _apply_heating_air_temperature_parameters(
+        self, idf: IDF, parameters: ECMParameters
+    ) -> None:
+        sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
+        modified_count = 0
+
+        for sizing_zone in sizing_zone_objects:
+            sizing_zone.Zone_Heating_Design_Supply_Air_Temperature = (
+                parameters.heating_air_temperature
+            )
+            self._logger.debug(
+                f"Set heating air temperature to {parameters.heating_air_temperature}°C for {sizing_zone.Name}"
             )
             modified_count += 1
 

@@ -3,7 +3,12 @@ from pathlib import Path
 from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .config_models import AnalysisConfig, PathsConfig, SimulationConfig
+from .config_models import (
+    AnalysisConfig,
+    ECMParametersConfig,
+    PathsConfig,
+    SimulationConfig,
+)
 
 
 class ConfigManager:
@@ -15,6 +20,7 @@ class ConfigManager:
         self.paths = self._parse_paths_config()
         self.simulation = self._parse_simulation_config()
         self.analysis = self._parse_analysis_config()
+        self.ecm_parameters = self._parse_ecm_parameters_config()
 
     def _load_config(self) -> ListConfig | DictConfig:
         if not self._config_dir.exists():
@@ -81,6 +87,20 @@ class ConfigManager:
         )
 
         return AnalysisConfig(**analysis_dict)  # type: ignore
+
+    def _parse_ecm_parameters_config(self) -> ECMParametersConfig:
+        ecm_parameters_config = OmegaConf.select(self._raw_config, "ecm_parameters")
+        if ecm_parameters_config is None:
+            self._logger.warning("ECM parameters config not found; using defaults")
+            return ECMParametersConfig()
+
+        ecm_parameters_dict = OmegaConf.to_container(
+            ecm_parameters_config,
+            resolve=True,
+            throw_on_missing=False,
+        )
+
+        return ECMParametersConfig(**ecm_parameters_dict)  # type: ignore
 
     @property
     def value(self):
