@@ -58,4 +58,4 @@ class Weather(BaseModel):
         return f"{self.location}_{self.scenario}"
 
     def __str__(self) -> str:
-        return f"WeatherFile(location='{self.location}', scenario='{self.scenario}')"
+        return f"Weather(location='{self.location}', scenario='{self.scenario}')"

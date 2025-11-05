@@ -16,10 +16,8 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
     def __init__(
         self,
         idd_path: Path | None = None,
-        energyplus_path: Path | None = None,
     ):
         self._idd_path = idd_path
-        self._energyplus_path = energyplus_path
         self._logger = logger.bind(module=self.__class__.__name__)
 
         if idd_path:

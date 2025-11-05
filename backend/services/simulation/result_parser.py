@@ -36,9 +36,11 @@ class ResultParser(IResultParser):
 
     def _parse_from_sql(self, result: SimulationResult, sql_path: Path) -> None:
         conn = sqlite3.connect(str(sql_path))
-        self._parse_energy_from_sql(result, conn)
-        self._parse_area_from_sql(result, conn)
-        conn.close()
+        try:
+            self._parse_energy_from_sql(result, conn)
+            self._parse_area_from_sql(result, conn)
+        finally:
+            conn.close()
 
     def _parse_energy_from_sql(
         self, result: SimulationResult, conn: sqlite3.Connection

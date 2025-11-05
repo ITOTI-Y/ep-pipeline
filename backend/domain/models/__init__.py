@@ -16,6 +16,6 @@ __all__ = [
     "SimulationResult",
     "SimulationStatus",
     "SimulationType",
-    "WeatherFile",
+    "Weather",
 ]
 SimulationJob.model_rebuild()
