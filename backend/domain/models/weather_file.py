@@ -37,9 +37,9 @@ class Weather(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def get_scenario_description(self) -> Self:
+    def _derive_scenario_from_path(self) -> Self:
         """Return a human-readable description of the weather file scenario."""
-        if not self.scenario:
+        if self.scenario is None:
             raw = self.file_path.stem.strip().upper().replace(" ", "")
             digits = re.sub(r"[^0-9]", "", raw.replace("SSP", ""))
             scenario_map: dict[str, str] = {

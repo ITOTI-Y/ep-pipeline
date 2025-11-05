@@ -52,11 +52,11 @@ class ResultParser(IResultParser):
             for _, row in df.iterrows():
                 row_name = str(row["RowName"])
                 column_name = str(row["ColumnName"])
-                if row_name in key_mapping:
+                if row_name in key_mapping and column_name in key_mapping[row_name]:
                     attr_name = key_mapping[row_name][column_name]
                     setattr(result, attr_name, float(row["Value"]))
         except Exception as e:
-            self._logger.error(f"Failed to parse energy from SQL: {e}")
+            self._logger.exception("Failed to parse energy from SQL: ")
             result.add_error(f"Failed to parse energy from SQL: {e}")
 
     def _parse_area_from_sql(
@@ -68,7 +68,8 @@ class ResultParser(IResultParser):
             key_mapping = self.AREA_KEY_MAPPING
             for _, row in df.iterrows():
                 row_name = str(row["RowName"])
-                setattr(result, key_mapping[row_name], float(row["Value"]))
+                if row_name in key_mapping:
+                    setattr(result, key_mapping[row_name], float(row["Value"]))
         except Exception as e:
-            self._logger.error(f"Failed to parse area from SQL: {e}")
+            self._logger.exception("Failed to parse area from SQL: ")
             result.add_error(f"Failed to parse area from SQL: {e}")
