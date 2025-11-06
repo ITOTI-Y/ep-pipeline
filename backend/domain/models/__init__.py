@@ -1,5 +1,5 @@
 from .building import Building
-from .context import BaselineContext, SimulationContext
+from .context import BaselineContext, ECMContext, SimulationContext
 from .ecm_parameters import ECMParameters
 from .enums import BuildingType, SimulationStatus, SimulationType
 from .simulation_job import SimulationJob
@@ -10,6 +10,7 @@ __all__ = [
     "BaselineContext",
     "Building",
     "BuildingType",
+    "ECMContext",
     "ECMParameters",
     "SimulationContext",
     "SimulationJob",

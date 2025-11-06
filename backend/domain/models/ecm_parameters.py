@@ -7,7 +7,7 @@ from ..models.enums import BuildingType
 
 class ECMParameters(BaseModel):
     model_config = ConfigDict(
-        frozen=True,
+        frozen=False,
         validate_assignment=True,
     )
 
@@ -71,7 +71,6 @@ class ECMParameters(BaseModel):
         le=3,
         description="Lighting power reduction level (discrete level: 1, 2, 3)",
     )
-
     @property
     def lighting_power_reduction(self) -> float | None:
         if (

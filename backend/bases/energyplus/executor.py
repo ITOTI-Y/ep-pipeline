@@ -68,7 +68,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 )
             else:
                 self._logger.error(
-                    f"EnergyPlus simulation completed with errors: {output_prefix}"
+                    f"EnergyPlus simulation completed with errors: {result.errors}"
                 )
 
         except Exception as e:

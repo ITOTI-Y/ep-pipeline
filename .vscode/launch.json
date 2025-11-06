@@ -16,7 +16,15 @@
             "name": "single_building_simulation",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/single_building.py",
+            "program": "${workspaceFolder}/test_single_building.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "ecm_simulation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_ecm_process.py",
             "console": "integratedTerminal",
             "justMyCode": false
         }
