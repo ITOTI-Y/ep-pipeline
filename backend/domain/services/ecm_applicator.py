@@ -264,7 +264,7 @@ class ECMApplicator(IECMApplicator):
         heating_equipment_types = [
             obj_type
             for obj_type in all_object_types
-            if obj_type.startswith("COIL:HEATING") or obj_type.startswith("CHILLER:")
+            if obj_type.startswith("COIL:HEATING")
         ]
 
         for equipment_type in heating_equipment_types:
