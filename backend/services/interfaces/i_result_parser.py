@@ -73,10 +73,10 @@ class IResultParser(ABC):
         "Net Conditioned Building Area": "net_building_area",
     }
     IRRADIATION_UNIT_TO_HOURS: ClassVar[dict[str, int]] = {
-        "Hourly": 1 / 1000,
-        "Daily": 24 / 1000,
-        "Monthly": 30 * 24 / 1000,
-        "Annual": 365 * 24 / 1000,
+        "Hourly": 1,
+        "Daily": 24,
+        "Monthly": 30 * 24,
+        "Annual": 365 * 24,
     }
 
     @abstractmethod

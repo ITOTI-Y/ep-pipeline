@@ -90,7 +90,7 @@ class ResultParser(IResultParser):
                         sum_irradiation=float(
                             row["sum_irradiation"]
                             * self.IRRADIATION_UNIT_TO_HOURS[str(row["frequency"])]
-                        ),
+                        ) / 1000,
                         unit="kWh/m²"
                         if str(row["unit"]) == "W/m2"
                         else str(row["unit"] + "* h"),

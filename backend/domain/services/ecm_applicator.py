@@ -283,6 +283,8 @@ class ECMApplicator(IECMApplicator):
                 self._logger.exception(f"Failed to process {equipment_type} objects")
                 continue
 
+        self._logger.info(f"Modified {modified_count} heating coil objects")
+
     def _apply_cooling_air_temperature_parameters(
         self, idf: IDF, parameters: ECMParameters
     ) -> None:
