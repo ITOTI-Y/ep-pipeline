@@ -27,6 +27,14 @@
             "program": "${workspaceFolder}/test_ecm_process.py",
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+                {
+            "name": "batch_simulation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_batch_simulation.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "eppy>=0.5.63",
+    "joblib>=1.5.2",
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
     "pandas>=2.3.3",

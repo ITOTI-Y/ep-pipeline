@@ -2,6 +2,7 @@ from pathlib import Path
 from pickle import dump, load
 
 from eppy.modeleditor import IDF
+from joblib import Parallel, delayed
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.domain.models import (
@@ -17,7 +18,7 @@ from backend.services.simulation import ECMService, FileCleaner, ResultParser
 from backend.utils.config import ConfigManager
 
 
-def test_ecm_process():
+def test_batch_simulation():
     config = ConfigManager(Path("backend/configs"))
 
     idf_file_path = config.paths.idf_files[1]
@@ -34,25 +35,42 @@ def test_ecm_process():
         location="Chicago",
     )
 
-    job = SimulationJob(
-        building=building,
-        weather=weather,
-        simulation_type=SimulationType.ECM,
-        output_directory=config.paths.ecm_dir / building.name,
-        output_prefix="ecm_",
-        read_variables=True,
+    output_directory = config.paths.ecm_dir / building.name
+
+    n_samples = 10
+
+    sampler = ParameterSampler(config=config)
+    ecm_samples = sampler.sample(
+        n_samples=n_samples, building_type=BuildingType.OFFICE_LARGE
     )
 
+    jobs = []
+    for i, ecm_parameters in enumerate(ecm_samples):
+        job = SimulationJob(
+            building=building,
+            weather=weather,
+            simulation_type=SimulationType.ECM,
+            output_directory=output_directory / f"sample_{i:03d}",
+            output_prefix=f"ecm_{i:03d}",
+            ecm_parameters=ecm_parameters,
+        )
+        jobs.append(job)
+
+    results = Parallel(n_jobs=10, verbose=10, backend="loky")(
+        delayed(_single_run)(job, config) for job in jobs
+    )
+
+    return results
+
+
+def _single_run(job: SimulationJob, config: ConfigManager):
     IDF.setiddname(str(config.paths.idd_file))
-    idf = IDF(str(building.idf_file_path))
+    idf = IDF(str(job.building.idf_file_path))
 
     context = ECMContext(
         job=job,
         idf=idf,
     )
-
-    sampler = ParameterSampler(config=config)
-    ecm_samples = sampler.sample(n_samples=10, building_type=BuildingType.OFFICE_LARGE)
 
     executor = EnergyPlusExecutor()
     result_parser = ResultParser()
@@ -64,15 +82,16 @@ def test_ecm_process():
         file_cleaner=file_cleaner,
         config=config,
     )
-    result = service.run(context, ecm_parameters=ecm_samples[0])
+    result = service.run(context, context.job.ecm_parameters)  # type: ignore
 
-    with open(config.paths.ecm_dir / building.name / "result.pkl", "wb") as f:
+    with open(context.job.output_directory / "result.pkl", "wb") as f:
         dump(result, f)
 
-    with open(config.paths.ecm_dir / building.name / "result.pkl", "rb") as f:
+    with open(context.job.output_directory / "result.pkl", "rb") as f:
         test_result = load(f)
-    print(test_result)
+
+    return test_result
 
 
 if __name__ == "__main__":
-    test_ecm_process()
+    test_batch_simulation()

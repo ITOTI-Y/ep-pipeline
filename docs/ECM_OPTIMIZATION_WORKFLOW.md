@@ -5,7 +5,7 @@
 本文档详细描述了基于EnergyPlus的建筑节能改造措施（ECM）优化完整工作流程，包括参数采样、能耗模拟、代理模型构建、最佳参数预测和验证模拟五个核心阶段。
 
 **适用项目**: `/home/pan/code/ep-pipeline`
-**技术栈**: Python 3.12+, EnergyPlus, eppy, XGBoost, scikit-learn
+**技术栈**: Python 3.12+, EnergyPlus, eppy, XGBoost, scikit-learn, joblib
 **架构模式**: 领域驱动设计 (DDD)
 
 ---
@@ -582,7 +582,7 @@ else:
 """
 
 from typing import List
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from joblib import Parallel, delayed
 from pathlib import Path
 from loguru import logger
 
@@ -595,14 +595,14 @@ class BatchECMSimulator:
     """
     批量ECM模拟器
 
-    并行执行多个ECM参数组合的EnergyPlus模拟。
+    使用joblib并行执行多个ECM参数组合的EnergyPlus模拟。
     """
 
     def __init__(
         self,
         executor: EnergyPlusExecutor,
         parser: ResultParser,
-        max_workers: int = 8
+        n_jobs: int = 8
     ):
         """
         初始化批量模拟器
@@ -610,11 +610,11 @@ class BatchECMSimulator:
         Args:
             executor: EnergyPlus执行器
             parser: 结果解析器
-            max_workers: 最大并行工作进程数
+            n_jobs: 并行任务数，-1表示使用所有CPU核心
         """
         self._executor = executor
         self._parser = parser
-        self._max_workers = max_workers
+        self._n_jobs = n_jobs
         self._logger = logger.bind(service=self.__class__.__name__)
 
     def run_batch(
@@ -637,7 +637,7 @@ class BatchECMSimulator:
             模拟结果列表
 
         Example:
-            >>> simulator = BatchECMSimulator(executor, parser, max_workers=8)
+            >>> simulator = BatchECMSimulator(executor, parser, n_jobs=8)
             >>> results = simulator.run_batch(
             ...     ecm_samples=samples,
             ...     baseline_idf_path=Path("baseline.idf"),
@@ -647,50 +647,30 @@ class BatchECMSimulator:
         """
         self._logger.info(
             f"Starting batch simulation: {len(ecm_samples)} samples, "
-            f"{self._max_workers} workers"
+            f"{self._n_jobs} parallel jobs"
         )
 
-        results = []
         total = len(ecm_samples)
 
-        with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-            # 提交所有任务
-            future_to_params = {
-                executor.submit(
-                    self._run_single_simulation,
-                    ecm_params,
-                    baseline_idf_path,
-                    weather_file,
-                    output_base_dir / f"sample_{idx:04d}",
-                    idx
-                ): ecm_params
-                for idx, ecm_params in enumerate(ecm_samples)
-            }
+        # 使用joblib并行执行模拟
+        results = Parallel(n_jobs=self._n_jobs, verbose=10, backend='loky')(
+            delayed(self._run_single_simulation)(
+                ecm_params,
+                baseline_idf_path,
+                weather_file,
+                output_base_dir / f"sample_{idx:04d}",
+                idx
+            )
+            for idx, ecm_params in enumerate(ecm_samples)
+        )
 
-            # 收集结果
-            completed = 0
-            for future in as_completed(future_to_params):
-                ecm_params = future_to_params[future]
-                try:
-                    result = future.result()
-                    results.append(result)
-                    completed += 1
-
-                    if completed % 10 == 0:
-                        self._logger.info(
-                            f"Progress: {completed}/{total} "
-                            f"({completed/total*100:.1f}%)"
-                        )
-                except Exception as e:
-                    self._logger.error(
-                        f"Simulation failed for params {ecm_params.to_dict()}: {e}"
-                    )
-                    completed += 1
+        # 过滤掉失败的模拟（返回None的情况）
+        successful_results = [r for r in results if r is not None]
 
         self._logger.success(
-            f"Batch simulation completed: {len(results)}/{total} successful"
+            f"Batch simulation completed: {len(successful_results)}/{total} successful"
         )
-        return results
+        return successful_results
 
     def _run_single_simulation(
         self,
@@ -711,40 +691,46 @@ class BatchECMSimulator:
             sample_id: 样本ID
 
         Returns:
-            模拟结果
+            模拟结果，失败时返回None
         """
-        from eppy.modeleditor import IDF
-        from backend.domain.services import ECMApplicator
+        try:
+            from eppy.modeleditor import IDF
+            from backend.domain.services import ECMApplicator
 
-        # 加载IDF
-        idf = IDF(str(baseline_idf_path))
+            # 加载IDF
+            idf = IDF(str(baseline_idf_path))
 
-        # 应用ECM参数
-        applicator = ECMApplicator()
-        applicator.apply(idf, ecm_params)
+            # 应用ECM参数
+            applicator = ECMApplicator()
+            applicator.apply(idf, ecm_params)
 
-        # 创建模拟任务
-        from backend.domain.models import SimulationJob, Weather
+            # 创建模拟任务
+            from backend.domain.models import SimulationJob, Weather
 
-        job = SimulationJob(
-            id=f"ecm_sample_{sample_id:04d}",
-            output_prefix=f"ecm_{sample_id:04d}",
-            output_directory=output_dir,
-            weather=Weather(file_path=weather_file),
-            read_variables=True,
-            ecm_parameters=ecm_params
-        )
+            job = SimulationJob(
+                id=f"ecm_sample_{sample_id:04d}",
+                output_prefix=f"ecm_{sample_id:04d}",
+                output_directory=output_dir,
+                weather=Weather(file_path=weather_file),
+                read_variables=True,
+                ecm_parameters=ecm_params
+            )
 
-        # 创建上下文并执行
-        from backend.domain.models import SimulationContext
+            # 创建上下文并执行
+            from backend.domain.models import SimulationContext
 
-        context = SimulationContext(job=job, idf=idf)
-        result = self._executor.run(context)
+            context = SimulationContext(job=job, idf=idf)
+            result = self._executor.run(context)
 
-        # 解析结果
-        result = self._parser.parse(result, context)
+            # 解析结果
+            result = self._parser.parse(result, context)
 
-        return result
+            return result
+        except Exception as e:
+            self._logger.error(
+                f"Simulation failed for sample {sample_id}: {e}"
+            )
+            return None
 ```
 
 ### 3.5 模拟输出指标
@@ -3278,7 +3264,7 @@ def main():
     batch_simulator = BatchECMSimulator(
         executor=executor,
         parser=parser,
-        max_workers=8  # 使用8个并行进程
+        n_jobs=8  # 使用8个并行任务
     )
 
     # 执行批量模拟
@@ -3520,7 +3506,7 @@ if __name__ == "__main__":
 优化的并行模拟策略
 """
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from joblib import Parallel, delayed
 from multiprocessing import cpu_count
 import psutil
 
@@ -3541,14 +3527,14 @@ class OptimizedBatchSimulator:
         available_memory_gb = psutil.virtual_memory().available / (1024**3)
 
         # 每个EnergyPlus进程约需2GB内存
-        max_workers_by_memory = int(available_memory_gb / 2)
+        max_jobs_by_memory = int(available_memory_gb / 2)
 
         # 取CPU核心数和内存限制的较小值
-        self._max_workers = min(cpu_cores - 1, max_workers_by_memory, 16)
+        self._n_jobs = min(cpu_cores - 1, max_jobs_by_memory, 16)
 
         logger.info(
             f"Parallel simulation configured: "
-            f"{self._max_workers} workers "
+            f"{self._n_jobs} parallel jobs "
             f"(CPU cores: {cpu_cores}, Available memory: {available_memory_gb:.1f}GB)"
         )
 
@@ -3558,65 +3544,54 @@ class OptimizedBatchSimulator:
         baseline_idf_path: Path,
         weather_file: Path,
         output_base_dir: Path,
-        chunk_size: int = 10
+        batch_size: int = 100
     ) -> List[SimulationResult]:
         """
         优化的批量模拟
 
-        使用分块处理和进度跟踪。
+        使用joblib并行处理和进度跟踪。
 
         Args:
             ecm_samples: ECM参数样本列表
             baseline_idf_path: 基准IDF路径
             weather_file: 天气文件路径
             output_base_dir: 输出基础目录
-            chunk_size: 分块大小
+            batch_size: 批次大小，用于分批处理大量样本
 
         Returns:
             模拟结果列表
         """
-        from tqdm import tqdm
-
-        results = []
         total_samples = len(ecm_samples)
+        results = []
 
-        # 分块处理
-        for chunk_start in range(0, total_samples, chunk_size):
-            chunk_end = min(chunk_start + chunk_size, total_samples)
-            chunk = ecm_samples[chunk_start:chunk_end]
+        # 分批处理大量样本
+        for batch_start in range(0, total_samples, batch_size):
+            batch_end = min(batch_start + batch_size, total_samples)
+            batch = ecm_samples[batch_start:batch_end]
 
             logger.info(
-                f"Processing chunk {chunk_start//chunk_size + 1}: "
-                f"samples {chunk_start+1}-{chunk_end}/{total_samples}"
+                f"Processing batch {batch_start//batch_size + 1}: "
+                f"samples {batch_start+1}-{batch_end}/{total_samples}"
             )
 
-            # 并行执行当前分块
-            with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-                futures = {}
+            # 使用joblib并行执行当前批次
+            batch_results = Parallel(
+                n_jobs=self._n_jobs,
+                verbose=10,
+                backend='loky',
+                timeout=600  # 10分钟超时
+            )(
+                delayed(self._run_single_simulation)(
+                    ecm_params,
+                    baseline_idf_path,
+                    weather_file,
+                    output_base_dir / f"sample_{batch_start + i}",
+                    batch_start + i
+                )
+                for i, ecm_params in enumerate(batch)
+            )
 
-                for i, ecm_params in enumerate(chunk):
-                    future = executor.submit(
-                        self._run_single_simulation,
-                        ecm_params,
-                        baseline_idf_path,
-                        weather_file,
-                        output_base_dir / f"sample_{chunk_start + i}"
-                    )
-                    futures[future] = chunk_start + i
-
-                # 收集结果
-                for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc=f"Chunk {chunk_start//chunk_size + 1}"
-                ):
-                    sample_idx = futures[future]
-                    try:
-                        result = future.result(timeout=600)  # 10分钟超时
-                        results.append(result)
-                    except Exception as e:
-                        logger.error(f"Sample {sample_idx} failed: {e}")
-                        results.append(None)
+            results.extend(batch_results)
 
         # 过滤失败的模拟
         successful_results = [r for r in results if r is not None]
@@ -3627,6 +3602,33 @@ class OptimizedBatchSimulator:
         )
 
         return successful_results
+```
+
+**为什么使用joblib而不是concurrent.futures?**
+
+joblib相比concurrent.futures.ProcessPoolExecutor有以下优势：
+
+1. **更好的内存管理**: joblib使用'loky'后端，提供更好的进程隔离和内存管理
+2. **自动序列化优化**: 对NumPy数组和大型对象有更高效的序列化机制
+3. **内置进度显示**: 通过`verbose`参数可以直接显示进度
+4. **更简洁的API**: 使用`Parallel`和`delayed`的语法更加简洁直观
+5. **更好的错误处理**: 提供更详细的错误信息和堆栈跟踪
+6. **缓存支持**: 可以使用`Memory`类缓存函数结果，避免重复计算
+
+```python
+# joblib示例
+from joblib import Parallel, delayed
+
+results = Parallel(n_jobs=8, verbose=10)(
+    delayed(simulate)(params) for params in param_list
+)
+
+# 等价的concurrent.futures代码更冗长
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
+with ProcessPoolExecutor(max_workers=8) as executor:
+    futures = [executor.submit(simulate, params) for params in param_list]
+    results = [f.result() for f in as_completed(futures)]
 ```
 
 #### 8.1.2 代理模型训练加速
@@ -3870,11 +3872,12 @@ class AdaptiveSampler:
 
 #### 8.5.2 模拟阶段
 
-- ✅ **并行度设置**: `max_workers = min(CPU核心数-1, 可用内存GB/2, 16)`
+- ✅ **并行度设置**: `n_jobs = min(CPU核心数-1, 可用内存GB/2, 16)` (joblib参数)
 - ✅ **超时控制**: 设置单个模拟超时(如10分钟),避免卡死
 - ✅ **错误处理**: 记录失败的模拟,但不中断整个批次
 - ✅ **结果验证**: 检查模拟结果的合理性(如EUI范围)
-- ✅ **分块处理**: 大批量模拟分成小块,便于进度跟踪和错误恢复
+- ✅ **分批处理**: 大批量模拟分成小批次,便于进度跟踪和错误恢复
+- ✅ **后端选择**: joblib使用'loky'后端以获得更好的稳定性和内存管理
 
 #### 8.5.3 代理模型阶段
 
@@ -3923,13 +3926,13 @@ class AdaptiveSampler:
 | 阶段 | 样本数 | 并行度 | 预计时间 | 内存需求 |
 |------|--------|--------|----------|----------|
 | 采样 | 200 | N/A | <1分钟 | <100MB |
-| 模拟 | 200 | 8核 | 2-4小时 | 16GB |
+| 模拟 | 200 | n_jobs=8 | 2-4小时 | 16GB |
 | 训练 | 200 | GPU | 1-5分钟 | 2GB |
 | 优化 | 50代 | N/A | 5-10分钟 | <1GB |
-| 验证 | 1 | 1核 | 5-10分钟 | 2GB |
+| 验证 | 1 | n_jobs=1 | 5-10分钟 | 2GB |
 | **总计** | - | - | **3-5小时** | **16GB** |
 
-*注: 基于典型办公建筑,11个ECM参数,8核CPU,无GPU加速*
+*注: 基于典型办公建筑,11个ECM参数,8核CPU,无GPU加速,使用joblib并行*
 
 ---
 
@@ -4106,10 +4109,12 @@ def validate_ecm_params(params: ECMParameters) -> bool:
 **Q2: 模拟速度太慢**
 
 A: 优化策略:
-- 增加并行度 (但注意内存限制)
+- 增加并行度 (设置更大的`n_jobs`值，但注意内存限制)
+- 使用joblib的'loky'后端以获得更好的性能
 - 使用更快的IDF模板
 - 减少输出变量
 - 使用SSD存储
+- 分批处理大量样本以避免内存溢出
 
 ### 10.2 代理模型问题
 
@@ -4341,7 +4346,7 @@ async def get_optimization_status(task_id: str):
 - **模拟**: EnergyPlus + eppy
 - **代理模型**: XGBoost, Random Forest, Neural Network
 - **优化**: DEAP (遗传算法), bayes_opt (贝叶斯优化)
-- **并行**: concurrent.futures.ProcessPoolExecutor
+- **并行**: joblib (Parallel, delayed)
 - **可视化**: matplotlib, seaborn
 
 ### 12.2 关键指标
