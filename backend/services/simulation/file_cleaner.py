@@ -27,4 +27,4 @@ class FileCleaner(IFileCleaner):
                 else:
                     self._logger.warning(f"File not found: {file_path}")
 
-        self._logger.info(f"Cleaned up {deleted_count} files for job {context.job.id}")
+        self._logger.info(f"Cleaned up {deleted_count} files for job {context.job.output_directory}")

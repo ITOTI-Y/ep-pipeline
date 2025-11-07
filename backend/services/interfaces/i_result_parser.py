@@ -32,6 +32,24 @@ class IResultParser(ABC):
                 AND RowName IN ('Total Building Area', 'Net Conditioned Building Area')
                 AND Units = 'm2'
             """
+    IRRADIATION_QUERY = """
+                SELECT
+                    r.KeyValue as name,
+                    s.ClassName as type,
+                    COUNT(*) as hour_count,
+                    SUM(r.value) as sum_irradiation,
+                    r.ReportingFrequency as frequency,
+                    r.Units as unit
+                FROM
+                    ReportVariableWithTime r
+                JOIN
+                    Surfaces s on s.SurfaceName = r.KeyValue
+                WHERE
+                    r.Name = 'Surface Outside Face Incident Solar Radiation Rate per Area'
+                    AND s.ClassName IN ('Wall', 'Roof')
+                GROUP BY
+                    r.KeyValue
+            """
     ENERGY_KEY_MAPPING: ClassVar[dict[str, dict[str, str]]] = {
         "Total Site Energy": {
             "Total Energy": "total_site_energy",
@@ -54,6 +72,13 @@ class IResultParser(ABC):
         "Total Building Area": "total_building_area",
         "Net Conditioned Building Area": "net_building_area",
     }
+    IRRADIATION_UNIT_TO_HOURS: ClassVar[dict[str, int]] = {
+        "Hourly": 1,
+        "Daily": 24,
+        "Monthly": 30 * 24,
+        "Annual": 365 * 24,
+    }
+
     @abstractmethod
     def parse(
         self,

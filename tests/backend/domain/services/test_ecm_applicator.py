@@ -167,7 +167,8 @@ class TestECMApplicatorMainApplyMethod:
         """Test that apply calls COP method when set."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         with patch.object(
@@ -210,7 +211,8 @@ class TestECMApplicatorMainApplyMethod:
             window_shgc=0.4,
             visible_transmittance=0.7,
             wall_insulation=2.5,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         with (
@@ -669,7 +671,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that coil objects are modified."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         # Create mock coil with COP field
@@ -688,7 +691,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that chiller objects are modified."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=5.0,
+            cooling_cop=5.0,
+            heating_cop=5.0,
         )
 
         # Create mock chiller with COP field
@@ -707,7 +711,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that multiple COP field names are checked."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.5,
+            cooling_cop=4.5,
+            heating_cop=4.5,
         )
 
         # Create equipment with multiple COP fields
@@ -730,7 +735,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that non-coil/chiller objects are skipped."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         mock_idf.idfobjects.keys = MagicMock(
@@ -754,7 +760,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that equipment without COP fields is skipped gracefully."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         # Create equipment without any COP fields
@@ -771,7 +778,8 @@ class TestApplyCoilAndChillerParameters:
         """Test that exception for one equipment type doesn't stop processing."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         mock_idf.idfobjects.keys = MagicMock(
