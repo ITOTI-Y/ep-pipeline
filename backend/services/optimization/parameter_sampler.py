@@ -22,8 +22,12 @@ class ParameterSampler:
             f"Generating {n_samples} samples for building type {building_type}"
         )
         ecm_samples = []
-        count = 0
-        while count < n_samples:
+        attempts = 0
+        max_attempts = n_samples * 10
+        while len(ecm_samples) < n_samples:
+            attempts += 1
+            if attempts > max_attempts:
+                raise RuntimeError("Failed to generate unique samples after max attempts")
             ecm_model = ECMParameters(building_type=building_type)
             for param_name in self._ecm_parameters_names:
                 select_value = np.random.choice(self._ecm_parameters[param_name])
@@ -31,6 +35,5 @@ class ParameterSampler:
             if ecm_model in ecm_samples:
                 continue
             ecm_samples.append(ecm_model)
-            count += 1
 
         return ecm_samples

@@ -8,7 +8,6 @@ from backend.utils.config import ConfigManager
 class ECMApply(IApply):
     def __init__(self, config: ConfigManager):
         super().__init__()
-        self._config = config
 
     def apply(self, context: SimulationContext, parameters: ECMParameters) -> None:
         self._logger.info("Applying ECM configuration")
@@ -33,6 +32,13 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if (
+            parameters.window_u_value is None
+            and parameters.window_shgc is None
+            and parameters.visible_transmittance is None
+        ):
+            self._logger.warning("Window parameters are not set, skipping")
+            return
         idf = context.idf
 
         window_material_name = (
@@ -86,6 +92,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.wall_insulation is None:
+            self._logger.warning("Wall insulation is not set, skipping")
+            return
+
         idf = context.idf
 
         insulation_materials_name = (
@@ -141,6 +151,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.infiltration_rate is None:
+            self._logger.warning("Infiltration rate is not set, skipping")
+            return
+
         idf = context.idf
 
         infiltration_objects = idf.idfobjects.get("ZONEINFILTRATION:DESIGNFLOWRATE", [])
@@ -172,6 +186,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.natural_ventilation_area is None:
+            self._logger.warning("Natural ventilation area is not set, skipping")
+            return
+
         idf = context.idf
 
         self._remove_objects(idf, "ZONEVENTILATION:WindandStackOpenArea")
@@ -202,6 +220,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.cooling_cop is None:
+            self._logger.warning("Cooling COP is not set, skipping")
+            return
+
         idf = context.idf
 
         modified_count = 0
@@ -252,6 +274,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.heating_cop is None:
+            self._logger.warning("Heating COP is not set, skipping")
+            return
+
         idf = context.idf
 
         modified_count = 0
@@ -302,6 +328,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.cooling_air_temperature is None:
+            self._logger.warning("Cooling air temperature is not set, skipping")
+            return
+
         idf = context.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
@@ -328,6 +358,10 @@ class ECMApply(IApply):
             context (SimulationContext): Simulation context
             parameters (ECMParameters): ECM parameters
         """
+        if parameters.heating_air_temperature is None:
+            self._logger.warning("Heating air temperature is not set, skipping")
+            return
+
         idf = context.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])

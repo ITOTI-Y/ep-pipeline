@@ -37,6 +37,10 @@ class ECMService(ISimulationService[ECMContext]):
 
     def execute(self, context: ECMContext) -> SimulationResult:
         self._logger.info(f"Executing ecm simulation for job {context.job.id}")
+        result = SimulationResult(
+            job_id=context.job.id,
+            success=False,
+        )
         try:
             result = self._executor.run(
                 context=context,
