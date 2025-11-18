@@ -1,5 +1,3 @@
-from eppy.modeleditor import IDF
-
 from backend.domain.models import ECMParameters, SimulationContext
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
@@ -34,8 +32,8 @@ class ECMApply(IApply):
         """
         if (
             parameters.window_u_value is None
-            and parameters.window_shgc is None
-            and parameters.visible_transmittance is None
+            or parameters.window_shgc is None
+            or parameters.visible_transmittance is None
         ):
             self._logger.warning("Window parameters are not set, skipping")
             return
@@ -424,9 +422,3 @@ class ECMApply(IApply):
                 continue
 
         self._logger.info(f"Modified {modified_count} lighting objects")
-
-    def _remove_objects(self, idf: IDF, object_type: str) -> None:
-        objects = list(idf.idfobjects.get(object_type, []))
-        for obj in objects:
-            idf.removeidfobject(obj)
-            self._logger.debug(f"Removed {object_type} object: {obj}")
