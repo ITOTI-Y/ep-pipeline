@@ -4,7 +4,7 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import SimulationContext, SimulationResult
+from backend.models import SimulationContext, SimulationResult
 from backend.services.interfaces import IEnergyPlusExecutor
 
 

@@ -325,7 +325,7 @@ import pandas as pd
 from loguru import logger
 
 from backend.services.interfaces import IResultParser
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 from backend.utils.exceptions import ParsingError
 
 
@@ -467,7 +467,7 @@ from uuid import UUID
 from loguru import logger
 
 from backend.domain.repositories import IBuildingRepository
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.factories import BuildingFactory
 
 
@@ -906,7 +906,7 @@ from typing import Optional
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 
 
 class BuildingFactory:

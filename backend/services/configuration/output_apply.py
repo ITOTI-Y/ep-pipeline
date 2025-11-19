@@ -1,6 +1,6 @@
 from eppy.modeleditor import IDF
 
-from backend.domain.models import SimulationContext
+from backend.models import SimulationContext
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 

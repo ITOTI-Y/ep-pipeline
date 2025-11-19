@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from backend.domain.models import SimulationContext, SimulationResult
+from backend.models import SimulationContext, SimulationResult
 
 
 class IResultParser(ABC):

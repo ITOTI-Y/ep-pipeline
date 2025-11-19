@@ -47,6 +47,7 @@ class PathsConfig(BaseModel):
         "output_dir",
         "baseline_dir",
         "pv_dir",
+        "ecm_dir",
         "optimization_dir",
         "temp_dir",
     )

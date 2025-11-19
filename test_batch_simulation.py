@@ -5,14 +5,14 @@ from eppy.modeleditor import IDF
 from joblib import Parallel, delayed
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
-from backend.domain.models import (
+from backend.models import (
     Building,
     BuildingType,
     ECMContext,
     SimulationJob,
     Weather,
 )
-from backend.domain.models.enums import SimulationType
+from backend.models.enums import SimulationType
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import ECMService, FileCleaner, ResultParser
 from backend.utils.config import ConfigManager
@@ -21,7 +21,7 @@ from backend.utils.config import ConfigManager
 def test_batch_simulation():
     config = ConfigManager(Path("backend/configs"))
 
-    idf_file_path = config.paths.idf_files[1]
+    idf_file_path = config.paths.idf_files[0]
 
     building = Building(
         name=idf_file_path.stem,
@@ -56,7 +56,7 @@ def test_batch_simulation():
         )
         jobs.append(job)
 
-    results = Parallel(n_jobs=10, verbose=10, backend="loky")(
+    results = Parallel(n_jobs=n_samples, verbose=10, backend="loky")(
         delayed(_single_run)(job, config) for job in jobs
     )
 

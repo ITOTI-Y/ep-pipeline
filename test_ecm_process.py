@@ -4,14 +4,14 @@ from pickle import dump, load
 from eppy.modeleditor import IDF
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
-from backend.domain.models import (
+from backend.models import (
     Building,
     BuildingType,
     ECMContext,
     SimulationJob,
     Weather,
 )
-from backend.domain.models.enums import SimulationType
+from backend.models.enums import SimulationType
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import ECMService, FileCleaner, ResultParser
 from backend.utils.config import ConfigManager

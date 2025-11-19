@@ -1,7 +1,7 @@
 import numpy as np
 from loguru import logger
 
-from backend.domain.models import BuildingType, ECMParameters
+from backend.models import BuildingType, ECMParameters
 from backend.utils.config import ConfigManager
 
 
@@ -27,7 +27,9 @@ class ParameterSampler:
         while len(ecm_samples) < n_samples:
             attempts += 1
             if attempts > max_attempts:
-                raise RuntimeError("Failed to generate unique samples after max attempts")
+                raise RuntimeError(
+                    "Failed to generate unique samples after max attempts"
+                )
             ecm_model = ECMParameters(building_type=building_type)
             for param_name in self._ecm_parameters_names:
                 select_value = np.random.choice(self._ecm_parameters[param_name])

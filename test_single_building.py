@@ -3,14 +3,14 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
-from backend.domain.models import (
+from backend.models import (
     BaselineContext,
     Building,
     BuildingType,
     SimulationJob,
     Weather,
 )
-from backend.domain.models.enums import SimulationType
+from backend.models.enums import SimulationType
 from backend.services.simulation import BaselineService, FileCleaner, ResultParser
 from backend.utils.config import ConfigManager
 
@@ -62,5 +62,7 @@ def run_single_building_simulation():
     result = service.run(context)
 
     print(result)
+
+
 if __name__ == "__main__":
     run_single_building_simulation()

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.domain.models import ECMContext, ECMParameters, SimulationResult
+from backend.models import ECMContext, ECMParameters, SimulationResult
 from backend.services.configuration import ECMApply, OutputApply, PeriodApply
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
@@ -23,7 +23,7 @@ class ECMService(ISimulationService[ECMContext]):
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
         self._config = config
-        self._ecm_apply = ECMApply(config=config)
+        self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
         self._logger = logger.bind(service=self.__class__.__name__)

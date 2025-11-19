@@ -226,7 +226,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
-from backend.domain.models import BuildingType, SimulationType
+from backend.models import BuildingType, SimulationType
 from backend.services.orchestration import SimulationOrchestrator
 from backend.application.observers import (  
     ConsoleProgressObserver,  
@@ -315,7 +315,7 @@ def baseline(
         weather_obj = weathers[0]
 
         # 创建任务
-        from backend.domain.models import SimulationJob
+        from backend.models import SimulationJob
         job = SimulationJob(
             building=building_obj,
             weather_file=weather_obj,
@@ -522,7 +522,7 @@ def _display_batch_summary(results: list) -> None:
 
 def _create_jobs_from_configs(configs: list, output_base: Path, container) -> list:
     """从配置创建任务列表"""
-    from backend.domain.models import SimulationJob, SimulationType
+    from backend.models import SimulationJob, SimulationType
 
     building_repo = container.resolve('IBuildingRepository')
     weather_repo = container.resolve('IWeatherRepository')
@@ -598,7 +598,7 @@ import time
 
 from loguru import logger
 
-from backend.domain.models import SimulationJob, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 from backend.services.orchestration import SimulationOrchestrator
 from backend.application.events import EventBus, SimulationStartedEvent, SimulationCompletedEvent
 

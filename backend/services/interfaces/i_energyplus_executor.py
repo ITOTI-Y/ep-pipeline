@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from backend.domain.models import SimulationContext, SimulationResult
+from backend.models import SimulationContext, SimulationResult
 
 
 class IEnergyPlusExecutor(ABC):

@@ -7,6 +7,6 @@ ecm_parameters:
   natural_ventilation_area: [0.4, 0.8, 1.2, 1.6, 2, 2.4] # m²
   cooling_cop: [3.5, 4, 4.5, 5, 5.5, 6]
   heating_cop: [3.5, 4, 4.5, 5, 5.5, 6]
-  cooling_air_temperature: [12, 13, 14, 15] # °C
-  heating_air_temperature: [22, 24, 26, 28] # °C
+  cooling_air_temperature: [10, 12, 14, 16] # °C
+  heating_air_temperature: [30, 32, 34, 36] # °C
   lighting_power_reduction_level: [1, 2, 3]

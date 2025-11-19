@@ -200,7 +200,7 @@ import yaml
 from pathlib import Path
 from loguru import logger
 
-from backend.domain.models import ECMParameters, BuildingType
+from backend.models import ECMParameters, BuildingType
 
 
 class ParameterSampler:
@@ -470,7 +470,7 @@ ECM参数样本 → ECMApplicator → 修改后的IDF → EnergyPlus → 模拟�
 from pathlib import Path
 from eppy.modeleditor import IDF
 from backend.domain.services import ECMApplicator
-from backend.domain.models import ECMParameters, BuildingType
+from backend.models import ECMParameters, BuildingType
 
 # 初始化IDD文件（仅需一次）
 IDF.setiddname(str(Path("/path/to/Energy+.idd")))
@@ -533,7 +533,7 @@ EnergyPlus执行器使用示例
 
 from pathlib import Path
 from backend.bases.energyplus import EnergyPlusExecutor
-from backend.domain.models import SimulationContext, SimulationJob, Weather
+from backend.models import SimulationContext, SimulationJob, Weather
 
 # 初始化执行器
 executor = EnergyPlusExecutor(
@@ -586,7 +586,7 @@ from joblib import Parallel, delayed
 from pathlib import Path
 from loguru import logger
 
-from backend.domain.models import ECMParameters, SimulationResult
+from backend.models import ECMParameters, SimulationResult
 from backend.bases.energyplus import EnergyPlusExecutor
 from backend.services.simulation import ResultParser
 
@@ -705,7 +705,7 @@ class BatchECMSimulator:
             applicator.apply(idf, ecm_params)
 
             # 创建模拟任务
-            from backend.domain.models import SimulationJob, Weather
+            from backend.models import SimulationJob, Weather
 
             job = SimulationJob(
                 id=f"ecm_sample_{sample_id:04d}",
@@ -717,7 +717,7 @@ class BatchECMSimulator:
             )
 
             # 创建上下文并执行
-            from backend.domain.models import SimulationContext
+            from backend.models import SimulationContext
 
             context = SimulationContext(job=job, idf=idf)
             result = self._executor.run(context)
@@ -767,7 +767,7 @@ result.conditioned_floor_area     # 空调面积 (m²)
 """
 
 from typing import Dict
-from backend.domain.models import ECMParameters, SimulationResult
+from backend.models import ECMParameters, SimulationResult
 
 
 class ECMCostCalculator:
@@ -986,7 +986,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from loguru import logger
 
-from backend.domain.models import ECMParameters, SimulationResult
+from backend.models import ECMParameters, SimulationResult
 
 
 class TrainingDataPreparator:
@@ -1940,7 +1940,7 @@ class EnsembleSurrogateModel:
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Tuple, Optional, List
 
-from backend.domain.models import ECMParameters, BuildingType
+from backend.models import ECMParameters, BuildingType
 
 
 class IOptimizationStrategy(ABC):
@@ -2496,7 +2496,7 @@ from typing import Dict, Tuple, List, Optional
 from pathlib import Path
 from loguru import logger
 
-from backend.domain.models import ECMParameters, BuildingType
+from backend.models import ECMParameters, BuildingType
 from .strategies import IOptimizationStrategy
 from .surrogate_models import XGBoostSurrogateModel
 
@@ -2693,7 +2693,7 @@ class ConstraintHandler:
         Returns:
             是否满足预算约束
         """
-        from backend.domain.models import ECMParameters
+        from backend.models import ECMParameters
 
         ecm_params = ECMParameters(**params)
         baseline = ECMParameters(**baseline_params)
@@ -2739,7 +2739,7 @@ from typing import Dict, Tuple
 from pathlib import Path
 from loguru import logger
 
-from backend.domain.models import (
+from backend.models import (
     ECMParameters, SimulationResult, SimulationJob,
     SimulationContext, Weather, BuildingType
 )
@@ -3178,7 +3178,7 @@ import numpy as np
 from loguru import logger
 
 # 导入项目模块
-from backend.domain.models import BuildingType, Weather
+from backend.models import BuildingType, Weather
 from backend.bases.energyplus import EnergyPlusExecutor
 from backend.services.simulation import ResultParser
 from backend.domain.services import ECMApplicator
@@ -3412,7 +3412,7 @@ def main():
     )
 
     # 运行基准模拟用于对比
-    from backend.domain.models import ECMParameters
+    from backend.models import ECMParameters
     baseline_params = ECMParameters(
         building_type=BUILDING_TYPE,
         # 使用默认/基准值

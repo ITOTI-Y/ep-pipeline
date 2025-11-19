@@ -1,7 +1,7 @@
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import BaselineContext, SimulationResult
+from backend.models import BaselineContext, SimulationResult
 from backend.services.configuration import OutputApply, PeriodApply
 from backend.services.interfaces import (
     IEnergyPlusExecutor,

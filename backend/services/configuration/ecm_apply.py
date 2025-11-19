@@ -1,10 +1,9 @@
-from backend.domain.models import ECMParameters, SimulationContext
+from backend.models import ECMParameters, SimulationContext
 from backend.services.configuration.iapply import IApply
-from backend.utils.config import ConfigManager
 
 
 class ECMApply(IApply):
-    def __init__(self, config: ConfigManager):
+    def __init__(self):
         super().__init__()
 
     def apply(self, context: SimulationContext, parameters: ECMParameters) -> None:
@@ -18,6 +17,7 @@ class ECMApply(IApply):
         self._apply_cooling_air_temperature_parameters(context, parameters)
         self._apply_heating_air_temperature_parameters(context, parameters)
         self._apply_lighting_parameters(context, parameters)
+        self._apply_hvac_settings_parameters(context)
         self._logger.info("ECM configuration applied successfully")
 
     def _apply_window_parameters(
@@ -422,3 +422,52 @@ class ECMApply(IApply):
                 continue
 
         self._logger.info(f"Modified {modified_count} lighting objects")
+
+    def _apply_hvac_settings_parameters(self, context: SimulationContext) -> None:
+        """
+        apply hvac settings parameters to idf object
+
+        Args:
+            context (SimulationContext): Simulation context
+            parameters (ECMParameters): ECM parameters
+        """
+        idf = context.idf
+
+        modified_count = 0
+
+        vav_reheat_terminals = idf.idfobjects.get(
+            "AIRTERMINAL:SINGLEDUCT:VAV:REHEAT", []
+        )
+
+        for terminal in vav_reheat_terminals:
+            terminal.Maximum_Air_Flow_Rate = "AUTOSIZE"
+            terminal.Maximum_Hot_Water_or_Steam_Flow_Rate = "AUTOSIZE"
+            terminal.Maximum_Flow_Fraction_During_Reheat = "AUTOSIZE"
+            terminal.Constant_Minimum_Air_Flow_Fraction = "AUTOSIZE"
+            terminal.Fixed_Minimum_Air_Flow_Rate = "AUTOSIZE"
+            modified_count += 1
+
+        self._logger.info(f"Modified {modified_count} VAV reheat terminals")
+
+        modified_count = 0
+
+        chillers = idf.idfobjects.get("CHILLER:ELECTRIC:REFORMULATEDEIR", [])
+
+        for chiller in chillers:
+            chiller.Reference_Capacity = "AUTOSIZE"
+            chiller.Reference_Chilled_Water_Flow_Rate = "AUTOSIZE"
+            chiller.Reference_Condenser_Water_Flow_Rate = "AUTOSIZE"
+            modified_count += 1
+
+        self._logger.info(f"Modified {modified_count} chillers")
+
+        modified_count = 0
+
+        cooling_towers = idf.idfobjects.get("COOLINGTOWER:VARIABLESPEED", [])
+        for tower in cooling_towers:
+            tower.Design_Water_Flow_Rate = "AUTOSIZE"
+            tower.Design_Air_Flow_Rate = "AUTOSIZE"
+            tower.Design_Fan_Power = "AUTOSIZE"
+            modified_count += 1
+
+        self._logger.info(f"Modified {modified_count} CoolingTowers")

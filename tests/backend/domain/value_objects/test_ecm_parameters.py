@@ -14,8 +14,8 @@ Tests cover:
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.models.ecm_parameters import ECMParameters
-from backend.domain.models.enums import BuildingType
+from backend.models.ecm_parameters import ECMParameters
+from backend.models.enums import BuildingType
 
 
 class TestECMParametersCreation:

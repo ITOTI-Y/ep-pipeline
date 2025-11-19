@@ -69,7 +69,7 @@
 import pytest
 from pathlib import Path
 
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.domain.value_objects import ECMParameters
 
 
