@@ -11,6 +11,7 @@ wheels/
 .ruff_cache
 .pytest_cache
 .augment
+.roo
 
 # Output files
 output/
