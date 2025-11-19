@@ -11,6 +11,13 @@ class BuildingType(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+    @classmethod
+    def from_str(cls, value: str) -> "BuildingType":
+        for building_type in cls:
+            if building_type.value.lower() in value.lower():
+                return building_type
+        return BuildingType.OFFICE_LARGE
+
 
 class SimulationStatus(str, Enum):
     PENDING = "pending"
