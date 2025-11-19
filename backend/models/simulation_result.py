@@ -6,6 +6,8 @@ from uuid import UUID, uuid4
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .ecm_parameters import ECMParameters
+
 logger = logger.bind(module=__name__)
 
 class Surface(BaseModel):
@@ -66,6 +68,10 @@ class SimulationResult(BaseModel):
     sql_path: Path | None = Field(
         default=None,
         description="Path to the SQL file containing detailed simulation data.",
+    )
+    ecm_parameters: ECMParameters | None = Field(
+        default=None,
+        description="ECM parameters used in the simulation.",
     )
     total_building_area: float | None = Field(
         default=None,

@@ -69,6 +69,7 @@ class ECMService(ISimulationService[ECMContext]):
         try:
             self.prepare(context, ecm_parameters)
             result = self.execute(context)
+            result.ecm_parameters = ecm_parameters
             return result
         finally:
             self.cleanup(context)
