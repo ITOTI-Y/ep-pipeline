@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 
-from backend.domain.models import SimulationContext, SimulationResult
+from backend.models import SimulationContext, SimulationResult, Surface
 from backend.services.interfaces import IResultParser
 
 
@@ -39,6 +39,7 @@ class ResultParser(IResultParser):
         try:
             self._parse_energy_from_sql(result, conn)
             self._parse_area_from_sql(result, conn)
+            self._parse_irradiation_from_sql(result, conn)
         finally:
             conn.close()
 
@@ -73,3 +74,29 @@ class ResultParser(IResultParser):
         except Exception as e:
             self._logger.exception("Failed to parse area from SQL: ")
             result.add_error(f"Failed to parse area from SQL: {e}")
+
+    def _parse_irradiation_from_sql(
+        self, result: SimulationResult, conn: sqlite3.Connection
+    ) -> None:
+        try:
+            query = self.IRRADIATION_QUERY
+            df = pd.read_sql_query(query, conn)
+            for _, row in df.iterrows():
+                result.surfaces.append(
+                    Surface(
+                        name=str(row["name"]),
+                        type=str(row["type"]),
+                        hour_count=int(row["hour_count"]),
+                        sum_irradiation=float(
+                            row["sum_irradiation"]
+                            * self.IRRADIATION_UNIT_TO_HOURS[str(row["frequency"])]
+                        )
+                        / 1000,
+                        unit="kWh/m²"
+                        if str(row["unit"]) == "W/m2"
+                        else str(row["unit"] + "* h"),
+                    )
+                )
+        except Exception as e:
+            self._logger.exception("Failed to parse irradiation from SQL: ")
+            result.add_error(f"Failed to parse irradiation from SQL: {e}")

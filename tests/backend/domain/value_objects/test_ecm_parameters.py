@@ -14,8 +14,8 @@ Tests cover:
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.models.ecm_parameters import ECMParameters
-from backend.domain.models.enums import BuildingType
+from backend.models.ecm_parameters import ECMParameters
+from backend.models.enums import BuildingType
 
 
 class TestECMParametersCreation:
@@ -32,8 +32,10 @@ class TestECMParametersCreation:
         assert params.wall_insulation is None
         assert params.infiltration_rate is None
         assert params.natural_ventilation_area is None
-        assert params.cop is None
+        assert params.cooling_cop is None
+        assert params.heating_cop is None
         assert params.cooling_air_temperature is None
+        assert params.heating_air_temperature is None
         assert params.lighting_power_reduction_level is None
 
     def test_create_with_all_valid_parameters(self):
@@ -46,7 +48,8 @@ class TestECMParametersCreation:
             wall_insulation=2.5,
             infiltration_rate=0.5,
             natural_ventilation_area=10.0,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
             cooling_air_temperature=13.0,
             lighting_power_reduction_level=2,
         )
@@ -58,7 +61,8 @@ class TestECMParametersCreation:
         assert params.wall_insulation == 2.5
         assert params.infiltration_rate == 0.5
         assert params.natural_ventilation_area == 10.0
-        assert params.cop == 4.0
+        assert params.cooling_cop == 4.0
+        assert params.heating_cop == 4.0
         assert params.cooling_air_temperature == 13.0
         assert params.lighting_power_reduction_level == 2
 
@@ -157,7 +161,8 @@ class TestECMParametersValidation:
         with pytest.raises(ValidationError) as exc_info:
             ECMParameters(
                 building_type=BuildingType.OFFICE_LARGE,
-                cop=0.5,
+                cooling_cop=0.5,
+                heating_cop=0.5,
             )
         assert "cop" in str(exc_info.value)
 
@@ -165,9 +170,11 @@ class TestECMParametersValidation:
         """Test that COP of exactly 1.0 is valid."""
         params = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=1.0,
+            cooling_cop=1.0,
+            heating_cop=1.0,
         )
-        assert params.cop == 1.0
+        assert params.cooling_cop == 1.0
+        assert params.heating_cop == 1.0
 
     def test_lighting_power_reduction_level_below_one_fails(self):
         """Test that lighting level below 1 raises ValidationError."""
@@ -313,7 +320,8 @@ class TestECMParametersToDictMethod:
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
         result = params.to_dict()
 
@@ -321,7 +329,8 @@ class TestECMParametersToDictMethod:
             "building_type": "OfficeLarge",
             "window_u_value": 1.5,
             "window_shgc": 0.4,
-            "cop": 4.0,
+            "cooling_cop": 4.0,
+            "heating_cop": 4.0,
         }
 
     def test_to_dict_with_lighting_level(self):
@@ -362,16 +371,19 @@ class TestECMParametersMergeMethod:
         params1 = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
-            cop=3.0,
+            cooling_cop=3.0,
+            heating_cop=3.0,
         )
         params2 = ECMParameters(
             building_type=BuildingType.OFFICE_LARGE,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
 
         merged = params1.merge(params2)
 
-        assert merged.cop == 4.0
+        assert merged.cooling_cop == 4.0
+        assert merged.heating_cop == 4.0
         assert merged.window_u_value == 1.5
 
     def test_merge_different_building_types_raises_error(self):
@@ -484,7 +496,8 @@ class TestECMParametersStringRepresentation:
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
-            cop=4.0,
+            cooling_cop=4.0,
+            heating_cop=4.0,
         )
         result = str(params)
 
@@ -492,7 +505,8 @@ class TestECMParametersStringRepresentation:
         assert "building_type=OfficeLarge" in result
         assert "window_u_value=1.5" in result
         assert "window_shgc=0.4" in result
-        assert "cop=4.0" in result
+        assert "cooling_cop=4.0" in result
+        assert "heating_cop=4.0" in result
 
     def test_str_excludes_none_values(self):
         """Test that string representation excludes None values."""

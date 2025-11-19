@@ -199,7 +199,7 @@ backend/services/
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-from backend.domain.models import SimulationJob, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 
 # 类型变量
 TContext = TypeVar('TContext')
@@ -413,7 +413,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from uuid import UUID
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class IResultParser(ABC):
@@ -495,7 +495,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from eppy.modeleditor import IDF
 
-from backend.domain.models import SimulationJob
+from backend.models import SimulationJob
 
 
 class SimulationContext(BaseModel):
@@ -840,7 +840,7 @@ from backend.services.interfaces import (
     IResultParser,
 )
 from backend.services.simulation.simulation_context import SimulationContext
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 from backend.utils.exceptions import SimulationError
 
 
@@ -1477,7 +1477,7 @@ from loguru import logger
 
 from backend.services.optimization.strategies import IOptimizationStrategy
 from backend.services.orchestration import SimulationOrchestrator
-from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.models import Building, WeatherFile, SimulationJob
 from backend.domain.value_objects import ECMParameters
 
 
@@ -1632,7 +1632,7 @@ from pathlib import Path
 import numpy as np
 from loguru import logger
 
-from backend.domain.models import Building, WeatherFile, SimulationJob
+from backend.models import Building, WeatherFile, SimulationJob
 from backend.domain.value_objects import ECMParameters
 from backend.services.orchestration import SimulationOrchestrator
 
@@ -1844,7 +1844,7 @@ import numpy as np
 from pathlib import Path
 from loguru import logger
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class DataAnalysisService:
@@ -2006,7 +2006,7 @@ from typing import Callable, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from loguru import logger
 
-from backend.domain.models import SimulationJob, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 from backend.services.interfaces import ICacheService
 from backend.factories import ServiceFactory
 
@@ -2218,8 +2218,8 @@ class SimulationOrchestrator:
 from pathlib import Path
 
 from backend.utils.config import ConfigManager, setup_container
-from backend.domain.models import Building, BuildingType, WeatherFile
-from backend.domain.models import SimulationJob, SimulationType
+from backend.models import Building, BuildingType, WeatherFile
+from backend.models import SimulationJob, SimulationType
 from backend.domain.value_objects import ECMParameters
 from backend.factories import ServiceFactory, BuildingFactory
 from backend.services.orchestration import SimulationOrchestrator
@@ -2387,7 +2387,7 @@ from pathlib import Path
 
 from backend.services.simulation import BaselineSimulationService
 from backend.services.simulation.simulation_context import BaselineContext
-from backend.domain.models import Building, BuildingType, WeatherFile, SimulationJob
+from backend.models import Building, BuildingType, WeatherFile, SimulationJob
 
 
 class TestBaselineSimulationService:

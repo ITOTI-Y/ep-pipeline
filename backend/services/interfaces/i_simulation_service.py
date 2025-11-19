@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class ISimulationService[Tcontext](ABC):

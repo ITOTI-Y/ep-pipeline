@@ -7,7 +7,7 @@ from ..models.enums import BuildingType
 
 class ECMParameters(BaseModel):
     model_config = ConfigDict(
-        frozen=True,
+        frozen=False,
         validate_assignment=True,
     )
 
@@ -47,14 +47,23 @@ class ECMParameters(BaseModel):
         ge=0.0,
         description="Area available for natural ventilation in m²",
     )
-    cop: float | None = Field(
+    cooling_cop: float | None = Field(
         default=None,
         ge=1.0,
-        description="Coefficient of Performance (COP) of the cooling or heating system",
+        description="Coefficient of Performance (COP) of the cooling system",
+    )
+    heating_cop: float | None = Field(
+        default=None,
+        ge=1.0,
+        description="Coefficient of Performance (COP) of the heating system",
     )
     cooling_air_temperature: float | None = Field(
         default=None,
         description="Cooling air temperature in °C",
+    )
+    heating_air_temperature: float | None = Field(
+        default=None,
+        description="Heating air temperature in °C",
     )
     lighting_power_reduction_level: int | None = Field(
         default=None,
@@ -62,7 +71,6 @@ class ECMParameters(BaseModel):
         le=3,
         description="Lighting power reduction level (discrete level: 1, 2, 3)",
     )
-
     @property
     def lighting_power_reduction(self) -> float | None:
         if (

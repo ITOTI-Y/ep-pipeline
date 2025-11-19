@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from backend.domain.models.enums import BuildingType
+from backend.models.enums import BuildingType
 
 
 @pytest.fixture

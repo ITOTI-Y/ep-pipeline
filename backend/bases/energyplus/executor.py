@@ -4,7 +4,7 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import SimulationContext, SimulationResult
+from backend.models import SimulationContext, SimulationResult
 from backend.services.interfaces import IEnergyPlusExecutor
 
 
@@ -41,6 +41,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         self._logger.debug(f"Read variables: {read_variables}")
 
         output_directory.mkdir(parents=True, exist_ok=True)
+        idf.saveas(str(output_directory / f"{output_prefix}.idf"))
 
         result = SimulationResult(
             job_id=job_id,
@@ -68,7 +69,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 )
             else:
                 self._logger.error(
-                    f"EnergyPlus simulation completed with errors: {output_prefix}"
+                    f"EnergyPlus simulation completed with errors: {result.errors}"
                 )
 
         except Exception as e:

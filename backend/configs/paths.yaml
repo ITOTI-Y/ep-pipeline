@@ -6,7 +6,8 @@ paths:
   output_dir: backend/output/
   baseline_dir: ${paths.output_dir}/baseline/
   pv_dir: ${paths.output_dir}/pv/
+  ecm_dir: ${paths.output_dir}/ecm/
   optimization_dir: ${paths.output_dir}/optimization/
   eplus_executable: /usr/local/EnergyPlus-25-1-0/energyplus
   idd_file: /usr/local/EnergyPlus-25-1-0/Energy+.idd
-  temp_dir: backend/temp/
+  temp_dir: ${paths.data_dir}/temp/

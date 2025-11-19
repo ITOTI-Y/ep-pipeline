@@ -2709,7 +2709,7 @@ from uuid import UUID
 import pandas as pd
 from loguru import logger
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class ResultParser:
@@ -2968,7 +2968,7 @@ from typing import Optional
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 from backend.services.interfaces import ISimulationService, IEnergyPlusExecutor
 from backend.services.simulation import BaselineContext
 from backend.infrastructure.parsers import ResultParser
@@ -3338,8 +3338,8 @@ from eppy.modeleditor import IDF
 
 from backend.utils.config import ConfigManager
 from backend.utils.factory import create_baseline_service
-from backend.domain.models import Building, WeatherFile, SimulationJob
-from backend.domain.models.enums import BuildingType, SimulationType
+from backend.models import Building, WeatherFile, SimulationJob
+from backend.models.enums import BuildingType, SimulationType
 from backend.services.simulation import BaselineContext
 
 
@@ -3442,8 +3442,8 @@ from loguru import logger
 
 from backend.utils.config import ConfigManager
 from backend.utils.factory import create_baseline_service
-from backend.domain.models import Building, WeatherFile, SimulationJob
-from backend.domain.models.enums import BuildingType, SimulationType
+from backend.models import Building, WeatherFile, SimulationJob
+from backend.models.enums import BuildingType, SimulationType
 from backend.services.simulation import BaselineContext
 
 
@@ -3569,7 +3569,7 @@ def run_batch_simulations(
             job.fail(str(e))
 
             # 返回失败结果
-            from backend.domain.models import SimulationResult
+            from backend.models import SimulationResult
             result = SimulationResult(
                 job_id=job.id,
                 output_directory=job.output_directory,
@@ -3662,7 +3662,7 @@ import pickle
 from pathlib import Path
 from typing import Optional
 
-from backend.domain.models import SimulationJob, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 
 
 class SimpleCache:
@@ -3757,8 +3757,8 @@ from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch
 
 from backend.services.simulation import BaselineSimulationService, BaselineContext
-from backend.domain.models import Building, WeatherFile, SimulationJob, SimulationResult
-from backend.domain.models.enums import BuildingType, SimulationType
+from backend.models import Building, WeatherFile, SimulationJob, SimulationResult
+from backend.models.enums import BuildingType, SimulationType
 
 
 @pytest.fixture
@@ -4003,8 +4003,8 @@ from eppy.modeleditor import IDF
 
 from backend.utils.config import ConfigManager
 from backend.utils.factory import create_baseline_service
-from backend.domain.models import Building, WeatherFile, SimulationJob
-from backend.domain.models.enums import BuildingType, SimulationType
+from backend.models import Building, WeatherFile, SimulationJob
+from backend.models.enums import BuildingType, SimulationType
 from backend.services.simulation import BaselineContext
 
 
@@ -5145,7 +5145,7 @@ indent-style = "space"
 ```python
 import pytest
 from pathlib import Path
-from backend.domain.models.building import Building, BuildingType
+from backend.models.building import Building, BuildingType
 
 
 class TestBuilding:

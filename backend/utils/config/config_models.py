@@ -18,6 +18,7 @@ class PathsConfig(BaseModel):
     output_dir: Path = Field(..., description="Output root directory")
     baseline_dir: Path = Field(..., description="Baseline simulation output directory")
     pv_dir: Path = Field(..., description="PV simulation output directory")
+    ecm_dir: Path = Field(..., description="ECM simulation output directory")
     optimization_dir: Path = Field(
         ..., description="Optimization result output directory"
     )
@@ -46,6 +47,7 @@ class PathsConfig(BaseModel):
         "output_dir",
         "baseline_dir",
         "pv_dir",
+        "ecm_dir",
         "optimization_dir",
         "temp_dir",
     )
@@ -133,6 +135,26 @@ class SimulationConfig(BaseModel):
         end = f"{self.end_year}-{self.end_month:02d}-{self.end_day:02d}"
         return f"{start} to {end}"
 
+class ECMParametersConfig(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+    )
+    window_shgc: list[float] = Field(default_factory=list, description="Window SHGC values")
+    window_u_value: list[float] = Field(default_factory=list, description="Window U-value values")
+    visible_transmittance: list[float] = Field(default_factory=list, description="Visible transmittance values")
+    wall_insulation: list[float] = Field(default_factory=list, description="Wall insulation values")
+    infiltration_rate: list[float] = Field(default_factory=list, description="Infiltration rate values")
+    natural_ventilation_area: list[float] = Field(default_factory=list, description="Natural ventilation area values")
+    cooling_cop: list[float] = Field(default_factory=list, description="Cooling COP values")
+    heating_cop: list[float] = Field(default_factory=list, description="Heating COP values")
+    cooling_air_temperature: list[float] = Field(default_factory=list, description="Cooling air temperature values")
+    heating_air_temperature: list[float] = Field(default_factory=list, description="Heating air temperature values")
+    lighting_power_reduction_level: list[int] = Field(default_factory=list, description="Lighting power reduction level values")
+
+    @property
+    def keys(self) -> list[str]:
+        return list(self.model_dump().keys())
 
 class AnalysisConfig(BaseModel):
     model_config = ConfigDict(

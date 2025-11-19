@@ -2224,8 +2224,8 @@ class IBuildingRepository(ABC):
 """
 
 from pathlib import Path
-from backend.domain.models import Building, BuildingType, WeatherFile
-from backend.domain.models import SimulationJob, SimulationType
+from backend.models import Building, BuildingType, WeatherFile
+from backend.models import SimulationJob, SimulationType
 from backend.domain.value_objects import ECMParameters, Location
 
 # 1. 创建建筑对象（自动验证）
@@ -2296,7 +2296,7 @@ try:
     # ... 执行模拟（由服务层完成）...
 
     # 创建结果对象
-    from backend.domain.models import SimulationResult
+    from backend.models import SimulationResult
 
     result = SimulationResult(
         job_id=job.id,
@@ -2349,7 +2349,7 @@ except ValidationError as e:
 from pathlib import Path
 from eppy.modeleditor import IDF
 
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.domain.value_objects import ECMParameters, Location
 from backend.domain.services import ECMApplicator, PVSystemDesigner
 
@@ -2527,7 +2527,7 @@ import pytest
 from pathlib import Path
 from pydantic import ValidationError
 
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.domain.value_objects import ECMParameters
 
 
@@ -2895,8 +2895,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from backend.domain.models import Building, BuildingType, WeatherFile
-from backend.domain.models import SimulationJob, SimulationType
+from backend.models import Building, BuildingType, WeatherFile
+from backend.models import SimulationJob, SimulationType
 from backend.domain.value_objects import ECMParameters, Location
 from backend.domain.services import ECMApplicator, PVSystemDesigner
 
@@ -2946,7 +2946,7 @@ class TestSimulationJobLifecycle:
         )
 
         # 5. 验证初始状态
-        from backend.domain.models.enums import SimulationStatus
+        from backend.models.enums import SimulationStatus
         assert job.status == SimulationStatus.PENDING
 
         # 6. 开始任务
@@ -2955,7 +2955,7 @@ class TestSimulationJobLifecycle:
         assert job.started_at is not None
 
         # 7. 创建结果（模拟完成）
-        from backend.domain.models import SimulationResult
+        from backend.models import SimulationResult
 
         result = SimulationResult(
             job_id=job.id,

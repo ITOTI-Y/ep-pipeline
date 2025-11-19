@@ -128,7 +128,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 
 
 class IBuildingRepository(ABC):
@@ -267,7 +267,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
-from backend.domain.models import WeatherFile
+from backend.models import WeatherFile
 
 
 class IWeatherRepository(ABC):
@@ -333,7 +333,7 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class IResultRepository(ABC):
@@ -456,7 +456,7 @@ from uuid import UUID
 from loguru import logger
 
 from backend.domain.repositories import IBuildingRepository
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.factories import BuildingFactory
 from backend.utils.exceptions import RepositoryError
 
@@ -758,7 +758,7 @@ from uuid import UUID
 from loguru import logger
 
 from backend.domain.repositories import IWeatherRepository
-from backend.domain.models import WeatherFile
+from backend.models import WeatherFile
 from backend.utils.exceptions import RepositoryError
 
 
@@ -957,7 +957,7 @@ import json
 from loguru import logger
 
 from backend.domain.repositories import IResultRepository
-from backend.domain.models import SimulationResult
+from backend.models import SimulationResult
 
 
 class FileSystemResultRepository(IResultRepository):
@@ -1325,7 +1325,7 @@ from sqlalchemy.orm import Session
 from loguru import logger
 
 from backend.domain.repositories import IBuildingRepository
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.infrastructure.repositories.database.models import BuildingModel
 
 
@@ -1422,7 +1422,7 @@ from uuid import UUID
 from functools import wraps
 
 from backend.domain.repositories import IBuildingRepository
-from backend.domain.models import Building, BuildingType
+from backend.models import Building, BuildingType
 from backend.infrastructure.cache import SmartCache
 
 
@@ -1733,7 +1733,7 @@ import pytest
 from pathlib import Path
 
 from backend.infrastructure.repositories.filesystem import FileSystemBuildingRepository
-from backend.domain.models import BuildingType
+from backend.models import BuildingType
 from backend.factories import BuildingFactory
 
 
