@@ -7,7 +7,6 @@ from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
     Building,
     BuildingType,
-    ECMContext,
     SimulationJob,
     Weather,
 )
@@ -20,11 +19,12 @@ from backend.utils.config import ConfigManager
 def test_ecm_process():
     config = ConfigManager(Path("backend/configs"))
 
-    idf_file_path = config.paths.idf_files[1]
+    idf_file_path = config.paths.idf_files[2]
+    building_type = BuildingType.from_str(idf_file_path.stem)
 
     building = Building(
         name=idf_file_path.stem,
-        building_type=BuildingType.OFFICE_LARGE,
+        building_type=building_type,
         location="Chicago",
         idf_file_path=idf_file_path,
     )
@@ -34,6 +34,10 @@ def test_ecm_process():
         location="Chicago",
     )
 
+    sampler = ParameterSampler(config=config)
+    ecm_samples = sampler.sample(n_samples=10, building_type=building_type)
+
+    IDF.setiddname(str(config.paths.idd_file))
     job = SimulationJob(
         building=building,
         weather=weather,
@@ -41,18 +45,9 @@ def test_ecm_process():
         output_directory=config.paths.ecm_dir / building.name,
         output_prefix="ecm_",
         read_variables=True,
+        idf=IDF(str(building.idf_file_path)),
+        ecm_parameters=ecm_samples[0],
     )
-
-    IDF.setiddname(str(config.paths.idd_file))
-    idf = IDF(str(building.idf_file_path))
-
-    context = ECMContext(
-        job=job,
-        idf=idf,
-    )
-
-    sampler = ParameterSampler(config=config)
-    ecm_samples = sampler.sample(n_samples=10, building_type=BuildingType.OFFICE_LARGE)
 
     executor = EnergyPlusExecutor()
     result_parser = ResultParser()
@@ -63,8 +58,9 @@ def test_ecm_process():
         result_parser=result_parser,
         file_cleaner=file_cleaner,
         config=config,
+        job=job,
     )
-    result = service.run(context, ecm_parameters=ecm_samples[0])
+    result = service.run()
 
     with open(config.paths.ecm_dir / building.name / "result.pkl", "wb") as f:
         dump(result, f)

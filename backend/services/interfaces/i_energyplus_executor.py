@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from backend.models import SimulationContext, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 
 
 class IEnergyPlusExecutor(ABC):
@@ -9,13 +9,13 @@ class IEnergyPlusExecutor(ABC):
     @abstractmethod
     def run(
         self,
-        context: SimulationContext,
+        job: SimulationJob,
     ) -> SimulationResult:
         """
         running energyplus simulation
 
         Args:
-            context (SimulationContext): simulation context
+            job (SimulationJob): simulation job
 
         Returns:
             SimulationResult: simulation result

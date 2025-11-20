@@ -1,6 +1,6 @@
 from eppy.modeleditor import IDF
 
-from backend.models import SimulationContext
+from backend.models import SimulationJob
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
@@ -10,9 +10,9 @@ class PeriodApply(IApply):
         super().__init__()
         self._config = config
 
-    def apply(self, context: SimulationContext) -> None:
+    def apply(self, job: SimulationJob) -> None:
         self._logger.info("Applying period configuration")
-        self._configure_simulation_period(context.idf)
+        self._configure_simulation_period(job.idf)
         self._logger.info("Period configuration applied successfully")
 
     def _configure_simulation_period(self, idf: IDF) -> None:

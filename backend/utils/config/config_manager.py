@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .config_models import (
+from backend.models.config_models import (
     AnalysisConfig,
     ECMParametersConfig,
     PathsConfig,
@@ -90,6 +90,7 @@ class ConfigManager:
 
     def _parse_ecm_parameters_config(self) -> ECMParametersConfig:
         ecm_parameters_config = OmegaConf.select(self._raw_config, "ecm_parameters")
+        n_samples = OmegaConf.select(self._raw_config, "n_samples")
         if ecm_parameters_config is None:
             self._logger.warning("ECM parameters config not found; using defaults")
             return ECMParametersConfig()

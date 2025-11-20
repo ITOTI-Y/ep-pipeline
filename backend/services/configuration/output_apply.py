@@ -1,6 +1,6 @@
 from eppy.modeleditor import IDF
 
-from backend.models import SimulationContext
+from backend.models import SimulationJob
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
@@ -10,12 +10,12 @@ class OutputApply(IApply):
         super().__init__()
         self._config = config
 
-    def apply(self, context: SimulationContext) -> None:
+    def apply(self, job: SimulationJob) -> None:
         self._logger.info("Applying output configuration")
-        self._configure_output_control_file(context.idf)
-        self._configure_output_meter(context.idf)
-        self._configure_output_variables(context.idf)
-        self._configure_output_controls(context.idf)
+        self._configure_output_control_file(job.idf)
+        self._configure_output_meter(job.idf)
+        self._configure_output_variables(job.idf)
+        self._configure_output_controls(job.idf)
         self._logger.info("Output configuration applied successfully")
 
     def _configure_output_control_file(self, idf: IDF) -> None:

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from eppy.modeleditor import IDF
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import SimulationStatus, SimulationType
@@ -53,6 +54,10 @@ class SimulationJob(BaseModel):
     read_variables: bool = Field(
         default=True,
         description="Whether to read variables from the EnergyPlus simulation.",
+    )
+    idf: IDF = Field(
+        ...,
+        description="The IDF object for the simulation.",
     )
     ecm_parameters: ECMParameters | None = Field(
         default=None,

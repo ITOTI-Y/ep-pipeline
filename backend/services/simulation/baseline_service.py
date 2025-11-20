@@ -1,7 +1,7 @@
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import BaselineContext, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 from backend.services.configuration import OutputApply, PeriodApply
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
@@ -12,14 +12,16 @@ from backend.services.interfaces import (
 from backend.utils.config import ConfigManager
 
 
-class BaselineService(ISimulationService[BaselineContext]):
+class BaselineService(ISimulationService):
     def __init__(
         self,
         executor: IEnergyPlusExecutor,
         result_parser: IResultParser,
         file_cleaner: IFileCleaner,
         config: ConfigManager,
+        job: SimulationJob,
     ):
+        self._job = job
         self._executor = executor
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
@@ -28,22 +30,22 @@ class BaselineService(ISimulationService[BaselineContext]):
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
 
-    def prepare(self, context: BaselineContext) -> None:
-        self._output_apply.apply(context)
-        self._period_apply.apply(context)
+    def prepare(self) -> None:
+        self._output_apply.apply(self._job)
+        self._period_apply.apply(self._job)
         self._logger.info("Preparation completed successfully")
 
-    def execute(self, context: BaselineContext) -> SimulationResult:
-        self._logger.info(f"Executing baseline simulation for job {context.job.id}")
+    def execute(self) -> SimulationResult:
+        self._logger.info(f"Executing baseline simulation for job {self._job.id}")
 
         try:
             result = self._executor.run(
-                context=context,
+                job=self._job,
             )
 
             result = self._result_parser.parse(
                 result=result,
-                context=context,
+                job=self._job,
             )
             return result
         except Exception as e:
@@ -51,9 +53,9 @@ class BaselineService(ISimulationService[BaselineContext]):
             result.add_error(str(e))
             return result
 
-    def cleanup(self, context: BaselineContext) -> None:
+    def cleanup(self) -> None:
         self._file_cleaner.clean(
-            context=context,
+            job=self._job,
             config=self._config,
         )
 

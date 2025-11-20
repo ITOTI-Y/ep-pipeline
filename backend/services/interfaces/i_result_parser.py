@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from backend.models import SimulationContext, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 
 
 class IResultParser(ABC):
@@ -83,6 +83,6 @@ class IResultParser(ABC):
     def parse(
         self,
         result: SimulationResult,
-        context: SimulationContext,
+        job: SimulationJob,
     ) -> SimulationResult:
         pass

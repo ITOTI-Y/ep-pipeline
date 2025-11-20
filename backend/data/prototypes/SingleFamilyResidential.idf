@@ -51,45 +51,45 @@
     LowerLeftCorner,         !- Starting Vertex Position
     Counterclockwise,        !- Vertex Entry Direction
     Relative;                !- Coordinate System
-
+! 
 ! BEGIN of res.default.var.tmpl
 ! END of res.default.var.tmpl
 !- Geometry from the scalable geometry template
 ! BEGIN of res.geo.sf.tmpl
-
-  BuildingSurface:Detailed,
-    Inter zone floor 1,      !- Name
-    Floor,                   !- Surface Type
-    Interior Floor,          !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Adiabatic,               !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ceiling_unit1,           !- Name
-    Ceiling,                 !- Surface Type
-    Interior Ceiling,        !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Zone,                    !- Outside Boundary Condition
-    attic_unit1,             !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
-    0,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Inter zone floor 1,      !- Name
+!     Floor,                   !- Surface Type
+!     Interior Floor,          !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Adiabatic,               !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     NoSun,                   !- Sun Exposure
+!     NoWind,                  !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     ceiling_unit1,           !- Name
+!     Ceiling,                 !- Surface Type
+!     Interior Ceiling,        !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Zone,                    !- Outside Boundary Condition
+!     attic_unit1,             !- Outside Boundary Condition Object
+!     NoSun,                   !- Sun Exposure
+!     NoWind,                  !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
 
 !-   ===========  ALL OBJECTS IN CLASS: ZONE ===========
 
@@ -126,274 +126,274 @@
     living_unit1,            !- Zone or ZoneList Name
     ,                        !- Space or SpaceList Name
     9.89591078066915;        !- Surface Area {m2}
-
-  BuildingSurface:Detailed,
-    Roof_front_unit1,        !- Name
-    Roof,                    !- Surface Type
-    Exterior Roof,           !- Construction Name
-    attic_unit1,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,4.54990910485622,6.6995631975537,  !- X,Y,Z ==> Vertex 3 {m}
-    0,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Roof_back_unit1,         !- Name
-    Roof,                    !- Surface Type
-    Exterior Roof,           !- Construction Name
-    attic_unit1,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
-    0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
-    0,4.54990910485622,6.6995631975537,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Roof_right_unit1,        !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    attic_unit1,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    3,                       !- Number of Vertices
-    12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 3 {m}
-
-  BuildingSurface:Detailed,
-    Roof_left_unit1,         !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    attic_unit1,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    3,                       !- Number of Vertices
-    0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
-    0,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 3 {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldf_1.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    6.03709094628325,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    6.03709094628325,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    0,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdr_1.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    12.1330909462833,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldb_1.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,9.09981820971244,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdl_1.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    0,9.09981820971244,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldf_1.garage1,      !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    6.096,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    0,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdr_1.garage1,      !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    6.096,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    6.096,6.096,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    6.096,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldb_1.garage1,      !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Zone,                    !- Outside Boundary Condition
-    garage1,                 !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    6.03709094628325,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    6.03709094628325,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdl_1.garage1,      !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,6.096,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    0,6.096,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Roof_front_garage1,      !- Name
-    Roof,                    !- Surface Type
-    Exterior Roof,           !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    6.096,3.048,3.60746341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    0,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Roof_back_garage1,       !- Name
-    Roof,                    !- Surface Type
-    Exterior Roof,           !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    0,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    0,3.048,3.60746341463415,  !- X,Y,Z ==> Vertex 3 {m}
-    6.096,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Roof_right_garage1,      !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    3,                       !- Number of Vertices
-    6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    6.096,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 3 {m}
-
-  BuildingSurface:Detailed,
-    Roof_left_garage1,       !- Name
-    Wall,                    !- Surface Type
-    Gable_end,               !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    3,                       !- Number of Vertices
-    0,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    0,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 3 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_front_unit1,        !- Name
+!     Roof,                    !- Surface Type
+!     Exterior Roof,           !- Construction Name
+!     attic_unit1,             !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,4.54990910485622,6.6995631975537,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_back_unit1,         !- Name
+!     Roof,                    !- Surface Type
+!     Exterior Roof,           !- Construction Name
+!     attic_unit1,             !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,4.54990910485622,6.6995631975537,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_right_unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     attic_unit1,             !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     3,                       !- Number of Vertices
+!     12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 3 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_left_unit1,         !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     attic_unit1,             !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     3,                       !- Number of Vertices
+!     0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,4.54990910485622,6.6995631975537;  !- X,Y,Z ==> Vertex 3 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldf_1.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     6.03709094628325,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.03709094628325,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdr_1.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     12.1330909462833,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldb_1.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,9.09981820971244,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdl_1.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,9.09981820971244,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldf_1.garage1,      !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     6.096,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdr_1.garage1,      !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     6.096,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     6.096,6.096,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     6.096,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldb_1.garage1,      !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Zone,                    !- Outside Boundary Condition
+!     garage1,                 !- Outside Boundary Condition Object
+!     NoSun,                   !- Sun Exposure
+!     NoWind,                  !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     6.03709094628325,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     6.03709094628325,0,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdl_1.garage1,      !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,6.096,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,6.096,2.60156341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_front_garage1,      !- Name
+!     Roof,                    !- Surface Type
+!     Exterior Roof,           !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.096,3.048,3.60746341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_back_garage1,       !- Name
+!     Roof,                    !- Surface Type
+!     Exterior Roof,           !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,3.048,3.60746341463415,  !- X,Y,Z ==> Vertex 3 {m}
+!     6.096,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_right_garage1,      !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     3,                       !- Number of Vertices
+!     6.096,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     6.096,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.096,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 3 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Roof_left_garage1,       !- Name
+!     Wall,                    !- Surface Type
+!     Gable_end,               !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     3,                       !- Number of Vertices
+!     0,6.096,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,3.048,3.60746341463415;  !- X,Y,Z ==> Vertex 3 {m}
 
   Window,
     Window_ldf_1.unit1,      !- Name
@@ -447,74 +447,74 @@
     0,                       !- Left extension from Window/Door Width {m}
     0,                       !- Right extension from Window/Door Width {m}
     0.0152439024390244;      !- Depth {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldf_2.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
-    0,0,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdr_2.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,0,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_ldb_2.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Wall_sdl_2.unit1,        !- Name
-    Wall,                    !- Surface Type
-    Exterior Wall,           !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    ,                        !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
-    0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
-    0,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldf_2.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,0,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,0,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdr_2.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     12.1330909462833,0,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,0,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_ldb_2.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     12.1330909462833,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,9.09981820971244,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Wall_sdl_2.unit1,        !- Name
+!     Wall,                    !- Surface Type
+!     Exterior Wall,           !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     Outdoors,                !- Outside Boundary Condition
+!     ,                        !- Outside Boundary Condition Object
+!     SunExposed,              !- Sun Exposure
+!     WindExposed,             !- Wind Exposure
+!     ,                        !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,9.09981820971244,2.60156341463415,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,0,2.60156341463415,  !- X,Y,Z ==> Vertex 2 {m}
+!     0,0,5.19302682926829,  !- X,Y,Z ==> Vertex 3 {m}
+!     0,9.09981820971244,5.19302682926829;  !- X,Y,Z ==> Vertex 4 {m}
 
   Window,
     Window_ldf_2.unit1,      !- Name
@@ -568,40 +568,40 @@
     0,                       !- Left extension from Window/Door Width {m}
     0,                       !- Right extension from Window/Door Width {m}
     0.0152439024390244;      !- Depth {m}
-
-  BuildingSurface:Detailed,
-    Floor_unit1,             !- Name
-    Floor,                   !- Surface Type
-    Interior Floor,          !- Construction Name
-    living_unit1,            !- Zone Name
-    ,                        !- Space Name
-    GroundSlabPreprocessorAverage,  !- Outside Boundary Condition
-    surfPropOthSdCoefSlabAverage,  !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 3 {m}
-    12.1330909462833,0,0.0101;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    Floor_garage1,           !- Name
-    Floor,                   !- Surface Type
-    Interior Floor,          !- Construction Name
-    garage1,                 !- Zone Name
-    ,                        !- Space Name
-    GroundSlabPreprocessorAverage,  !- Outside Boundary Condition
-    surfPropOthSdCoefSlabAverage,  !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.0,                     !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
-    0,6.096,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
-    6.096,6.096,0.0101,  !- X,Y,Z ==> Vertex 3 {m}
-    6.096,0,0.0101;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Floor_unit1,             !- Name
+!     Floor,                   !- Surface Type
+!     Interior Floor,          !- Construction Name
+!     living_unit1,            !- Zone Name
+!     ,                        !- Space Name
+!     GroundSlabPreprocessorAverage,  !- Outside Boundary Condition
+!     surfPropOthSdCoefSlabAverage,  !- Outside Boundary Condition Object
+!     NoSun,                   !- Sun Exposure
+!     NoWind,                  !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     12.1330909462833,9.09981820971244,0.0101,  !- X,Y,Z ==> Vertex 3 {m}
+!     12.1330909462833,0,0.0101;  !- X,Y,Z ==> Vertex 4 {m}
+! 
+!   BuildingSurface:Detailed,
+!     Floor_garage1,           !- Name
+!     Floor,                   !- Surface Type
+!     Interior Floor,          !- Construction Name
+!     garage1,                 !- Zone Name
+!     ,                        !- Space Name
+!     GroundSlabPreprocessorAverage,  !- Outside Boundary Condition
+!     surfPropOthSdCoefSlabAverage,  !- Outside Boundary Condition Object
+!     NoSun,                   !- Sun Exposure
+!     NoWind,                  !- Wind Exposure
+!     0.0,                     !- View Factor to Ground
+!     4,                       !- Number of Vertices
+!     0,0,0.0101,  !- X,Y,Z ==> Vertex 1 {m}
+!     0,6.096,0.0101,  !- X,Y,Z ==> Vertex 2 {m}
+!     6.096,6.096,0.0101,  !- X,Y,Z ==> Vertex 3 {m}
+!     6.096,0,0.0101;  !- X,Y,Z ==> Vertex 4 {m}
 
   Door,
     Door_ldb_unit1,          !- Name
@@ -2821,180 +2821,180 @@
     0.5,                     !- Blind Right Side Opening Multiplier
     ,                        !- Minimum Slat Angle {deg}
     ;                        !- Maximum Slat Angle {deg}
-
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:CONTROL ===========
-
-  GroundHeatTransfer:Control,
-    gtp_control,             !- Name
-    no,                      !- Run Basement Preprocessor
-    yes;                     !- Run Slab Preprocessor
-
+! 
+!   GroundHeatTransfer:Control,
+!     gtp_control,             !- Name
+!     no,                      !- Run Basement Preprocessor
+!     yes;                     !- Run Slab Preprocessor
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:MATERIALS ===========
-
-  GroundHeatTransfer:Slab:Materials,
-    2,                       !- NMAT: Number of materials
-    0.16,                    !- ALBEDO: Surface Albedo: No Snow
-    0.4,                     !- ALBEDO: Surface Albedo: Snow
-    0.9,                     !- EPSLW: Surface Emissivity: No Snow
-    0.9,                     !- EPSLW: Surface Emissivity: Snow
-    0.75,                    !- Z0: Surface Roughness: No Snow {cm}
-    0.05,                    !- Z0: Surface Roughness: Snow {cm}
-    6,                       !- HIN: Indoor HConv: Downward Flow {W/m2-K}
-    9;                       !- HIN: Indoor HConv: Upward {W/m2-K}
-
+! 
+!   GroundHeatTransfer:Slab:Materials,
+!     2,                       !- NMAT: Number of materials
+!     0.16,                    !- ALBEDO: Surface Albedo: No Snow
+!     0.4,                     !- ALBEDO: Surface Albedo: Snow
+!     0.9,                     !- EPSLW: Surface Emissivity: No Snow
+!     0.9,                     !- EPSLW: Surface Emissivity: Snow
+!     0.75,                    !- Z0: Surface Roughness: No Snow {cm}
+!     0.05,                    !- Z0: Surface Roughness: Snow {cm}
+!     6,                       !- HIN: Indoor HConv: Downward Flow {W/m2-K}
+!     9;                       !- HIN: Indoor HConv: Upward {W/m2-K}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:MATLPROPS ===========
-
-  GroundHeatTransfer:Slab:MatlProps,
-    2300,                    !- RHO: Slab Material density {kg/m3}
-    1200,                    !- RHO: Soil Density {kg/m3}
-    650,                     !- CP: Slab CP {J/kg-K}
-    1200,                    !- CP: Soil CP {J/kg-K}
-    0.9,                     !- TCON: Slab k {W/m-K}
-    1;                       !- TCON: Soil k {W/m-K}
-
+! 
+!   GroundHeatTransfer:Slab:MatlProps,
+!     2300,                    !- RHO: Slab Material density {kg/m3}
+!     1200,                    !- RHO: Soil Density {kg/m3}
+!     650,                     !- CP: Slab CP {J/kg-K}
+!     1200,                    !- CP: Soil CP {J/kg-K}
+!     0.9,                     !- TCON: Slab k {W/m-K}
+!     1;                       !- TCON: Soil k {W/m-K}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:BOUNDCONDS ===========
-
-  GroundHeatTransfer:Slab:BoundConds,
-    FALSE,                   !- EVTR: Is surface evapotranspiration modeled
-    TRUE,                    !- FIXBC: is the lower boundary at a fixed temperature
-    10,                      !- TDEEPin {C}
-    FALSE;                   !- USRHflag: Is the ground surface h specified by the user?
-
+! 
+!   GroundHeatTransfer:Slab:BoundConds,
+!     FALSE,                   !- EVTR: Is surface evapotranspiration modeled
+!     TRUE,                    !- FIXBC: is the lower boundary at a fixed temperature
+!     10,                      !- TDEEPin {C}
+!     FALSE;                   !- USRHflag: Is the ground surface h specified by the user?
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:BLDGPROPS ===========
-
-  GroundHeatTransfer:Slab:BldgProps,
-    10,                      !- IYRS: Number of years to iterate
-    0,                       !- Shape: Slab shape
-    4,                       !- HBLDG: Building height {m}
-    22.22,                   !- TIN1: January Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN2: February Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN3: March Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN4: April Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN5: May Indoor Average Temperature Setpoint {C}
-    23.88,                   !- TIN6: June Indoor Average Temperature Setpoint {C}
-    23.88,                   !- TIN7: July Indoor Average Temperature Setpoint {C}
-    23.88,                   !- TIN8: August Indoor Average Temperature Setpoint {C}
-    23.88,                   !- TIN9: September Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN10: October Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN11: November Indoor Average Temperature Setpoint {C}
-    22.22,                   !- TIN12: December Indoor Average Temperature Setpoint {C}
-    0,                       !- TINAmp: Daily Indoor sine wave variation amplitude {deltaC}
-    0.1;                     !- ConvTol: Convergence Tolerance
-
+! 
+!   GroundHeatTransfer:Slab:BldgProps,
+!     10,                      !- IYRS: Number of years to iterate
+!     0,                       !- Shape: Slab shape
+!     4,                       !- HBLDG: Building height {m}
+!     22.22,                   !- TIN1: January Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN2: February Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN3: March Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN4: April Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN5: May Indoor Average Temperature Setpoint {C}
+!     23.88,                   !- TIN6: June Indoor Average Temperature Setpoint {C}
+!     23.88,                   !- TIN7: July Indoor Average Temperature Setpoint {C}
+!     23.88,                   !- TIN8: August Indoor Average Temperature Setpoint {C}
+!     23.88,                   !- TIN9: September Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN10: October Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN11: November Indoor Average Temperature Setpoint {C}
+!     22.22,                   !- TIN12: December Indoor Average Temperature Setpoint {C}
+!     0,                       !- TINAmp: Daily Indoor sine wave variation amplitude {deltaC}
+!     0.1;                     !- ConvTol: Convergence Tolerance
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:INSULATION ===========
-
-  GroundHeatTransfer:Slab:Insulation,
-    0,                       !- RINS: R value of under slab insulation {m2-K/W}
-    0,                       !- DINS: Width of strip of under slab insulation {m}
-    1.76099742894375,        !- RVINS: R value of vertical insulation {m2-K/W}
-    1.5,                     !- ZVINS: Depth of vertical insulation {m}
-    1;                       !- IVINS: Flag: Is there vertical insulation
-
+! 
+!   GroundHeatTransfer:Slab:Insulation,
+!     0,                       !- RINS: R value of under slab insulation {m2-K/W}
+!     0,                       !- DINS: Width of strip of under slab insulation {m}
+!     1.76099742894375,        !- RVINS: R value of vertical insulation {m2-K/W}
+!     1.5,                     !- ZVINS: Depth of vertical insulation {m}
+!     1;                       !- IVINS: Flag: Is there vertical insulation
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:SLAB:EQUIVALENTSLAB ===========
-
-  GroundHeatTransfer:Slab:EquivalentSlab,
-    2.59994805991784,        !- APRatio: The area to perimeter ratio for this slab {m}
-    0.1,                     !- SLABDEPTH: Thickness of slab on grade {m}
-    15,                      !- CLEARANCE: Distance from edge of slab to domain edge {m}
-    15;                      !- ZCLEARANCE: Distance from bottom of slab to domain bottom {m}
-
+! 
+!   GroundHeatTransfer:Slab:EquivalentSlab,
+!     2.59994805991784,        !- APRatio: The area to perimeter ratio for this slab {m}
+!     0.1,                     !- SLABDEPTH: Thickness of slab on grade {m}
+!     15,                      !- CLEARANCE: Distance from edge of slab to domain edge {m}
+!     15;                      !- ZCLEARANCE: Distance from bottom of slab to domain bottom {m}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:SIMPARAMETERS ===========
-
-  GroundHeatTransfer:Basement:SimParameters,
-    0.1,                     !- F: Multiplier for the ADI solution
-    15;                      !- IYRS: Maximum number of yearly iterations:
-
+! 
+!   GroundHeatTransfer:Basement:SimParameters,
+!     0.1,                     !- F: Multiplier for the ADI solution
+!     15;                      !- IYRS: Maximum number of yearly iterations:
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:MATLPROPS ===========
-
-  GroundHeatTransfer:Basement:MatlProps,
-    6,                       !- NMAT: Number of materials in this domain
-    2243,                    !- Density for Foundation Wall {kg/m3}
-    2243,                    !- density for Floor Slab {kg/m3}
-    311,                     !- density for Ceiling {kg/m3}
-    1500,                    !- density for Soil {kg/m3}
-    2000,                    !- density for Gravel {kg/m3}
-    449,                     !- density for Wood {kg/m3}
-    880,                     !- Specific heat for foundation wall {J/kg-K}
-    880,                     !- Specific heat for floor slab {J/kg-K}
-    1530,                    !- Specific heat for ceiling {J/kg-K}
-    840,                     !- Specific heat for soil {J/kg-K}
-    720,                     !- Specific heat for gravel {J/kg-K}
-    1530,                    !- Specific heat for wood {J/kg-K}
-    1.4,                     !- Thermal conductivity for foundation wall {W/m-K}
-    1.4,                     !- Thermal conductivity for floor slab {W/m-K}
-    0.09,                    !- Thermal conductivity for ceiling {W/m-K}
-    1.1,                     !- thermal conductivity for soil {W/m-K}
-    1.9,                     !- thermal conductivity for gravel {W/m-K}
-    0.12;                    !- thermal conductivity for wood {W/m-K}
-
+! 
+!   GroundHeatTransfer:Basement:MatlProps,
+!     6,                       !- NMAT: Number of materials in this domain
+!     2243,                    !- Density for Foundation Wall {kg/m3}
+!     2243,                    !- density for Floor Slab {kg/m3}
+!     311,                     !- density for Ceiling {kg/m3}
+!     1500,                    !- density for Soil {kg/m3}
+!     2000,                    !- density for Gravel {kg/m3}
+!     449,                     !- density for Wood {kg/m3}
+!     880,                     !- Specific heat for foundation wall {J/kg-K}
+!     880,                     !- Specific heat for floor slab {J/kg-K}
+!     1530,                    !- Specific heat for ceiling {J/kg-K}
+!     840,                     !- Specific heat for soil {J/kg-K}
+!     720,                     !- Specific heat for gravel {J/kg-K}
+!     1530,                    !- Specific heat for wood {J/kg-K}
+!     1.4,                     !- Thermal conductivity for foundation wall {W/m-K}
+!     1.4,                     !- Thermal conductivity for floor slab {W/m-K}
+!     0.09,                    !- Thermal conductivity for ceiling {W/m-K}
+!     1.1,                     !- thermal conductivity for soil {W/m-K}
+!     1.9,                     !- thermal conductivity for gravel {W/m-K}
+!     0.12;                    !- thermal conductivity for wood {W/m-K}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:INSULATION ===========
 !- $r_bsmtwall_SI = $r_bsmtwall/5.6786;
 !- 0.0001;
-
-  GroundHeatTransfer:Basement:Insulation,
-    1.76099742894375e-05,    !- REXT: R Value of any exterior insulation {m2-K/W}
-    True;                    !- INSFULL: Flag: Is the wall fully insulated?
-
+! 
+!   GroundHeatTransfer:Basement:Insulation,
+!     1.76099742894375e-05,    !- REXT: R Value of any exterior insulation {m2-K/W}
+!     True;                    !- INSFULL: Flag: Is the wall fully insulated?
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:SURFACEPROPS ===========
-
-  GroundHeatTransfer:Basement:SurfaceProps,
-    0.16,                    !- ALBEDO: Surface albedo for No snow conditions
-    0.4,                     !- ALBEDO: Surface albedo for snow conditions
-    0.94,                    !- EPSLN: Surface emissivity No Snow
-    0.86,                    !- EPSLN: Surface emissivity with Snow
-    6,                       !- VEGHT: Surface roughness No snow conditions {cm}
-    0.25,                    !- VEGHT: Surface roughness Snow conditions {cm}
-    False;                   !- PET: Flag, Potential evapotranspiration on?
-
+! 
+!   GroundHeatTransfer:Basement:SurfaceProps,
+!     0.16,                    !- ALBEDO: Surface albedo for No snow conditions
+!     0.4,                     !- ALBEDO: Surface albedo for snow conditions
+!     0.94,                    !- EPSLN: Surface emissivity No Snow
+!     0.86,                    !- EPSLN: Surface emissivity with Snow
+!     6,                       !- VEGHT: Surface roughness No snow conditions {cm}
+!     0.25,                    !- VEGHT: Surface roughness Snow conditions {cm}
+!     False;                   !- PET: Flag, Potential evapotranspiration on?
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:BLDGDATA ===========
-
-  GroundHeatTransfer:Basement:BldgData,
-    0.200000006162114,       !- DWALL: Wall thickness {m}
-    0.243828108701145,       !- DSLAB: Floor slab thickness {m}
-    0.3,                     !- DGRAVXY: Width of gravel pit beside basement wall {m}
-    0.2,                     !- DGRAVZN: Gravel depth extending above the floor slab {m}
-    0.1;                     !- DGRAVZP: Gravel depth below the floor slab {m}
-
+! 
+!   GroundHeatTransfer:Basement:BldgData,
+!     0.200000006162114,       !- DWALL: Wall thickness {m}
+!     0.243828108701145,       !- DSLAB: Floor slab thickness {m}
+!     0.3,                     !- DGRAVXY: Width of gravel pit beside basement wall {m}
+!     0.2,                     !- DGRAVZN: Gravel depth extending above the floor slab {m}
+!     0.1;                     !- DGRAVZP: Gravel depth below the floor slab {m}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:INTERIOR ===========
-
-  GroundHeatTransfer:Basement:Interior,
-    True,                    !- COND: Flag: Is the basement conditioned?
-    0.92,                    !- HIN: Downward convection only heat transfer coefficient {W/m2-K}
-    4.04,                    !- HIN: Upward convection only heat transfer coefficient {W/m2-K}
-    3.08,                    !- HIN: Horizontal convection only heat transfer coefficient {W/m2-K}
-    6.13,                    !- HIN: Downward combined (convection and radiation) heat transfer coefficient {W/m2-K}
-    9.26,                    !- HIN: Upward combined (convection and radiation) heat transfer coefficient {W/m2-K}
-    8.29;                    !- HIN: Horizontal combined (convection and radiation) heat transfer coefficient {W/m2-K}
-
+! 
+!   GroundHeatTransfer:Basement:Interior,
+!     True,                    !- COND: Flag: Is the basement conditioned?
+!     0.92,                    !- HIN: Downward convection only heat transfer coefficient {W/m2-K}
+!     4.04,                    !- HIN: Upward convection only heat transfer coefficient {W/m2-K}
+!     3.08,                    !- HIN: Horizontal convection only heat transfer coefficient {W/m2-K}
+!     6.13,                    !- HIN: Downward combined (convection and radiation) heat transfer coefficient {W/m2-K}
+!     9.26,                    !- HIN: Upward combined (convection and radiation) heat transfer coefficient {W/m2-K}
+!     8.29;                    !- HIN: Horizontal combined (convection and radiation) heat transfer coefficient {W/m2-K}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:COMBLDG ===========
-
-  GroundHeatTransfer:Basement:ComBldg,
-    21,                      !- January average temperature {C}
-    21,                      !- February average temperature {C}
-    21,                      !- March average temperature {C}
-    21,                      !- April average temperature {C}
-    24,                      !- May average temperature {C}
-    24,                      !- June average temperature {C}
-    24,                      !- July average temperature {C}
-    24,                      !- August average temperature {C}
-    24,                      !- September average temperature {C}
-    24,                      !- October average temperature {C}
-    21,                      !- November average temperature {C}
-    21,                      !- December average temperature {C}
-    21;                      !- Daily variation sine wave amplitude {deltaC}
-
+! 
+!   GroundHeatTransfer:Basement:ComBldg,
+!     21,                      !- January average temperature {C}
+!     21,                      !- February average temperature {C}
+!     21,                      !- March average temperature {C}
+!     21,                      !- April average temperature {C}
+!     24,                      !- May average temperature {C}
+!     24,                      !- June average temperature {C}
+!     24,                      !- July average temperature {C}
+!     24,                      !- August average temperature {C}
+!     24,                      !- September average temperature {C}
+!     24,                      !- October average temperature {C}
+!     21,                      !- November average temperature {C}
+!     21,                      !- December average temperature {C}
+!     21;                      !- Daily variation sine wave amplitude {deltaC}
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:EQUIVSLAB ===========
-
-  GroundHeatTransfer:Basement:EquivSlab,
-    2.59994805991784,        !- APRatio: The area to perimeter ratio for this slab {m}
-    True;                    !- EquivSizing: Flag
-
+! 
+!   GroundHeatTransfer:Basement:EquivSlab,
+!     2.59994805991784,        !- APRatio: The area to perimeter ratio for this slab {m}
+!     True;                    !- EquivSizing: Flag
+! 
 !-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:EQUIVAUTOGRID ===========
-
-  GroundHeatTransfer:Basement:EquivAutoGrid,
-    15,                      !- CLEARANCE: Distance from outside of wall to edge of 3-D ground domain {m}
-    0.1,                     !- SlabDepth: Thickness of the floor slab {m}
-    1.21914054350572;        !- BaseDepth: Depth of the basement wall below grade {m}
+! 
+!   GroundHeatTransfer:Basement:EquivAutoGrid,
+!     15,                      !- CLEARANCE: Distance from outside of wall to edge of 3-D ground domain {m}
+!     0.1,                     !- SlabDepth: Thickness of the floor slab {m}
+!     1.21914054350572;        !- BaseDepth: Depth of the basement wall below grade {m}
 
 !- Process internal gains from the appliances.template..
 ! BEGIN of res.appliances.tmpl
@@ -5880,559 +5880,818 @@
     SumOrAverage,            !- Aggregation Type for Variable or Meter 5
     Zone Total Internal Total Heat Gain,  !- Variable or Meter 6 Name
     SumOrAverage;            !- Aggregation Type for Variable or Meter 6
+! 
+! -------------------------------------------------------------
+! New objects created from ExpandObjects
+! -------------------------------------------------------------
+! 
 
-! GPARM parameters as run:
-!    ID = US+SF+CZ5A+hp+slab+IECC_2024
-!    weatherfile = USA_NY_Buffalo.Niagara.Intl.AP.725280_TMY3.epw
-!    climate_zone = Climate Zone 5
-!    moisture_regime = Moist
-!    humidity_designation =
-!    tropical_designation = Not Tropical
-!    bldg_type = Single-Family
-!    fndn_type = slab
-!    system_tag = Heat Pump
-!    code = IECC_2024
-!    permits = 1721.1612014281
-!    cfm25 = 4
-!    state_abbr = NY
-!    iecc2024_ec = yes
-!    uef = 3.30
-!    re = 4.05
-!    afue = 1
-!    seer = 15.0526315789474
-!    seer2 = 14.3
-!    appliances_credit =
-!    u_window = 0.25
-!    shgc_window = 0.4
-!    dhw_source_fuel = electricity
-!    dhw_heater_eff = 1
-!    afn_control = MultizoneWithDistribution
-!    dhw_type = heatpump
-!    webposting = Yes
-!    DEBUG_TYPE = no
-!    hourly_output = no
-!    TEMPLATE_PATH = template/v23.1
-!    default_values = regular
-! Default values:
-!    ach50 = 3
-!    afue = 1
-!    heating_coil =
-!    heating_fuel = electricity
-!    hspf =
-!    leakage_ratio = 0.0792471467691846
-!    seer =
-!    system = heatpump
-!    ua_si = 0.659266099359746
-! GPARM computed values:
-!    LPD_hardwired = 1.05216214401829
-!    LPD_plugin = 0.478467682251396
-!    cfa_fndn_per_unit = 0
-!    cfa_per_unit = 2376
-!    efficacy_ratio_cfl = 0.272727272727273
-!    efficacy_ratio_inc = 1
-!    efficacy_ratio_led = 0.230769230769231
-!    efficacy_ratio_lf = 0.170454545454545
-!    ela = 55.3975339640825
-!    f_cfl_hw = 0.2
-!    f_inc_hw = 0
-!    f_led_hw = 0.8
-!    f_lf_hw = 0
-!    ffa_fndn_per_unit = 0
-!    gtp_filename =
-!    internal_gains = 86760.8
-!    internal_gains_W = 1059.19523390956
-!    internal_gains_W_heatedbsmt = 0
-!    internal_gains_heatedbsmt = 0
-!    internal_gains_kWhyr = 9278.55024904776
-!    internal_gains_kWhyr_heatedbsmt = 0
-!    long_dim =
-!    ltg_exterior = 189.401978076923
-!    ltg_exterior_W = 43.2424607481559
-!    ltg_exterior_benchmark = 344.52
-!    ltg_garage = 21.9902447552448
-!    ltg_garage_W = 7.16294617434682
-!    ltg_garage_benchmark = 40
-!    ltg_hardwired = 713.272060441958
-!    ltg_hardwired_W = 232.336176039726
-!    ltg_hw_benchmark = 1297.4336
-!    ltg_plugin = 324.3584
-!    ltg_plugin_W = 105.654201954397
-!    ltg_plugin_benchmark = 324.3584
-!    n_bedrooms = 3
-!    n_ppl = 3
-!    short_dim =
-!    window_area = 355.236927696469
-! Code requirements: IECC_2024
-!    r_bsmtwall = 19
-!    r_ceiling = 49
-!    r_crawlwall = 19
-!    r_floor = 30
-!    r_masswall = 13
-!    r_sheathing = 5
-!    r_slab = 10
-!    r_slab_depth = 4
-!    r_wall = 20
-!    shgc_skylight = 0.4
-!    shgc_window = 0.4
-!    u_skylight = 0.55
-!    u_window = 0.25
-! GPARM parameters as run:
-!    ID = US+SF+CZ5A+hp+slab+IECC_2024
-!    weatherfile = USA_NY_Buffalo.Niagara.Intl.AP.725280_TMY3.epw
-!    climate_zone = Climate Zone 5
-!    moisture_regime = Moist
-!    humidity_designation =
-!    tropical_designation = Not Tropical
-!    bldg_type = Single-Family
-!    fndn_type = slab
-!    system_tag = Heat Pump
-!    code = IECC_2024
-!    permits = 1721.1612014281
-!    cfm25 = 4
-!    state_abbr = NY
-!    iecc2024_ec = yes
-!    uef = 3.30
-!    re = 4.05
-!    afue = 1
-!    seer = 15.0526315789474
-!    seer2 = 14.3
-!    appliances_credit =
-!    u_window = 0.25
-!    shgc_window = 0.4
-!    dhw_source_fuel = electricity
-!    dhw_heater_eff = 1
-!    afn_control = MultizoneWithDistribution
-!    dhw_type = heatpump
-!    webposting = Yes
-!    DEBUG_TYPE = no
-!    hourly_output = no
-!    TEMPLATE_PATH = template/v23.1
-!    default_values = regular
-! =====================================================
-!           Report on template variables
+BuildingSurface:Detailed,
+  Inter zone floor 1,                                      !- Name
+  Floor,                                                   !- Surface Type
+  Interior Floor,                                          !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Adiabatic,                                               !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  NoSun,                                                   !- Sun Exposure
+  NoWind,                                                  !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  ceiling_unit1,                                           !- Name
+  Ceiling,                                                 !- Surface Type
+  Interior Ceiling,                                        !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Zone,                                                    !- Outside Boundary Condition
+  attic_unit1,                                             !- Outside Boundary Condition Object
+  NoSun,                                                   !- Sun Exposure
+  NoWind,                                                  !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  5.19302682926829,                                        !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  5.19302682926829,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  5.19302682926829,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  9.09981820971244,                                        !- Vertex 4 Y-coordinate
+  5.19302682926829;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_front_unit1,                                        !- Name
+  Roof,                                                    !- Surface Type
+  Exterior Roof,                                           !- Construction Name
+  attic_unit1,                                             !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  5.19302682926829,                                        !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  5.19302682926829,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  4.54990910485622,                                        !- Vertex 3 Y-coordinate
+  6.6995631975537,                                         !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  4.54990910485622,                                        !- Vertex 4 Y-coordinate
+  6.6995631975537;                                         !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_back_unit1,                                         !- Name
+  Roof,                                                    !- Surface Type
+  Exterior Roof,                                           !- Construction Name
+  attic_unit1,                                             !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  5.19302682926829,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  5.19302682926829,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  4.54990910485622,                                        !- Vertex 3 Y-coordinate
+  6.6995631975537,                                         !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  4.54990910485622,                                        !- Vertex 4 Y-coordinate
+  6.6995631975537;                                         !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_right_unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  attic_unit1,                                             !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  3,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  5.19302682926829,                                        !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  5.19302682926829,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  4.54990910485622,                                        !- Vertex 3 Y-coordinate
+  6.6995631975537;                                         !- Vertex 3 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_left_unit1,                                         !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  attic_unit1,                                             !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  3,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  5.19302682926829,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  5.19302682926829,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  4.54990910485622,                                        !- Vertex 3 Y-coordinate
+  6.6995631975537;                                         !- Vertex 3 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldf_1.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  6.03709094628325,                                        !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  6.03709094628325,                                        !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdr_1.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldb_1.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  9.09981820971244,                                        !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdl_1.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  9.09981820971244,                                        !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldf_1.garage1,                                      !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  6.096,                                                   !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  6.096,                                                   !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdr_1.garage1,                                      !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  6.096,                                                   !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  6.096,                                                   !- Vertex 2 X-coordinate
+  6.096,                                                   !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  6.096,                                                   !- Vertex 3 X-coordinate
+  6.096,                                                   !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  6.096,                                                   !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldb_1.garage1,                                      !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Zone,                                                    !- Outside Boundary Condition
+  garage1,                                                 !- Outside Boundary Condition Object
+  NoSun,                                                   !- Sun Exposure
+  NoWind,                                                  !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  6.03709094628325,                                        !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  6.03709094628325,                                        !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdl_1.garage1,                                      !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  6.096,                                                   !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  2.60156341463415,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  6.096,                                                   !- Vertex 4 Y-coordinate
+  2.60156341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_front_garage1,                                      !- Name
+  Roof,                                                    !- Surface Type
+  Exterior Roof,                                           !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  6.096,                                                   !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  6.096,                                                   !- Vertex 3 X-coordinate
+  3.048,                                                   !- Vertex 3 Y-coordinate
+  3.60746341463415,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  3.048,                                                   !- Vertex 4 Y-coordinate
+  3.60746341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_back_garage1,                                       !- Name
+  Roof,                                                    !- Surface Type
+  Exterior Roof,                                           !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  6.096,                                                   !- Vertex 1 X-coordinate
+  6.096,                                                   !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  6.096,                                                   !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  3.048,                                                   !- Vertex 3 Y-coordinate
+  3.60746341463415,                                        !- Vertex 3 Z-coordinate
+  6.096,                                                   !- Vertex 4 X-coordinate
+  3.048,                                                   !- Vertex 4 Y-coordinate
+  3.60746341463415;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_right_garage1,                                      !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  3,                                                       !- Number of Vertices
+  6.096,                                                   !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  6.096,                                                   !- Vertex 2 X-coordinate
+  6.096,                                                   !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  6.096,                                                   !- Vertex 3 X-coordinate
+  3.048,                                                   !- Vertex 3 Y-coordinate
+  3.60746341463415;                                        !- Vertex 3 Z-coordinate
+
+BuildingSurface:Detailed,
+  Roof_left_garage1,                                       !- Name
+  Wall,                                                    !- Surface Type
+  Gable_end,                                               !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  3,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  6.096,                                                   !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  3.048,                                                   !- Vertex 3 Y-coordinate
+  3.60746341463415;                                        !- Vertex 3 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldf_2.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  5.19302682926829,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  5.19302682926829;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdr_2.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  12.1330909462833,                                        !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  5.19302682926829,                                        !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  5.19302682926829;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_ldb_2.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  12.1330909462833,                                        !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  5.19302682926829,                                        !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  9.09981820971244,                                        !- Vertex 4 Y-coordinate
+  5.19302682926829;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Wall_sdl_2.unit1,                                        !- Name
+  Wall,                                                    !- Surface Type
+  Exterior Wall,                                           !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  Outdoors,                                                !- Outside Boundary Condition
+  ,                                                        !- Outside Boundary Condition Object
+  SunExposed,                                              !- Sun Exposure
+  WindExposed,                                             !- Wind Exposure
+  ,                                                        !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  9.09981820971244,                                        !- Vertex 1 Y-coordinate
+  2.60156341463415,                                        !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  0,                                                       !- Vertex 2 Y-coordinate
+  2.60156341463415,                                        !- Vertex 2 Z-coordinate
+  0,                                                       !- Vertex 3 X-coordinate
+  0,                                                       !- Vertex 3 Y-coordinate
+  5.19302682926829,                                        !- Vertex 3 Z-coordinate
+  0,                                                       !- Vertex 4 X-coordinate
+  9.09981820971244,                                        !- Vertex 4 Y-coordinate
+  5.19302682926829;                                        !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Floor_unit1,                                             !- Name
+  Floor,                                                   !- Surface Type
+  Interior Floor,                                          !- Construction Name
+  living_unit1,                                            !- Zone Name
+  ,                                                        !- Space Name
+  OtherSideCoefficients,                                   !- Outside Boundary Condition
+  surfPropOthSdCoefSlabAverage,                            !- Outside Boundary Condition Object
+  NoSun,                                                   !- Sun Exposure
+  NoWind,                                                  !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  9.09981820971244,                                        !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  12.1330909462833,                                        !- Vertex 3 X-coordinate
+  9.09981820971244,                                        !- Vertex 3 Y-coordinate
+  0.0101,                                                  !- Vertex 3 Z-coordinate
+  12.1330909462833,                                        !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  0.0101;                                                  !- Vertex 4 Z-coordinate
+
+BuildingSurface:Detailed,
+  Floor_garage1,                                           !- Name
+  Floor,                                                   !- Surface Type
+  Interior Floor,                                          !- Construction Name
+  garage1,                                                 !- Zone Name
+  ,                                                        !- Space Name
+  OtherSideCoefficients,                                   !- Outside Boundary Condition
+  surfPropOthSdCoefSlabAverage,                            !- Outside Boundary Condition Object
+  NoSun,                                                   !- Sun Exposure
+  NoWind,                                                  !- Wind Exposure
+  0.0,                                                     !- View Factor to Ground
+  4,                                                       !- Number of Vertices
+  0,                                                       !- Vertex 1 X-coordinate
+  0,                                                       !- Vertex 1 Y-coordinate
+  0.0101,                                                  !- Vertex 1 Z-coordinate
+  0,                                                       !- Vertex 2 X-coordinate
+  6.096,                                                   !- Vertex 2 Y-coordinate
+  0.0101,                                                  !- Vertex 2 Z-coordinate
+  6.096,                                                   !- Vertex 3 X-coordinate
+  6.096,                                                   !- Vertex 3 Y-coordinate
+  0.0101,                                                  !- Vertex 3 Z-coordinate
+  6.096,                                                   !- Vertex 4 X-coordinate
+  0,                                                       !- Vertex 4 Y-coordinate
+  0.0101;                                                  !- Vertex 4 Z-coordinate
+ Output:PreprocessorMessage,GroundTempCalc - Slab,Warning,
+ Slab thickness [0.100 m] reset to 0.122 m  for computational stability.;
+
+! ========================================================================
+! The following was created by the Slab preprocessor program.
+! Check the convergence message at the end of this file.
+! Weather File Location=Chicago/Midway IL USA TMY--14819
 !
-! -----------------------------
-! Variables changed in template:
-! -----------------------------
+!  Monthly Slab Outside Face Temperatures, C and Heat Fluxes(loss), W/(m^2)
+!  Perimeter Area: 67.20
+!  Core Area:      40.96
 !
-! ERRNO:  'Inappropriate ioctl for device' --> ''
-! EXTENDED_OS_ERROR:  'Inappropriate ioctl for device' --> ''
-! OS_ERROR:  'Inappropriate ioctl for device' --> ''
-! afue:  '' --> '1'
-! dhw_heater_eff:  '' --> '1'
-! dhw_source_fuel:  '' --> 'electricity'
-! dhw_type:  '' --> 'heatpump'
-! fndn_type:  'Slab' --> 'slab'
-! humidity_designation:  'Not Warm-Humid' --> ''
-! seer:  '' --> '15.0526315789474'
-! seer2:  '' --> '14.3'
-!
-! ---------------------------------
-! New variables created in template:
-! ---------------------------------
-!
-! AirLoopReturn_length:  '0.1'
-! AirLoopSupply_length:  '0.1'
-! CAPw:  '4.2'
-! CZ1:  'Climate Zone 1'
-! CZ2:  'Climate Zone 2'
-! CZ3:  'Climate Zone 3'
-! CZ4:  'Climate Zone 4'
-! CZ5:  'Climate Zone 5'
-! CZ6:  'Climate Zone 6'
-! CZ7:  'Climate Zone 7'
-! CZ8:  'Climate Zone 8'
-! C_ela_garage:  '49.6335482376361'
-! Cwappl:  '63.400420808242'
-! HERS_setback:  '1.1111'
-! IMEF:  '2.06'
-! LPD_hardwired:  '1.05216214401829'
-! LPD_plugin:  '0.478467682251396'
-! MainReturn_length:  '1'
-! MainTrunk_length:  '2'
-! PROJECT_PATH:  '.'
-! Qfan:  '89.3991222124677'
-! Qinf:  '34.6885471347716'
-! Qtot:  '101.28'
-! RMC:  '0.371966249235033'
-! SAF:  '1'
-! SAF_ext:  '1'
-! SAF_gar:  '1'
-! SCY:  '303.5'
-! S_overhang:  '0.0152439024390244'
-! S_overhang_pf:  '0.01'
-! Wsf:  '0.65'
-! ZoneReturn1_length:  '6.85'
-! ZoneReturn2_length:  '1.2'
-! ZoneSupply1_length:  '1'
-! ZoneSupply2_length:  '13.95'
-! ZoneSupplyLink2_length:  '0.0001'
-! abs_airflow_conv_tol:  '1e-05'
-! ac_curve_type:  'default'
-! ach50:  '3'
-! ach50_garage:  '8'
-! add_pkg_dhw:  'no'
-! adjFmix:  '0.71774432158005'
-! ann_op_hrs_ext_ltg:  '4380'
-! ann_op_hrs_int_ltg_mh:  '3070'
-! ann_op_hrs_int_ltg_site:  '2858'
-! ann_op_hrs_mels:  '5928'
-! ann_op_hrs_ppl:  '6031'
-! aspect_ratio:  '1.33333333333333'
-! atticvent:  '0.37'
-! atticvent_cm2:  '3700'
-! bare_masonry:  'no'
-! base_watts:  '280'
-! bath_gpm:  '4.4'
-! bath_peak_flow:  '0.00027764'
-! bldg_azimuth:  '0'
-! boiler_eff:  '0.8'
-! branch_tag:  'AirLoopHVAC:UnitaryHeatPump:AirToAir'
-! bsmt_zone_tag:  'living_unit1'
-! cWgpd:  '0.994367986438694'
-! cdACY:  '228.090644973852'
-! cdCEF_elec:  '3.73'
-! cdCEF_gas:  '3.3'
-! ceil_area:  '110.408921933086'
-! ceil_insulation:  'fiberglass_blown'
-! ceiling_framing_fraction:  '0.07'
-! ceiling_ht:  '2.59146341463415'
-! cfa_fndn_per_unit:  '0'
-! cfa_per_unit:  '2376'
-! cfa_per_unit_sqmt:  '220.817843866171'
-! cfa_total:  '2376'
-! cfa_total_fndn:  '0'
-! cfa_total_sqmt:  '220.817843866171'
-! cfm50:  '1009.8'
-! cfm50_garage:  '631.111111111111'
-! clg_EIR_ff_curve:  'HPACCOOLEIRFFF'
-! clg_EIR_ft_curve:  'HPACCOOLEIRFT'
-! clg_PLFR_curve:  'HPACCOOLPLFFPLR'
-! clg_cap_ff_curve:  'HPACCoolCapFFF'
-! clg_cap_ft_curve:  'HPACCoolCapFT'
-! clotheswasher_peak_flow:  '1.6219189818e-06'
-! code_original:  'IECC_2024'
-! concrete_density:  '135'
-! cond_crawlspace:  'no'
-! conv_accel_limit:  '0'
-! cooling_airflow_cms:  'autosize'
-! cooling_airflow_cms_lowspeed:  'autosize'
-! cooling_cap:  'autosize'
-! cooling_cap_lowspeed:  'autosize'
-! cooling_setpt:  '75'
-! cooling_shr:  'autosize'
-! cop_cooling:  '4.30390188093723'
-! cop_cooling_lowspeed:  '5.37987735117154'
-! cop_heating:  '3.8377982946518'
-! cop_heating_lowspeed:  '4.79724786831475'
-! crawlvent:  '0.37'
-! cwACY:  '230.138001162115'
-! cwAGC:  '12'
-! cwLCY:  '312'
-! cwLER:  '152'
-! dWcap:  '12'
-! dWcpy:  '193.1'
-! dWkWh_cyc:  '0.609195823002766'
-! dWkWh_yr:  '117.635713421834'
-! daily_bath_gal:  '6'
-! daily_shower_gal:  '23.9'
-! daily_sink_gal:  '21.1'
-! dday_sched_type:  'annual'
-! dhw_heater_control:  'Cycle'
-! dhw_multiplier:  '0.567'
-! dhw_pipe_const:  'Insulated pipe'
-! dhw_pipe_length:  '2'
-! dhw_pipe_loc_unit:  'living_unit1'
-! dhw_sav_2012:  '0.1'
-! dhw_savings_factor:  '0.433'
-! dhw_savings_mult:  '1'
-! dhw_setpt_sch:  'dhw_setpt_hpwh'
-! dhw_tank_loss_SI:  '0.232135950478784'
-! dhw_tank_size:  '80'
-! dhw_tank_size_SI:  '0.30283288'
-! dishwasher_peak_flow:  '6.36685353e-07'
-! dolperTherm:  '1.09'
-! dolperkWh:  '0.12'
-! door_area:  '3.71747211895911'
-! door_ht:  '2.13414634146341'
-! door_ldb_l:  '1.74190122145513'
-! door_t:  '0.0507234881837073'
-! duct_loc:  'attic'
-! dwAGC:  '22.32'
-! dwEnergyFactor:  '0.64'
-! dwLER:  '270'
-! ef:  '3.38813'
-! efficacy_ratio_cfl:  '0.272727272727273'
-! efficacy_ratio_inc:  '1'
-! efficacy_ratio_led:  '0.230769230769231'
-! efficacy_ratio_lf:  '0.170454545454545'
-! ela:  '55.3975339640825'
-! ela_ceil:  '0.011939399618037'
-! ela_floor:  '0.011939399618037'
-! ela_garage:  '34.6226967844005'
-! ela_garage_gable:  '0.00186143158811865'
-! ela_garage_longwall:  '0.0037228631762373'
-! ela_garage_roof:  '0.0037228631762373'
-! ela_garage_shared_wall:  '0.00170831659412835'
-! ela_garage_shortwall:  '0.0037228631762373'
-! ela_longdim_wall:  '0.00340012477060435'
-! ela_nongarage_wall:  '0.001691808176476'
-! ela_shortdim_wall:  '0.00255009357795326'
-! ela_sqcm:  '357.402730122675'
-! ela_sqcm_garage:  '223.371790574238'
-! ela_sqm:  '0.0357402730122675'
-! ela_sqm_garage:  '0.0223371790574238'
-! elecH2O:  '0.0178'
-! eri_type:  'eri_iecc'
-! erv:  'no'
-! erv_latent_eff:  '0'
-! estar_appl:  'none'
-! ext_ltg_control:  ''
-! ext_ltg_sch:  'ExteriorLighting'
-! ext_roof_emissivity:  '0.9'
-! ext_roof_solar_absorptance:  '0.75'
-! ext_wall_emissivity:  '0.7'
-! ext_wall_type:  'wood_framed'
-! fEff:  '0.95'
-! f_cfl_ext:  '0.2'
-! f_cfl_gar:  '0.2'
-! f_cfl_hw:  '0.2'
-! f_inc_ext:  '0'
-! f_inc_gar:  '0'
-! f_inc_hw:  '0'
-! f_led_ext:  '0.8'
-! f_led_gar:  '0.8'
-! f_led_hw:  '0.8'
-! f_lf_ext:  '0'
-! f_lf_gar:  '0'
-! f_lf_hw:  '0'
-! facade_area:  '853'
-! facade_lpd:  '0.075'
-! facade_watts:  '63.975'
-! fan_eff:  '0.58'
-! fan_power_per_ton:  '112'
-! fan_total_eff:  '0.50054'
-! ffa_fndn_per_unit:  '0'
-! ffa_total_fndn:  '0'
-! floor_area:  '110.408921933086'
-! fndn_zone:  'living'
-! fndn_zone_unit:  'living_unit1'
-! force_other_fndn_R0:  'yes'
-! foundn_depth:  '0'
-! fraction_ceil_under_attic:  '0.7'
-! framing_fraction:  '0'
-! furred_framing_fraction:  '0.25'
-! gain_ppl:  '2120.48051567536'
-! gar_ltg_sch:  'InteriorLightingHE'
-! garage:  'yes'
-! garage_area:  '400'
-! garage_door_width:  '4.8768'
-! garage_door_x_origin:  '0.6096'
-! garage_length:  '6.096'
-! garage_size:  '2'
-! garage_width:  '6.096'
-! garage_x_origin:  '6.03709094628325'
-! garage_y_origin:  '-6.096'
-! garage_z_vertex:  '0.0101'
-! gasH2O:  '0.3914'
-! grout_cell_spacing:  '96'
-! gtp_filename:  ''
-! gtp_ref_floor:  'GroundSlabPreprocessorAverage'
-! gtp_ref_floor_obj:  'surfPropOthSdCoefSlabAverage'
-! has_ext_ltg_control:  'no'
-! has_occ_sensors:  'no'
-! has_ventilation:  'yes'
-! heat_avail_sched:  'always_avail'
-! heating_SAT:  '32.22'
-! heating_airflow_cms:  'autosize'
-! heating_airflow_cms_lowspeed:  'autosize'
-! heating_cap:  'autosize'
-! heating_cap_lowspeed:  'autosize'
-! heating_coil:  'electric'
-! heating_fuel:  'electricity'
-! heating_setpt:  '72'
-! hers_dhw_gains_W:  '1.04420541093893'
-! hp_curve_type:  'default'
-! hp_sizing_type:  'auto'
-! hpwh_compressor_loc:  'Zone'
-! hpwh_inlet_air_config:  'ZoneAirOnly'
-! hpwh_n_nodes:  '12'
-! hrv:  'yes'
-! hrv_aval:  'always_avail'
-! hrv_sensible_eff:  '0.75'
-! hspf:  '8.82352941176471'
-! hspf2:  '7.5'
-! htg_EIR_ff_curve:  'HPACHeatEIRFFF'
-! htg_EIR_ft_curve:  'HPACHeatEIRFT'
-! htg_PLFR_curve:  'HPACCOOLPLFFPLR'
-! htg_cap_ff_curve:  'HPACHeatCapFFF'
-! htg_cap_ft_curve:  'HPACHeatCapFT'
-! htg_defrost_EIR_ft:  'Defrost_EIR_FT'
-! hvac_type:  'heatpump'
-! hw_ltg_sch:  'InteriorLightingHE'
-! i:  '3'
-! iecc_mels_adj_W:  '340.847218482321'
-! iecc_mels_adj_W_heatedbsmt:  '0'
-! iecc_mels_adj_W_m2:  '1.54356736989469'
-! iecc_mels_adj_kWhyr:  '1515.4067333724'
-! iecc_mels_adj_kWhyr_heatedbsmt:  '0'
-! insulation_loc:  'exterior'
-! lamp_ratio_cfl:  '0.2'
-! lamp_ratio_inc:  '0'
-! lamp_ratio_led:  '0.8'
-! lamp_ratio_lf:  '0'
-! landscape_area:  '3000'
-! landscape_lpd:  '0.025'
-! landscape_watts:  '75'
-! leakage_ratio:  '0.0792471467691846'
-! leakage_ratio_return1:  '0.033716953749622'
-! leakage_ratio_return2:  '0.00590661963497028'
-! leakage_ratio_supply1:  '0.00265040624646102'
-! leakage_ratio_supply2:  '0.0369731671381313'
-! lgt_high_eff_ratio:  '0'
-! long_dim:  '12.1330909462833'
-! longdim_wall_area:  '31.4424612937218'
-! low_flow_shower:  '0'
-! low_flow_sink:  '0'
-! ltg_exterior:  '189.401978076923'
-! ltg_exterior_W:  '43.2424607481559'
-! ltg_exterior_benchmark:  '344.52'
-! ltg_garage:  '21.9902447552448'
-! ltg_garage_W:  '7.16294617434682'
-! ltg_garage_benchmark:  '40'
-! ltg_hardwired:  '713.272060441958'
-! ltg_hardwired_W:  '232.336176039726'
-! ltg_hardwired_W_heatedbsmt:  '0'
-! ltg_hardwired_heatedbsmt:  '0'
-! ltg_hw_benchmark:  '1297.4336'
-! ltg_hw_benchmark_heatedbsmt:  '0'
-! ltg_plugin:  '324.3584'
-! ltg_plugin_W:  '105.654201954397'
-! ltg_plugin_W_heatedbsmt:  '0'
-! ltg_plugin_benchmark:  '324.3584'
-! ltg_plugin_benchmark_heatedbsmt:  '0'
-! ltg_plugin_heatedbsmt:  '0'
-! ltg_radfrac:  '0.6'
-! ltg_visfrac:  '0.2'
-! main_return_duct_loc:  'attic'
-! main_return_duct_loc_unit:  'attic_unit1'
-! main_supply_duct_loc:  'attic'
-! main_supply_duct_loc_unit:  'attic_unit1'
-! max_dhw_temp:  '51'
-! max_supply:  '0.566'
-! misc_eqpmt2_type:  'ElectricEquipment'
-! motor_eff:  '0.863'
-! my_coil_type:  'Coil:Cooling:DX:SingleSpeed'
-! my_coil_type_heating:  'Coil:Heating:DX:SingleSpeed'
-! n_bedrooms:  '3'
-! n_doors:  '1'
-! n_ppl:  '3'
-! n_stories_per_unit:  '2'
-! n_units:  '1'
-! n_units_modeled:  '1'
-! oCDeff:  '0'
-! oFrac:  '0.25'
-! option:  ''
-! p:  '18766'
-! parkinglot_area:  '19843'
-! parkinglot_lpd:  '0.026'
-! parkinglot_watts:  '515.918'
-! pipe_ins_R:  '7'
-! pipe_ins_k_SI:  '0.03317175'
-! pipe_ins_thickness_SI:  '0.040650406504065'
-! plugin_ltg_sch:  'InteriorLightingHE'
-! plugload_usage_factor:  '0.67553'
-! prototype:  'singlefamily'
-! r_bsmtwall:  '0.0001'
-! r_ceiling:  '49'
-! r_crawlwall:  '0'
-! r_duct:  '8'
-! r_fiberglass_blown:  '2.5'
-! r_floor:  '0'
-! r_masswall:  '13'
-! r_returnduct:  '8'
-! r_sheathing:  '5'
-! r_slab:  '10'
-! r_slab_depth:  '4'
-! r_wall:  '20'
-! refFgpd:  '44.6'
-! refWgpd:  '15.717671770089'
-! return_duct_loc_unit:  '_unit1'
-! roof_const:  'Gable_end'
-! roof_pitch:  '0.333333333333333'
-! roof_pk_ht:  '1.51663636828541'
-! roof_pk_ht_garage:  '1.016'
-! roof_surface:  'Wall'
-! runbsmt:  'no'
-! runslab:  'yes'
-! semi_conditioned:  'no'
-! sensitivity_analysis:  'no'
-! shade_line:  ''
-! shading_frac:  '0.85'
-! shgc_skylight:  '0.4'
-! short_dim:  '9.09981820971244'
-! shortdim_wall_area:  '23.5818459702914'
-! shower_gpm:  '2.25'
-! shower_peak_flow:  '0.000141975'
-! sink_gpm:  '1.14'
-! sink_peak_flow:  '7.1934e-05'
-! sizing_ems:  'no'
-! sizing_fraction_cooling:  '1.15'
-! sizing_fraction_heating:  '1.25'
-! source_inlet_node:  'Condenser water outlet node_unit1'
-! source_outlet_node:  'Condenser water inlet node_unit1'
-! stack_coeff:  '0.00029'
-! state_ID:  'NY'
-! statfile:  'USA_NY_Buffalo.Niagara.Intl.AP.725280_TMY3.stat'
-! style_ceiling:  'attic'
-! style_roof:  'gable'
-! supply_duct_loc_unit:  '_unit1'
-! supply_leak_ratio_of_total:  '0.5'
-! system:  'heatpump'
-! temp_vent_cms:  '0'
-! thermostat_setpt:  'iecc'
-! total_area:  '330.506150989138'
-! u_door:  '0.25'
-! u_duct_SI:  '0.709825'
-! u_returnduct_SI:  '0.709825'
-! u_skylight:  '0.55'
-! ua:  '1.25174854285435'
-! ua_si:  '0.659266099359746'
-! unit_id:  '1'
-! vent_cfm:  '60'
-! vent_clearance:  '0.0101'
-! vent_cms:  '0.0283168464628752'
-! vent_fan_efficacy:  '1.2'
-! vent_fan_prs:  '1059.4400064757'
-! vent_fan_total_eff:  '0.6'
-! vent_mode:  'balanced'
-! vent_sch:  'always_avail'
-! wall_framing_fraction:  '0.25'
-! wall_ht:  '8.5'
-! water_heater_loc:  'living_unit'
-! water_main_temp:  '54.14225814'
-! waterheater_loc_unit:  'living_unit1'
-! wind_coeff:  '0.000231'
-! window_dist:  'equal'
-! window_ht:  '1.52439024390244'
-! window_ldb_l:  '2.70719591738945'
-! window_ldf_l:  '2.70719591738945'
-! window_sdl_l:  '2.70719591738945'
-! window_sdr_l:  '2.70719591738945'
-! wwr:  '0.15'
-! x_ldb:  '2.74190122145512'
-! x_ldf:  '1'
-! x_sdl:  '1'
-! x_sdr:  '1'
-! z:  '0.914634146341463'
-! zone_return_duct_loc1:  'living'
-! zone_return_duct_loc1_unit:  'living_unit1'
-! zone_return_duct_loc2:  'attic'
-! zone_return_duct_loc2_unit:  'attic_unit1'
-! zone_supply_duct_loc1:  'attic'
-! zone_supply_duct_loc1_unit:  'attic_unit1'
-! zone_supply_duct_loc2:  'living'
-! zone_supply_duct_loc2_unit:  'living_unit1'
-!
-! =====================================================
-! END of res.eplus.tmpl
+!       Month   TAverage   TPerimeter    TCore      TInside AverageFlux PerimeterFlux CoreFlux 
+!           1      20.77     20.22        21.67       22.22      4.795       6.617     1.805
+!           2      20.54     19.93        21.56       22.22      5.537       7.578     2.189
+!           3      20.62     20.11        21.46       22.22      5.271       6.953     2.513
+!           4      20.79     20.41        21.40       22.22      4.731       5.973     2.694
+!           5      21.07     20.86        21.40       22.22      3.808       4.479     2.707
+!           6      22.65     22.62        22.70       23.88      4.067       4.176     3.887
+!           7      23.10     23.15        23.00       23.88      2.592       2.397     2.912
+!           8      23.33     23.44        23.15       23.88      1.820       1.454     2.422
+!           9      23.34     23.38        23.26       23.88      1.796       1.646     2.042
+!          10      21.92     21.83        22.06       22.22      0.995       1.288     0.515
+!          11      21.45     21.18        21.88       22.22      2.556       3.428     1.126
+!          12      21.03     20.57        21.79       22.22      3.922       5.442     1.428
+
+SurfaceProperty:OtherSideCoefficients,
+  surfPropOthSdCoefSlabAverage,        !- Name
+  0.0,                                 !- Combined Convective Radiative Film Coefficient
+  1.0,                                 !- Constant Temperature
+  1.0,                                 !- Constant Temperature Coefficient
+  0.0,                                 !- External Dry-Bulb Temperature Coefficient
+  0.0,                                 !- Ground Temperature Coefficient
+  0.0,                                 !- Wind Speed Coefficient
+  0.0,                                 !- Zone Air Temperature Coefficient
+  scheduleOSCSlabAverageSurfaceTemp,   !- Constant Temperature Schedule Name
+  No,                                  !- Sinusoidal Variation of Constant Temperature Coefficient
+  24;                                  !- Period of Sinusoidal Variation
+ 
+Schedule:Compact,
+  scheduleOSCSlabAverageSurfaceTemp,   !- Name
+  Temperature,                         !- ScheduleType
+  Through:   1/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.768,                              !- Field
+  Through:   2/28,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.543,                              !- Field
+  Through:   3/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.624,                              !- Field
+  Through:   4/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.787,                              !- Field
+  Through:   5/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.067,                              !- Field
+  Through:   6/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  22.649,                              !- Field
+  Through:   7/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.095,                              !- Field
+  Through:   8/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.329,                              !- Field
+  Through:   9/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.336,                              !- Field
+  Through:  10/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.919,                              !- Field
+  Through:  11/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.446,                              !- Field
+  Through:  12/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.032;                              !- Field
+
+SurfaceProperty:OtherSideCoefficients,
+  surfPropOthSdCoefSlabPerimeter,      !- Name
+  0.0,                                 !- Combined Convective Radiative Film Coefficient
+  1.0,                                 !- Constant Temperature
+  1.0,                                 !- Constant Temperature Coefficient
+  0.0,                                 !- External Dry-Bulb Temperature Coefficient
+  0.0,                                 !- Ground Temperature Coefficient
+  0.0,                                 !- Wind Speed Coefficient
+  0.0,                                 !- Zone Air Temperature Coefficient
+  scheduleOSCSlabPerimeterTemp,        !- Constant Temperature Schedule Name
+  No,                                  !- Sinusoidal Variation of Constant Temperature Coefficient
+  24;                                  !- Period of Sinusoidal Variation
+ 
+Schedule:Compact,
+  scheduleOSCSlabPerimeterTemp,        !- Name
+  Temperature,                         !- ScheduleType
+  Through:   1/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.216,                              !- Field
+  Through:   2/28,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  19.925,                              !- Field
+  Through:   3/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.115,                              !- Field
+  Through:   4/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.412,                              !- Field
+  Through:   5/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.864,                              !- Field
+  Through:   6/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  22.616,                              !- Field
+  Through:   7/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.154,                              !- Field
+  Through:   8/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.440,                              !- Field
+  Through:   9/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.382,                              !- Field
+  Through:  10/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.830,                              !- Field
+  Through:  11/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.182,                              !- Field
+  Through:  12/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  20.572;                              !- Field
+
+SurfaceProperty:OtherSideCoefficients,
+  surfPropOthSdCoefSlabCore,           !- Name
+  0.0,                                 !- Combined Convective Radiative Film Coefficient
+  1.0,                                 !- Constant Temperature
+  1.0,                                 !- Constant Temperature Coefficient
+  0.0,                                 !- External Dry-Bulb Temperature Coefficient
+  0.0,                                 !- Ground Temperature Coefficient
+  0.0,                                 !- Wind Speed Coefficient
+  0.0,                                 !- Zone Air Temperature Coefficient
+  scheduleOSCSlabCoreTemp,             !- Constant Temperature Schedule Name
+  No,                                  !- Sinusoidal Variation of Constant Temperature Coefficient
+  24;                                  !- Period of Sinusoidal Variation
+ 
+Schedule:Compact,
+  scheduleOSCSlabCoreTemp,             !- Name
+  Temperature,                         !- ScheduleType
+  Through:   1/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.674,                              !- Field
+  Through:   2/28,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.557,                              !- Field
+  Through:   3/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.459,                              !- Field
+  Through:   4/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.404,                              !- Field
+  Through:   5/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.400,                              !- Field
+  Through:   6/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  22.703,                              !- Field
+  Through:   7/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  22.998,                              !- Field
+  Through:   8/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.147,                              !- Field
+  Through:   9/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  23.262,                              !- Field
+  Through:  10/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  22.064,                              !- Field
+  Through:  11/30,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.879,                              !- Field
+  Through:  12/31,                     !- Field
+  For:AllDays,                         !- Field
+  Until:24:00,                         !- Field
+  21.788;                              !- Field
+  
+ ! Convergence has been gained.
