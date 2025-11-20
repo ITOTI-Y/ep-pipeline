@@ -4,7 +4,7 @@ from pathlib import Path
 from pickle import dump, load
 
 from eppy.modeleditor import IDF
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, cpu_count, delayed
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
@@ -119,13 +119,15 @@ def main():
     n_jobs = cpu_count() - 2
 
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in ecm_services
+        delayed(_single_run)(job, service, config) for job, service in all_services
     )
 
     parse_results_to_csv()
 
+
 def parse_results_to_csv():
     import pandas as pd
+
     config = ConfigManager(Path("backend/configs"))
     results_dir = config.paths.ecm_dir
 
