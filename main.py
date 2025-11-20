@@ -21,7 +21,7 @@ from backend.services.simulation import (
     FileCleaner,
     ResultParser,
 )
-from backend.utils.config import ConfigManager
+from backend.utils.config import ConfigManager, set_logger
 
 
 def base_services_prepare(
@@ -146,6 +146,7 @@ def parse_results_to_csv():
 def _single_run(
     job: SimulationJob, service: BaselineService | ECMService, config: ConfigManager
 ):
+    set_logger(config.paths.log_dir)
     IDF.setiddname(str(config.paths.idd_file))
     job.idf = IDF(str(job.building.idf_file_path))
 
