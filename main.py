@@ -5,6 +5,7 @@ from pickle import dump, load
 
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
+from loguru import logger
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
@@ -86,6 +87,7 @@ def ecm_services_prepare(
 
 def main():
     config = ConfigManager(Path("backend/configs"))
+    logger.info("Starting simulation")
     idf_files = config.paths.idf_files
     weather_files = config.paths.ftmy_files
 
@@ -116,7 +118,7 @@ def main():
 
     all_services = chain(base_services, ecm_services)
 
-    n_jobs = cpu_count() - 2
+    n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
 
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config) for job, service in all_services

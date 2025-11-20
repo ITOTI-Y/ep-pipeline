@@ -38,6 +38,11 @@ class BaselineService(ISimulationService):
     def execute(self) -> SimulationResult:
         self._logger.info(f"Executing baseline simulation for job {self._job.id}")
 
+        result = SimulationResult(
+            job_id=self._job.id,
+            building_type=self._job.building.building_type,
+        )
+
         try:
             result = self._executor.run(
                 job=self._job,

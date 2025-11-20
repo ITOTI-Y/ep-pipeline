@@ -5,7 +5,7 @@ from loguru import logger
 
 
 def set_logger(log_dir: Path) -> None:
-    # logger.remove()
+    logger.remove()
 
     logger.add(
         log_dir / "debug.log",
