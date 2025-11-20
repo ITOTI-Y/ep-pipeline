@@ -8,7 +8,6 @@ from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
     Building,
     BuildingType,
-    ECMContext,
     SimulationJob,
     Weather,
 )
@@ -21,11 +20,12 @@ from backend.utils.config import ConfigManager
 def test_batch_simulation():
     config = ConfigManager(Path("backend/configs"))
 
-    idf_file_path = config.paths.idf_files[0]
+    idf_file_path = config.paths.idf_files[2]
+    building_type = BuildingType.from_str(idf_file_path.stem)
 
     building = Building(
         name=idf_file_path.stem,
-        building_type=BuildingType.OFFICE_LARGE,
+        building_type=building_type,
         location="Chicago",
         idf_file_path=idf_file_path,
     )
@@ -37,15 +37,16 @@ def test_batch_simulation():
 
     output_directory = config.paths.ecm_dir / building.name
 
-    n_samples = 10
+    n_samples = 2
 
     sampler = ParameterSampler(config=config)
     ecm_samples = sampler.sample(
-        n_samples=n_samples, building_type=BuildingType.OFFICE_LARGE
+        n_samples=n_samples, building_type=building_type
     )
 
     jobs = []
     for i, ecm_parameters in enumerate(ecm_samples):
+        IDF.setiddname(str(config.paths.idd_file))
         job = SimulationJob(
             building=building,
             weather=weather,
@@ -53,6 +54,7 @@ def test_batch_simulation():
             output_directory=output_directory / f"sample_{i:03d}",
             output_prefix=f"ecm_{i:03d}",
             ecm_parameters=ecm_parameters,
+            idf=IDF(str(building.idf_file_path)),
         )
         jobs.append(job)
 
@@ -65,13 +67,7 @@ def test_batch_simulation():
 
 def _single_run(job: SimulationJob, config: ConfigManager):
     IDF.setiddname(str(config.paths.idd_file))
-    idf = IDF(str(job.building.idf_file_path))
-
-    context = ECMContext(
-        job=job,
-        idf=idf,
-    )
-
+    job.idf = IDF(str(job.building.idf_file_path))
     executor = EnergyPlusExecutor()
     result_parser = ResultParser()
     file_cleaner = FileCleaner()
@@ -81,13 +77,17 @@ def _single_run(job: SimulationJob, config: ConfigManager):
         result_parser=result_parser,
         file_cleaner=file_cleaner,
         config=config,
+        job=job,
     )
-    result = service.run(context, context.job.ecm_parameters)  # type: ignore
 
-    with open(context.job.output_directory / "result.pkl", "wb") as f:
+    if job.ecm_parameters is None:
+        raise ValueError("ECM parameters are not set")
+    result = service.run()
+
+    with open(job.output_directory / "result.pkl", "wb") as f:
         dump(result, f)
 
-    with open(context.job.output_directory / "result.pkl", "rb") as f:
+    with open(job.output_directory / "result.pkl", "rb") as f:
         test_result = load(f)
 
     return test_result

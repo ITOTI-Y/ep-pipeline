@@ -1,4 +1,4 @@
-from backend.models import ECMParameters, SimulationContext
+from backend.models import ECMParameters, SimulationJob
 from backend.services.configuration.iapply import IApply
 
 
@@ -6,28 +6,28 @@ class ECMApply(IApply):
     def __init__(self):
         super().__init__()
 
-    def apply(self, context: SimulationContext, parameters: ECMParameters) -> None:
+    def apply(self, job: SimulationJob, parameters: ECMParameters) -> None:
         self._logger.info("Applying ECM configuration")
-        self._apply_window_parameters(context, parameters)
-        self._apply_wall_insulation_parameters(context, parameters)
-        self._apply_infiltration_parameters(context, parameters)
-        self._apply_natural_ventilation_parameters(context, parameters)
-        self._apply_cooling_coil_and_chiller_parameters(context, parameters)
-        self._apply_heating_coil_and_chiller_parameters(context, parameters)
-        self._apply_cooling_air_temperature_parameters(context, parameters)
-        self._apply_heating_air_temperature_parameters(context, parameters)
-        self._apply_lighting_parameters(context, parameters)
-        self._apply_hvac_settings_parameters(context)
+        self._apply_window_parameters(job, parameters)
+        self._apply_wall_insulation_parameters(job, parameters)
+        self._apply_infiltration_parameters(job, parameters)
+        self._apply_natural_ventilation_parameters(job, parameters)
+        self._apply_cooling_coil_and_chiller_parameters(job, parameters)
+        self._apply_heating_coil_and_chiller_parameters(job, parameters)
+        self._apply_cooling_air_temperature_parameters(job, parameters)
+        self._apply_heating_air_temperature_parameters(job, parameters)
+        self._apply_lighting_parameters(job, parameters)
+        self._apply_hvac_settings_parameters(job)
         self._logger.info("ECM configuration applied successfully")
 
     def _apply_window_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply windows parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if (
@@ -37,7 +37,7 @@ class ECMApply(IApply):
         ):
             self._logger.warning("Window parameters are not set, skipping")
             return
-        idf = context.idf
+        idf = job.idf
 
         window_material_name = (
             "WindowMaterial_SimpleGlazingSystem"
@@ -81,20 +81,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} fenestration surface objects")
 
     def _apply_wall_insulation_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply wall insulation parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.wall_insulation is None:
             self._logger.warning("Wall insulation is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         insulation_materials_name = (
             "UserDefined Insulation Material" + f"_{parameters.wall_insulation:.2f}"
@@ -140,20 +140,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} surface control objects")
 
     def _apply_infiltration_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply infiltration parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.infiltration_rate is None:
             self._logger.warning("Infiltration rate is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         infiltration_objects = idf.idfobjects.get("ZONEINFILTRATION:DESIGNFLOWRATE", [])
         modified_count = 0
@@ -175,20 +175,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} infiltration objects")
 
     def _apply_natural_ventilation_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply natural ventilation parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.natural_ventilation_area is None:
             self._logger.warning("Natural ventilation area is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         self._remove_objects(idf, "ZONEVENTILATION:WindandStackOpenArea")
         zones = idf.idfobjects.get("ZONE", [])
@@ -209,20 +209,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} ventilation objects")
 
     def _apply_cooling_coil_and_chiller_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply cooling coil and chiller parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.cooling_cop is None:
             self._logger.warning("Cooling COP is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         modified_count = 0
 
@@ -263,20 +263,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} coil and chiller objects")
 
     def _apply_heating_coil_and_chiller_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply heating coil and chiller parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.heating_cop is None:
             self._logger.warning("Heating COP is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         modified_count = 0
 
@@ -317,20 +317,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} heating coil objects")
 
     def _apply_cooling_air_temperature_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply cooling air temperature parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.cooling_air_temperature is None:
             self._logger.warning("Cooling air temperature is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
         modified_count = 0
@@ -347,20 +347,20 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} sizing zone objects")
 
     def _apply_heating_air_temperature_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply heating air temperature parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
         if parameters.heating_air_temperature is None:
             self._logger.warning("Heating air temperature is not set, skipping")
             return
 
-        idf = context.idf
+        idf = job.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
         modified_count = 0
@@ -377,16 +377,16 @@ class ECMApply(IApply):
         self._logger.info(f"Modified {modified_count} sizing zone objects")
 
     def _apply_lighting_parameters(
-        self, context: SimulationContext, parameters: ECMParameters
+        self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
         apply lighting parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
-        idf = context.idf
+        idf = job.idf
 
         lights = idf.idfobjects.get("LIGHTS", [])
         lighting_power_reduction = parameters.lighting_power_reduction
@@ -423,15 +423,15 @@ class ECMApply(IApply):
 
         self._logger.info(f"Modified {modified_count} lighting objects")
 
-    def _apply_hvac_settings_parameters(self, context: SimulationContext) -> None:
+    def _apply_hvac_settings_parameters(self, job: SimulationJob) -> None:
         """
         apply hvac settings parameters to idf object
 
         Args:
-            context (SimulationContext): Simulation context
+            job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
-        idf = context.idf
+        idf = job.idf
 
         modified_count = 0
 

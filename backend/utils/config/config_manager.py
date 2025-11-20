@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from .config_models import (
+from backend.models.config_models import (
     AnalysisConfig,
     ECMParametersConfig,
     PathsConfig,

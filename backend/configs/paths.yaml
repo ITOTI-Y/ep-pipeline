@@ -11,3 +11,4 @@ paths:
   eplus_executable: /usr/local/EnergyPlus-25-1-0/energyplus
   idd_file: /usr/local/EnergyPlus-25-1-0/Energy+.idd
   temp_dir: ${paths.data_dir}/temp/
+  log_dir: ${paths.output_dir}/logs/

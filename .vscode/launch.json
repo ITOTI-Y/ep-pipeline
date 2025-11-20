@@ -35,6 +35,14 @@
             "program": "${workspaceFolder}/test_batch_simulation.py",
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+                {
+            "name": "main",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

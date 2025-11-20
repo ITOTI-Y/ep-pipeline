@@ -6,12 +6,12 @@ from loguru import logger
 from backend.models import SimulationResult
 
 
-class ISimulationService[Tcontext](ABC):
+class ISimulationService(ABC):
     def __init__(self):
         self._logger = logger.bind(service=self.__class__.__name__)
 
     @abstractmethod
-    def prepare(self, context: Tcontext) -> None:
+    def prepare(self) -> None:
         """
         Prepare the simulation context.
 
@@ -20,10 +20,6 @@ class ISimulationService[Tcontext](ABC):
             - validate files existence
             - setting output variables
             - apply preparation logic
-
-        Args:
-            context (Tcontext): The simulation context.
-
         Raises:
             ValidationError: If validation fails.
             FileNotFoundError: If required files are missing.
@@ -32,12 +28,9 @@ class ISimulationService[Tcontext](ABC):
         pass
 
     @abstractmethod
-    def execute(self, context: Tcontext) -> SimulationResult:
+    def execute(self) -> SimulationResult:
         """
         Execute the simulation.
-
-        Args:
-            context (Tcontext): The simulation context.
 
         Returns:
             SimulationResult: The simulation result containing output paths,
@@ -50,25 +43,23 @@ class ISimulationService[Tcontext](ABC):
         pass
 
     @abstractmethod
-    def cleanup(self, context: Tcontext) -> None:
+    def cleanup(self) -> None:
         """
         Clean up temporary files and resources after simulation.
 
         This method should remove intermediate files and release any
         resources held during the simulation. It should not raise exceptions.
 
-        Args:
-            context (Tcontext): The simulation context.
         """
         pass
 
-    def run(self, context: Tcontext) -> SimulationResult:
+    def run(self) -> SimulationResult:
         try:
-            self.prepare(context)
-            result = self.execute(context)
+            self.prepare()
+            result = self.execute()
             return result
         finally:
-            self.cleanup(context)
+            self.cleanup()
 
     def _remove_objects(self, idf: IDF, object_type: str) -> None:
         objects = list(idf.idfobjects.get(object_type, []))

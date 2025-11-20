@@ -20,6 +20,10 @@ class Weather(BaseModel):
         default=None,
         description="Scenario associated with the weather data (e.g., TMY, FTMY, SSP etc.)",
     )
+    code: str | None = Field(
+        default=None,
+        description="Code associated with the weather data (e.g., TMY, FTMY, SSP etc.)",
+    )
     id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the weather file"
     )
@@ -50,12 +54,13 @@ class Weather(BaseModel):
                 "585": "SSP5-8.5 (High Emissions)",
             }
             self.scenario = scenario_map.get(digits, f"Future Scenario {digits}")
+            self.code = f"SSP{digits}" if digits else "TMY"
 
         return self
 
     def get_identifier(self) -> str:
         """Generate a unique identifier for the weather file based on location and scenario."""
-        return f"{self.location}_{self.scenario}"
+        return f"{self.location}_{self.code}"
 
     def __str__(self) -> str:
         return f"Weather(location='{self.location}', scenario='{self.scenario}')"

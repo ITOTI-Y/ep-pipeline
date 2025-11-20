@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from backend.models import SimulationContext
+from backend.models import SimulationJob
 from backend.utils.config import ConfigManager
 
 
@@ -8,7 +8,7 @@ class IFileCleaner(ABC):
     @abstractmethod
     def clean(
         self,
-        context: SimulationContext,
+        job: SimulationJob,
         config: ConfigManager,
     ):
         pass

@@ -4,7 +4,7 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationContext, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 from backend.services.interfaces import IEnergyPlusExecutor
 
 
@@ -25,14 +25,14 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
 
     def run(
         self,
-        context: SimulationContext,
+        job: SimulationJob,
     ) -> SimulationResult:
-        idf = context.idf
-        output_prefix = context.job.output_prefix
-        weather_file = context.job.weather.file_path
-        output_directory = context.job.output_directory
-        read_variables = context.job.read_variables
-        job_id = context.job.id
+        idf = job.idf
+        output_prefix = job.output_prefix
+        weather_file = job.weather.file_path
+        output_directory = job.output_directory
+        read_variables = job.read_variables
+        job_id = job.id
 
         self._logger.info(f"Running EnergyPlus simulation: {output_prefix}")
         self._logger.debug(f"Weather file: {weather_file}")
@@ -45,6 +45,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
 
         result = SimulationResult(
             job_id=job_id,
+            building_type=job.building.building_type,
         )
 
         try:
@@ -55,6 +56,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 output_prefix=output_prefix,
                 readvars=read_variables,
                 verbose="v",
+                expandobjects=True,
             )
 
             result.success = True

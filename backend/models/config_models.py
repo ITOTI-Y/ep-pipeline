@@ -22,6 +22,7 @@ class PathsConfig(BaseModel):
     optimization_dir: Path = Field(
         ..., description="Optimization result output directory"
     )
+    log_dir: Path = Field(..., description="Log directory")
     eplus_executable: Path = Field(..., description="EnergyPlus executable path")
     idd_file: Path = Field(..., description="IDD file path")
     temp_dir: Path = Field(..., description="Temporary directory")
@@ -50,6 +51,7 @@ class PathsConfig(BaseModel):
         "ecm_dir",
         "optimization_dir",
         "temp_dir",
+        "log_dir",
     )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""
@@ -151,7 +153,6 @@ class ECMParametersConfig(BaseModel):
     cooling_air_temperature: list[float] = Field(default_factory=list, description="Cooling air temperature values")
     heating_air_temperature: list[float] = Field(default_factory=list, description="Heating air temperature values")
     lighting_power_reduction_level: list[int] = Field(default_factory=list, description="Lighting power reduction level values")
-
     @property
     def keys(self) -> list[str]:
         return list(self.model_dump().keys())

@@ -4,7 +4,6 @@ from eppy.modeleditor import IDF
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
-    BaselineContext,
     Building,
     BuildingType,
     SimulationJob,
@@ -18,11 +17,12 @@ from backend.utils.config import ConfigManager
 def run_single_building_simulation():
     config = ConfigManager(Path("backend/configs"))
 
-    idf_file_path = config.paths.idf_files[1]
+    idf_file_path = config.paths.idf_files[2]
+    building_type = BuildingType.from_str(idf_file_path.stem)
 
     building = Building(
         name=idf_file_path.stem,
-        building_type=BuildingType.OFFICE_LARGE,
+        building_type=building_type,
         location="Chicago",
         idf_file_path=idf_file_path,
     )
@@ -32,6 +32,7 @@ def run_single_building_simulation():
         location="Chicago",
     )
 
+    IDF.setiddname(str(config.paths.idd_file))
     job = SimulationJob(
         building=building,
         weather=weather,
@@ -39,14 +40,7 @@ def run_single_building_simulation():
         output_directory=config.paths.baseline_dir / building.name,
         output_prefix="baseline_",
         read_variables=True,
-    )
-
-    IDF.setiddname(str(config.paths.idd_file))
-    idf = IDF(str(building.idf_file_path))
-
-    context = BaselineContext(
-        job=job,
-        idf=idf,
+        idf=IDF(str(building.idf_file_path)),
     )
 
     executor = EnergyPlusExecutor()
@@ -58,8 +52,9 @@ def run_single_building_simulation():
         result_parser=result_parser,
         file_cleaner=file_cleaner,
         config=config,
+        job=job,
     )
-    result = service.run(context)
+    result = service.run()
 
     print(result)
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 
-from backend.models import SimulationContext, SimulationResult, Surface
+from backend.models import SimulationJob, SimulationResult, Surface
 from backend.services.interfaces import IResultParser
 
 
@@ -15,19 +15,19 @@ class ResultParser(IResultParser):
     def parse(
         self,
         result: SimulationResult,
-        context: SimulationContext,
+        job: SimulationJob,
     ) -> SimulationResult:
         result.table_csv_path = (
-            context.job.output_directory / f"{context.job.output_prefix}tbl.csv"
+            job.output_directory / f"{job.output_prefix}tbl.csv"
         )
         result.meter_csv_path = (
-            context.job.output_directory / f"{context.job.output_prefix}mtr.csv"
+            job.output_directory / f"{job.output_prefix}mtr.csv"
         )
         result.variables_csv_path = (
-            context.job.output_directory / f"{context.job.output_prefix}out.csv"
+            job.output_directory / f"{job.output_prefix}out.csv"
         )
         result.sql_path = (
-            context.job.output_directory / f"{context.job.output_prefix}out.sql"
+            job.output_directory / f"{job.output_prefix}out.sql"
         )
 
         if result.sql_path.exists():

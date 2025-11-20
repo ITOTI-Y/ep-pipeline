@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import ECMContext, ECMParameters, SimulationResult
+from backend.models import SimulationJob, SimulationResult
 from backend.services.configuration import ECMApply, OutputApply, PeriodApply
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
@@ -11,14 +11,16 @@ from backend.services.interfaces import (
 from backend.utils.config import ConfigManager
 
 
-class ECMService(ISimulationService[ECMContext]):
+class ECMService(ISimulationService):
     def __init__(
         self,
         executor: IEnergyPlusExecutor,
         result_parser: IResultParser,
         file_cleaner: IFileCleaner,
         config: ConfigManager,
+        job: SimulationJob,
     ):
+        self._job = job
         self._executor = executor
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
@@ -28,48 +30,48 @@ class ECMService(ISimulationService[ECMContext]):
         self._period_apply = PeriodApply(config=config)
         self._logger = logger.bind(service=self.__class__.__name__)
 
-    def prepare(self, context: ECMContext, ecm_parameters: ECMParameters) -> None:
+    def prepare(self) -> None:
         self._logger.info("Preparing ECM simulation")
-        self._output_apply.apply(context)
-        self._period_apply.apply(context)
-        self._ecm_apply.apply(context, ecm_parameters)
+        self._output_apply.apply(self._job)
+        self._period_apply.apply(self._job)
+        self._ecm_apply.apply(self._job, self._job.ecm_parameters)  # type: ignore
         self._logger.info("ECM preparation completed successfully")
 
-    def execute(self, context: ECMContext) -> SimulationResult:
-        self._logger.info(f"Executing ecm simulation for job {context.job.id}")
+    def execute(self) -> SimulationResult:
+        self._logger.info(f"Executing ecm simulation for job {self._job.id}")
+
         result = SimulationResult(
-            job_id=context.job.id,
-            success=False,
+            job_id=self._job.id,
+            building_type=self._job.building.building_type,
         )
+
         try:
             result = self._executor.run(
-                context=context,
+                job=self._job,
             )
             result = self._result_parser.parse(
                 result=result,
-                context=context,
+                job=self._job,
             )
             return result
         except Exception as e:
             self._logger.exception(
-                f"Failed to execute ecm simulation for job {context.job.id}"
+                f"Failed to execute ecm simulation for job {self._job.id}"
             )
             result.add_error(str(e))
             return result
 
-    def cleanup(self, context: ECMContext) -> None:
+    def cleanup(self) -> None:
         self._file_cleaner.clean(
-            context=context,
+            job=self._job,
             config=self._config,
         )
 
-    def run(
-        self, context: ECMContext, ecm_parameters: ECMParameters
-    ) -> SimulationResult:
+    def run(self) -> SimulationResult:
         try:
-            self.prepare(context, ecm_parameters)
-            result = self.execute(context)
-            result.ecm_parameters = ecm_parameters
+            self.prepare()
+            result = self.execute()
+            result.ecm_parameters = self._job.ecm_parameters or None
             return result
         finally:
-            self.cleanup(context)
+            self.cleanup()

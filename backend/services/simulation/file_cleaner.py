@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationContext
+from backend.models import SimulationJob
 from backend.services.interfaces import IFileCleaner
 from backend.utils.config import ConfigManager
 
@@ -11,13 +11,13 @@ class FileCleaner(IFileCleaner):
 
     def clean(
         self,
-        context: SimulationContext,
+        job: SimulationJob,
         config: ConfigManager,
     ) -> None:
         cleanup_files = config.simulation.cleanup_files
         deleted_count = 0
         for pattern in cleanup_files:
-            file_paths = context.job.output_directory.glob(pattern)
+            file_paths = job.output_directory.glob(pattern)
             for file_path in file_paths:
                 if file_path.exists():
                     file_path.unlink()
@@ -27,5 +27,5 @@ class FileCleaner(IFileCleaner):
                     self._logger.warning(f"File not found: {file_path}")
 
         self._logger.info(
-            f"Cleaned up {deleted_count} files for job {context.job.output_directory}"
+            f"Cleaned up {deleted_count} files for job {job.output_directory}"
         )
