@@ -37,6 +37,10 @@ class ECMApply(IApply):
         ):
             self._logger.warning("Window parameters are not set, skipping")
             return
+
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         window_material_name = (
@@ -94,6 +98,9 @@ class ECMApply(IApply):
             self._logger.warning("Wall insulation is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         insulation_materials_name = (
@@ -153,6 +160,9 @@ class ECMApply(IApply):
             self._logger.warning("Infiltration rate is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         infiltration_objects = idf.idfobjects.get("ZONEINFILTRATION:DESIGNFLOWRATE", [])
@@ -188,6 +198,9 @@ class ECMApply(IApply):
             self._logger.warning("Natural ventilation area is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         self._remove_objects(idf, "ZONEVENTILATION:WindandStackOpenArea")
@@ -222,6 +235,9 @@ class ECMApply(IApply):
             self._logger.warning("Cooling COP is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         modified_count = 0
@@ -276,6 +292,9 @@ class ECMApply(IApply):
             self._logger.warning("Heating COP is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         modified_count = 0
@@ -330,6 +349,9 @@ class ECMApply(IApply):
             self._logger.warning("Cooling air temperature is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
@@ -360,6 +382,9 @@ class ECMApply(IApply):
             self._logger.warning("Heating air temperature is not set, skipping")
             return
 
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
@@ -386,6 +411,9 @@ class ECMApply(IApply):
             job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         lights = idf.idfobjects.get("LIGHTS", [])
@@ -431,6 +459,9 @@ class ECMApply(IApply):
             job (SimulationJob): Simulation job
             parameters (ECMParameters): ECM parameters
         """
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         idf = job.idf
 
         modified_count = 0

@@ -12,6 +12,9 @@ class PeriodApply(IApply):
 
     def apply(self, job: SimulationJob) -> None:
         self._logger.info("Applying period configuration")
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         self._configure_simulation_period(job.idf)
         self._logger.info("Period configuration applied successfully")
 

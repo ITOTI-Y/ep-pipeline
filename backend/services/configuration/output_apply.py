@@ -12,6 +12,9 @@ class OutputApply(IApply):
 
     def apply(self, job: SimulationJob) -> None:
         self._logger.info("Applying output configuration")
+        if job.idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         self._configure_output_control_file(job.idf)
         self._configure_output_meter(job.idf)
         self._configure_output_variables(job.idf)

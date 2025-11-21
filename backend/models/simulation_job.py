@@ -55,8 +55,8 @@ class SimulationJob(BaseModel):
         default=True,
         description="Whether to read variables from the EnergyPlus simulation.",
     )
-    idf: IDF = Field(
-        ...,
+    idf: IDF | None = Field(
+        default=None,
         description="The IDF object for the simulation.",
     )
     ecm_parameters: ECMParameters | None = Field(
