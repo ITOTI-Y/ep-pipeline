@@ -36,7 +36,7 @@ def base_services_prepare(
             simulation_type=SimulationType.BASELINE,
             output_directory=config.paths.baseline_dir / building.name / weather.code,  # type: ignore
             output_prefix="baseline_",
-            idf=IDF(str(building.idf_file_path)),
+            # idf is initialized in the worker process
         )
 
         baseline_service = BaselineService(
@@ -72,7 +72,7 @@ def ecm_services_prepare(
                 / weather.code
                 / f"sample_{i:03d}",
                 output_prefix=f"ecm_{i:03d}",
-                idf=IDF(str(building.idf_file_path)),
+                # idf is initialized in the worker process
                 ecm_parameters=ecm_sample,
             )
             ecm_service = ECMService(
