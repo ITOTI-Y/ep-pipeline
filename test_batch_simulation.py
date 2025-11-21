@@ -40,9 +40,7 @@ def test_batch_simulation():
     n_samples = 2
 
     sampler = ParameterSampler(config=config)
-    ecm_samples = sampler.sample(
-        n_samples=n_samples, building_type=building_type
-    )
+    ecm_samples = sampler.sample(n_samples=n_samples, building_type=building_type)
 
     jobs = []
     for i, ecm_parameters in enumerate(ecm_samples):

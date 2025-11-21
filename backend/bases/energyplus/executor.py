@@ -40,6 +40,10 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         self._logger.debug(f"Output prefix: {output_prefix}")
         self._logger.debug(f"Read variables: {read_variables}")
 
+        if idf is None:
+            self._logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
+
         output_directory.mkdir(parents=True, exist_ok=True)
         idf.saveas(str(output_directory / f"{output_prefix}.idf"))
 
