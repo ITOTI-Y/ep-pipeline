@@ -17,18 +17,10 @@ class ResultParser(IResultParser):
         result: SimulationResult,
         job: SimulationJob,
     ) -> SimulationResult:
-        result.table_csv_path = (
-            job.output_directory / f"{job.output_prefix}tbl.csv"
-        )
-        result.meter_csv_path = (
-            job.output_directory / f"{job.output_prefix}mtr.csv"
-        )
-        result.variables_csv_path = (
-            job.output_directory / f"{job.output_prefix}out.csv"
-        )
-        result.sql_path = (
-            job.output_directory / f"{job.output_prefix}out.sql"
-        )
+        result.table_csv_path = job.output_directory / f"{job.output_prefix}tbl.csv"
+        result.meter_csv_path = job.output_directory / f"{job.output_prefix}mtr.csv"
+        result.variables_csv_path = job.output_directory / f"{job.output_prefix}out.csv"
+        result.sql_path = job.output_directory / f"{job.output_prefix}out.sql"
 
         if result.sql_path.exists():
             self._parse_from_sql(result, result.sql_path)
