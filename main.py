@@ -148,7 +148,7 @@ def parse_results_to_csv():
 def _single_run(
     job: SimulationJob, service: BaselineService | ECMService, config: ConfigManager
 ):
-    set_logger(config.paths.log_dir)
+    set_logger(config.paths.log_dir.resolve())
     IDF.setiddname(str(config.paths.idd_file))
     job.idf = IDF(str(job.building.idf_file_path))
 
