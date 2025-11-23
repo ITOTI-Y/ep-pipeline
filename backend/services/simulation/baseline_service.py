@@ -26,17 +26,16 @@ class BaselineService(ISimulationService):
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
         self._config = config
-        self._logger = logger.bind(service=self.__class__.__name__)
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
 
     def prepare(self) -> None:
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
-        self._logger.info("Preparation completed successfully")
+        logger.info("Baseline preparation completed successfully")
 
     def execute(self) -> SimulationResult:
-        self._logger.info(f"Executing baseline simulation for job {self._job.id}")
+        logger.info(f"Executing baseline simulation for job {self._job.id}")
 
         result = SimulationResult(
             job_id=self._job.id,
@@ -54,7 +53,7 @@ class BaselineService(ISimulationService):
             )
             return result
         except Exception as e:
-            self._logger.exception("Failed to execute baseline simulation")
+            logger.exception("Failed to execute baseline simulation")
             result.add_error(str(e))
             return result
 
@@ -78,4 +77,4 @@ class BaselineService(ISimulationService):
             End_Year=self._config.simulation.end_year,
         )
 
-        self._logger.success("Simulation period configured successfully")
+        logger.success("Simulation period configured successfully")

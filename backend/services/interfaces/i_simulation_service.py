@@ -7,8 +7,6 @@ from backend.models import SimulationResult
 
 
 class ISimulationService(ABC):
-    def __init__(self):
-        self._logger = logger.bind(service=self.__class__.__name__)
 
     @abstractmethod
     def prepare(self) -> None:
@@ -65,4 +63,4 @@ class ISimulationService(ABC):
         objects = list(idf.idfobjects.get(object_type, []))
         for obj in objects:
             idf.removeidfobject(obj)
-            self._logger.debug(f"Removed {object_type} object: {obj}")
+            logger.debug(f"Removed {object_type} object: {obj}")

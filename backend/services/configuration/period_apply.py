@@ -1,4 +1,5 @@
 from eppy.modeleditor import IDF
+from loguru import logger
 
 from backend.models import SimulationJob
 from backend.services.configuration.iapply import IApply
@@ -11,9 +12,12 @@ class PeriodApply(IApply):
         self._config = config
 
     def apply(self, job: SimulationJob) -> None:
-        self._logger.info("Applying period configuration")
+        logger.info("Applying period configuration")
+        if job.idf is None:
+            logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
         self._configure_simulation_period(job.idf)
-        self._logger.info("Period configuration applied successfully")
+        logger.info("Period configuration applied successfully")
 
     def _configure_simulation_period(self, idf: IDF) -> None:
         self._remove_objects(idf, "RUNPERIOD")
@@ -29,4 +33,4 @@ class PeriodApply(IApply):
             End_Year=self._config.simulation.end_year,
         )
 
-        self._logger.success("Simulation period configured successfully")
+        logger.success("Simulation period configured successfully")

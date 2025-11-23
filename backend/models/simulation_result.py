@@ -11,6 +11,7 @@ from .enums import BuildingType
 
 logger = logger.bind(module=__name__)
 
+
 class Surface(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
@@ -18,10 +19,15 @@ class Surface(BaseModel):
         arbitrary_types_allowed=True,
     )
     name: str = Field(..., description="The name of the surface.")
-    hour_count: int = Field(..., description="The number of hours the surface simulation was run.")
-    sum_irradiation: float = Field(..., description="The sum of the irradiation on the surface in kWh/m².")
+    hour_count: int = Field(
+        ..., description="The number of hours the surface simulation was run."
+    )
+    sum_irradiation: float = Field(
+        ..., description="The sum of the irradiation on the surface in kWh/m²."
+    )
     unit: str = Field(..., description="The unit of the irradiation.")
     type: str = Field(..., description="The type of the surface.")
+
 
 class SimulationResult(BaseModel):
     model_config = ConfigDict(
@@ -71,7 +77,8 @@ class SimulationResult(BaseModel):
         description="Path to the SQL file containing detailed simulation data.",
     )
     building_type: BuildingType = Field(
-        ..., description="The type of the building.",
+        ...,
+        description="The type of the building.",
     )
     ecm_parameters: ECMParameters | None = Field(
         default=None,
@@ -157,7 +164,6 @@ class SimulationResult(BaseModel):
     def has_errors(self) -> bool:
         """Check if there are any error messages."""
         return len(self.errors) > 0
-
 
     def get_eui_summary(self) -> dict[str, float | None]:
         """Get a summary of energy use intensities."""

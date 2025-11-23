@@ -7,7 +7,7 @@ from backend.utils.config import ConfigManager
 
 class FileCleaner(IFileCleaner):
     def __init__(self):
-        self._logger = logger.bind(module=self.__class__.__name__)
+        pass
 
     def clean(
         self,
@@ -21,11 +21,9 @@ class FileCleaner(IFileCleaner):
             for file_path in file_paths:
                 if file_path.exists():
                     file_path.unlink()
-                    self._logger.debug(f"Deleted: {file_path}")
+                    logger.debug(f"Deleted: {file_path}")
                     deleted_count += 1
                 else:
-                    self._logger.warning(f"File not found: {file_path}")
+                    logger.warning(f"File not found: {file_path}")
 
-        self._logger.info(
-            f"Cleaned up {deleted_count} files for job {job.output_directory}"
-        )
+        logger.info(f"Cleaned up {deleted_count} files for job {job.output_directory}")

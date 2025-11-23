@@ -7,8 +7,6 @@ from backend.models import SimulationContext
 
 
 class IApply(ABC):
-    def __init__(self):
-        self._logger = logger.bind(service=self.__class__.__name__)
 
     @abstractmethod
     def apply(self, context: SimulationContext) -> None:
@@ -18,4 +16,4 @@ class IApply(ABC):
         objects = list(idf.idfobjects.get(object_type, []))
         for obj in objects:
             idf.removeidfobject(obj)
-            self._logger.debug(f"Removed {object_type} object: {obj}")
+            logger.debug(f"Removed {object_type} object: {obj}")

@@ -40,7 +40,6 @@ def run_single_building_simulation():
         output_directory=config.paths.baseline_dir / building.name,
         output_prefix="baseline_",
         read_variables=True,
-        idf=IDF(str(building.idf_file_path)),
     )
 
     executor = EnergyPlusExecutor()
@@ -54,6 +53,8 @@ def run_single_building_simulation():
         config=config,
         job=job,
     )
+
+    job.idf = IDF(str(building.idf_file_path))
     result = service.run()
 
     print(result)

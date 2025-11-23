@@ -7,7 +7,6 @@ from backend.utils.config import ConfigManager
 
 class ParameterSampler:
     def __init__(self, config: ConfigManager, seed: int = 1):
-        self._logger = logger.bind(service=self.__class__.__name__)
         self._seed = seed
         np.random.seed(seed)
         self._ecm_parameters: dict[str, list] = config.ecm_parameters.model_dump()
@@ -18,9 +17,7 @@ class ParameterSampler:
         n_samples: int,
         building_type: BuildingType,
     ) -> list[ECMParameters]:
-        self._logger.info(
-            f"Generating {n_samples} samples for building type {building_type}"
-        )
+        logger.info(f"Generating {n_samples} samples for building type {building_type}")
         ecm_samples = []
         attempts = 0
         max_attempts = n_samples * 10
