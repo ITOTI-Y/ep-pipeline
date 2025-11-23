@@ -54,7 +54,7 @@ def ecm_services_prepare(
     config: ConfigManager,
     buildings_weather_combinations: list[tuple[Building, Weather]],
 ) -> Generator[tuple[SimulationJob, ECMService]]:
-    n_sample = 100
+    n_sample = 512
 
     sampler = ParameterSampler(config=config)
 
@@ -90,7 +90,7 @@ def main():
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
     idf_files = config.paths.idf_files
-    weather_files = config.paths.ftmy_files
+    weather_files = config.paths.ftmy_files + config.paths.tmy_files
 
     IDF.setiddname(str(config.paths.idd_file))
 
@@ -163,3 +163,4 @@ def _single_run(
 
 if __name__ == "__main__":
     main()
+    # parse_results_to_csv()

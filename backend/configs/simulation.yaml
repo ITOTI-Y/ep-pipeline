@@ -21,3 +21,4 @@ simulation:
     - "*.rvaudit"
     - "*.htm"
     - "*.mtr"
+    - "*.sql"

@@ -54,7 +54,7 @@ class Weather(BaseModel):
                 "585": "SSP5-8.5 (High Emissions)",
             }
             self.scenario = scenario_map.get(digits, f"Future Scenario {digits}")
-            self.code = f"SSP{digits}" if digits else "TMY"
+            self.code = f"SSP{digits}" if digits in scenario_map.keys() else "TMY"
 
         return self
 
