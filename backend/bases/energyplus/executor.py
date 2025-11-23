@@ -18,7 +18,6 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         idd_path: Path | None = None,
     ):
         self._idd_path = idd_path
-        self._logger = logger.bind(module=self.__class__.__name__)
 
         if idd_path:
             IDF.setiddname(str(idd_path))
@@ -34,14 +33,14 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         read_variables = job.read_variables
         job_id = job.id
 
-        self._logger.info(f"Running EnergyPlus simulation: {output_prefix}")
-        self._logger.debug(f"Weather file: {weather_file}")
-        self._logger.debug(f"Output directory: {output_directory}")
-        self._logger.debug(f"Output prefix: {output_prefix}")
-        self._logger.debug(f"Read variables: {read_variables}")
+        logger.info(f"Running EnergyPlus simulation: {output_prefix}")
+        logger.debug(f"Weather file: {weather_file}")
+        logger.debug(f"Output directory: {output_directory}")
+        logger.debug(f"Output prefix: {output_prefix}")
+        logger.debug(f"Read variables: {read_variables}")
 
         if idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
 
         output_directory.mkdir(parents=True, exist_ok=True)
@@ -70,16 +69,16 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 self._parse_error_file(err_file, result)
 
             if result.success:
-                self._logger.success(
+                logger.success(
                     f"EnergyPlus simulation completed successfully: {output_prefix}"
                 )
             else:
-                self._logger.error(
+                logger.error(
                     f"EnergyPlus simulation completed with errors: {result.errors}"
                 )
 
         except Exception as e:
-            self._logger.exception("Failed to run EnergyPlus: ")
+            logger.exception("Failed to run EnergyPlus: ")
 
             result.success = False
             result.add_error(f"Failed to run EnergyPlus: {e}")
@@ -106,6 +105,6 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 result.add_warning(warning.strip())
 
         except FileNotFoundError:
-            self._logger.warning(f"Error file not found: {err_file}")
+            logger.warning(f"Error file not found: {err_file}")
         except Exception:
-            self._logger.exception("Failed to parse error file: ")
+            logger.exception("Failed to parse error file: ")

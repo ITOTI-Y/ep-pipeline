@@ -28,17 +28,16 @@ class ECMService(ISimulationService):
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
-        self._logger = logger.bind(service=self.__class__.__name__)
 
     def prepare(self) -> None:
-        self._logger.info("Preparing ECM simulation")
+        logger.info("ECM preparation started")
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._ecm_apply.apply(self._job, self._job.ecm_parameters)  # type: ignore
-        self._logger.info("ECM preparation completed successfully")
+        logger.info("ECM preparation completed")
 
     def execute(self) -> SimulationResult:
-        self._logger.info(f"Executing ecm simulation for job {self._job.id}")
+        logger.info(f"ECM simulation for job {self._job.id} started")
 
         result = SimulationResult(
             job_id=self._job.id,
@@ -55,9 +54,7 @@ class ECMService(ISimulationService):
             )
             return result
         except Exception as e:
-            self._logger.exception(
-                f"Failed to execute ecm simulation for job {self._job.id}"
-            )
+            logger.exception(f"Failed to execute ecm simulation for job {self._job.id}")
             result.add_error(str(e))
             return result
 

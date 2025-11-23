@@ -10,7 +10,7 @@ from backend.services.interfaces import IResultParser
 
 class ResultParser(IResultParser):
     def __init__(self):
-        self._logger = logger.bind(module=self.__class__.__name__)
+        pass
 
     def parse(
         self,
@@ -49,7 +49,7 @@ class ResultParser(IResultParser):
                     attr_name = key_mapping[row_name][column_name]
                     setattr(result, attr_name, float(row["Value"]))
         except Exception as e:
-            self._logger.exception("Failed to parse energy from SQL: ")
+            logger.exception("Failed to parse energy from SQL: ")
             result.add_error(f"Failed to parse energy from SQL: {e}")
 
     def _parse_area_from_sql(
@@ -64,7 +64,7 @@ class ResultParser(IResultParser):
                 if row_name in key_mapping:
                     setattr(result, key_mapping[row_name], float(row["Value"]))
         except Exception as e:
-            self._logger.exception("Failed to parse area from SQL: ")
+            logger.exception("Failed to parse area from SQL: ")
             result.add_error(f"Failed to parse area from SQL: {e}")
 
     def _parse_irradiation_from_sql(
@@ -90,5 +90,5 @@ class ResultParser(IResultParser):
                     )
                 )
         except Exception as e:
-            self._logger.exception("Failed to parse irradiation from SQL: ")
+            logger.exception("Failed to parse irradiation from SQL: ")
             result.add_error(f"Failed to parse irradiation from SQL: {e}")

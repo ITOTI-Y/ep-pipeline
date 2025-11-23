@@ -1,4 +1,5 @@
 from eppy.modeleditor import IDF
+from loguru import logger
 
 from backend.models import SimulationJob
 from backend.services.configuration.iapply import IApply
@@ -11,15 +12,15 @@ class OutputApply(IApply):
         self._config = config
 
     def apply(self, job: SimulationJob) -> None:
-        self._logger.info("Applying output configuration")
+        logger.info("Applying output configuration")
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         self._configure_output_control_file(job.idf)
         self._configure_output_meter(job.idf)
         self._configure_output_variables(job.idf)
         self._configure_output_controls(job.idf)
-        self._logger.info("Output configuration applied successfully")
+        logger.info("Output configuration applied successfully")
 
     def _configure_output_control_file(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUTCONTROL:FILES")
@@ -32,7 +33,7 @@ class OutputApply(IApply):
             Output_SQLite="Yes",
         )
 
-        self._logger.success("Output control file configured successfully")
+        logger.success("Output control file configured successfully")
 
     def _configure_output_meter(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUT:METER")
@@ -43,7 +44,7 @@ class OutputApply(IApply):
             Reporting_Frequency="Hourly",
         )
 
-        self._logger.success("Output meter configured successfully")
+        logger.success("Output meter configured successfully")
 
     def _configure_output_variables(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUT:VARIABLE")
@@ -69,7 +70,7 @@ class OutputApply(IApply):
             )
             added_count += 1
 
-        self._logger.success(f"Added {added_count} output variables to IDF")
+        logger.success(f"Added {added_count} output variables to IDF")
 
     def _configure_output_controls(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUTCONTROL:TABLE:STYLE")
@@ -93,4 +94,4 @@ class OutputApply(IApply):
             Unit_Conversion_for_Tabular_Data="JtoKWH",
         )
 
-        self._logger.success("Output controls configured successfully")
+        logger.success("Output controls configured successfully")

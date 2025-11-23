@@ -1,3 +1,5 @@
+from loguru import logger
+
 from backend.models import ECMParameters, SimulationJob
 from backend.services.configuration.iapply import IApply
 
@@ -7,7 +9,7 @@ class ECMApply(IApply):
         super().__init__()
 
     def apply(self, job: SimulationJob, parameters: ECMParameters) -> None:
-        self._logger.info("Applying ECM configuration")
+        logger.info("Applying ECM configuration")
         self._apply_window_parameters(job, parameters)
         self._apply_wall_insulation_parameters(job, parameters)
         self._apply_infiltration_parameters(job, parameters)
@@ -18,7 +20,7 @@ class ECMApply(IApply):
         self._apply_heating_air_temperature_parameters(job, parameters)
         self._apply_lighting_parameters(job, parameters)
         self._apply_hvac_settings_parameters(job)
-        self._logger.info("ECM configuration applied successfully")
+        logger.info("ECM configuration applied successfully")
 
     def _apply_window_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -35,11 +37,11 @@ class ECMApply(IApply):
             or parameters.window_shgc is None
             or parameters.visible_transmittance is None
         ):
-            self._logger.warning("Window parameters are not set, skipping")
+            logger.warning("Window parameters are not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -77,12 +79,12 @@ class ECMApply(IApply):
         for surface in fenestration_surfaces:
             if surface.Surface_Type.upper() == "WINDOW":
                 surface.Construction_Name = constructions_name
-                self._logger.debug(
+                logger.debug(
                     f"Set construction name to {constructions_name} for {surface.Name}"
                 )
                 modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} fenestration surface objects")
+        logger.info(f"Modified {modified_count} fenestration surface objects")
 
     def _apply_wall_insulation_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -95,11 +97,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.wall_insulation is None:
-            self._logger.warning("Wall insulation is not set, skipping")
+            logger.warning("Wall insulation is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -139,12 +141,12 @@ class ECMApply(IApply):
                     Material_Name=insulation_materials_name,
                     Schedule_Name=schedule_name,
                 )
-                self._logger.debug(
+                logger.debug(
                     f"Set insulation material to {insulation_materials_name} for {surface.Name}"
                 )
                 modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} surface control objects")
+        logger.info(f"Modified {modified_count} surface control objects")
 
     def _apply_infiltration_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -157,11 +159,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.infiltration_rate is None:
-            self._logger.warning("Infiltration rate is not set, skipping")
+            logger.warning("Infiltration rate is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -169,20 +171,18 @@ class ECMApply(IApply):
         modified_count = 0
 
         if not infiltration_objects:
-            self._logger.warning(
-                "No ZONEINFILTRATION:DESIGNFLOWRATE objects found in IDF"
-            )
+            logger.warning("No ZONEINFILTRATION:DESIGNFLOWRATE objects found in IDF")
             return
 
         for infiltration in infiltration_objects:
             infiltration.Design_Flow_Rate_Calculation_Method = "AirChanges/Hour"
             infiltration.Air_Changes_per_Hour = parameters.infiltration_rate
-            self._logger.debug(
+            logger.debug(
                 f"Set infiltration rate to {parameters.infiltration_rate} ACH for {infiltration.Name}"
             )
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} infiltration objects")
+        logger.info(f"Modified {modified_count} infiltration objects")
 
     def _apply_natural_ventilation_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -195,11 +195,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.natural_ventilation_area is None:
-            self._logger.warning("Natural ventilation area is not set, skipping")
+            logger.warning("Natural ventilation area is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -214,12 +214,12 @@ class ECMApply(IApply):
                 Zone_or_Space_Name=zone.Name,
                 Opening_Area=parameters.natural_ventilation_area,
             )
-            self._logger.debug(
+            logger.debug(
                 f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone.Name}"
             )
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} ventilation objects")
+        logger.info(f"Modified {modified_count} ventilation objects")
 
     def _apply_cooling_coil_and_chiller_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -232,11 +232,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.cooling_cop is None:
-            self._logger.warning("Cooling COP is not set, skipping")
+            logger.warning("Cooling COP is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -268,15 +268,15 @@ class ECMApply(IApply):
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
                             setattr(equipment, cop_field_name, parameters.cooling_cop)
-                            self._logger.debug(
+                            logger.debug(
                                 f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.Name}"
                             )
                             modified_count += 1
             except Exception:
-                self._logger.exception(f"Failed to process {equipment_type} objects")
+                logger.exception(f"Failed to process {equipment_type} objects")
                 continue
 
-        self._logger.info(f"Modified {modified_count} coil and chiller objects")
+        logger.info(f"Modified {modified_count} coil and chiller objects")
 
     def _apply_heating_coil_and_chiller_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -289,11 +289,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.heating_cop is None:
-            self._logger.warning("Heating COP is not set, skipping")
+            logger.warning("Heating COP is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -325,15 +325,15 @@ class ECMApply(IApply):
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
                             setattr(equipment, cop_field_name, parameters.heating_cop)
-                            self._logger.debug(
+                            logger.debug(
                                 f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.Name}"
                             )
                             modified_count += 1
             except Exception:
-                self._logger.exception(f"Failed to process {equipment_type} objects")
+                logger.exception(f"Failed to process {equipment_type} objects")
                 continue
 
-        self._logger.info(f"Modified {modified_count} heating coil objects")
+        logger.info(f"Modified {modified_count} heating coil objects")
 
     def _apply_cooling_air_temperature_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -346,11 +346,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.cooling_air_temperature is None:
-            self._logger.warning("Cooling air temperature is not set, skipping")
+            logger.warning("Cooling air temperature is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -361,12 +361,12 @@ class ECMApply(IApply):
             sizing_zone.Zone_Cooling_Design_Supply_Air_Temperature = (
                 parameters.cooling_air_temperature
             )
-            self._logger.debug(
+            logger.debug(
                 f"Set cooling air temperature to {parameters.cooling_air_temperature}°C for {sizing_zone.Zone_or_ZoneList_Name}"
             )
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} sizing zone objects")
+        logger.info(f"Modified {modified_count} sizing zone objects")
 
     def _apply_heating_air_temperature_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -379,11 +379,11 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if parameters.heating_air_temperature is None:
-            self._logger.warning("Heating air temperature is not set, skipping")
+            logger.warning("Heating air temperature is not set, skipping")
             return
 
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -394,12 +394,12 @@ class ECMApply(IApply):
             sizing_zone.Zone_Heating_Design_Supply_Air_Temperature = (
                 parameters.heating_air_temperature
             )
-            self._logger.debug(
+            logger.debug(
                 f"Set heating air temperature to {parameters.heating_air_temperature}°C for {sizing_zone.Zone_or_ZoneList_Name}"
             )
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} sizing zone objects")
+        logger.info(f"Modified {modified_count} sizing zone objects")
 
     def _apply_lighting_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -412,7 +412,7 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -421,11 +421,11 @@ class ECMApply(IApply):
         modified_count = 0
 
         if not lights:
-            self._logger.warning("No LIGHTS objects found in IDF")
+            logger.warning("No LIGHTS objects found in IDF")
             return
 
         if lighting_power_reduction is None:
-            self._logger.warning("Lighting power reduction is not set")
+            logger.warning("Lighting power reduction is not set")
             return
 
         for light in lights:
@@ -444,12 +444,12 @@ class ECMApply(IApply):
                 light.Watts_per_Person = original_power * lighting_power_reduction
                 modified_count += 1
             else:
-                self._logger.warning(
+                logger.warning(
                     f"Unsupported lighting calculation method: {calc_method}"
                 )
                 continue
 
-        self._logger.info(f"Modified {modified_count} lighting objects")
+        logger.info(f"Modified {modified_count} lighting objects")
 
     def _apply_hvac_settings_parameters(self, job: SimulationJob) -> None:
         """
@@ -460,7 +460,7 @@ class ECMApply(IApply):
             parameters (ECMParameters): ECM parameters
         """
         if job.idf is None:
-            self._logger.error("IDF is not set, skipping")
+            logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         idf = job.idf
 
@@ -478,7 +478,7 @@ class ECMApply(IApply):
             terminal.Fixed_Minimum_Air_Flow_Rate = "AUTOSIZE"
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} VAV reheat terminals")
+        logger.info(f"Modified {modified_count} VAV reheat terminals")
 
         modified_count = 0
 
@@ -490,7 +490,7 @@ class ECMApply(IApply):
             chiller.Reference_Condenser_Water_Flow_Rate = "AUTOSIZE"
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} chillers")
+        logger.info(f"Modified {modified_count} chillers")
 
         modified_count = 0
 
@@ -501,4 +501,4 @@ class ECMApply(IApply):
             tower.Design_Fan_Power = "AUTOSIZE"
             modified_count += 1
 
-        self._logger.info(f"Modified {modified_count} CoolingTowers")
+        logger.info(f"Modified {modified_count} CoolingTowers")

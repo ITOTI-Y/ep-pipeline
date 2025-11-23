@@ -87,6 +87,7 @@ def ecm_services_prepare(
 
 def main():
     config = ConfigManager(Path("backend/configs"))
+    set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
     idf_files = config.paths.idf_files
     weather_files = config.paths.ftmy_files
