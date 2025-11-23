@@ -126,7 +126,7 @@ class ECMApply(IApply):
             Hourly_Value=1.0,
         )
 
-        self._remove_objects(idf, "SurfaceControl:MoveableInsulation")
+        self._remove_objects(idf, "SurfaceControl:MovableInsulation")
         surfaces = idf.idfobjects.get("BUILDINGSURFACE:DETAILED", [])
         modified_count = 0
         for surface in surfaces:

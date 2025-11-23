@@ -45,7 +45,6 @@ def test_ecm_process():
         output_directory=config.paths.ecm_dir / building.name,
         output_prefix="ecm_",
         read_variables=True,
-        idf=IDF(str(building.idf_file_path)),
         ecm_parameters=ecm_samples[0],
     )
 
@@ -60,6 +59,8 @@ def test_ecm_process():
         config=config,
         job=job,
     )
+
+    job.idf = IDF(str(building.idf_file_path))
     result = service.run()
 
     with open(config.paths.ecm_dir / building.name / "result.pkl", "wb") as f:
