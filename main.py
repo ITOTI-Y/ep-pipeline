@@ -138,9 +138,10 @@ def parse_results_to_csv():
     for result_file in results_dir.glob("**/result.pkl"):
         with open(result_file, "rb") as f:
             result = load(f)
+            code = {"code": result_file.parents[1].name}
             ecm_parameters = result.ecm_parameters.model_dump()
             eui_result = result.get_eui_summary()
-            all_data = dict(sorted({**ecm_parameters, **eui_result}.items()))
+            all_data = dict(sorted({**code, **ecm_parameters, **eui_result}.items()))
             results.append(all_data)
     df = pd.DataFrame(results)
     df.to_csv(results_dir / "results.csv", index=False)
@@ -162,5 +163,5 @@ def _single_run(
 
 
 if __name__ == "__main__":
-    main()
-    # parse_results_to_csv()
+    # main()
+    parse_results_to_csv()
