@@ -15,7 +15,7 @@ from backend.models import (
     SimulationType,
     Weather,
 )
-from backend.script.parse_data import parse_results_to_csv, parse_optimal_data
+from backend.script.parse_data import parse_optimal_data, parse_results_to_csv
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
     BaselineService,

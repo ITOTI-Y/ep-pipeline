@@ -13,6 +13,8 @@ def parse_results_to_csv(config: ConfigManager):
     for result_file in results_dir.glob("**/result.pkl"):
         with open(result_file, "rb") as f:
             result = load(f)
+            if result.ecm_parameters is None:
+                continue
             code = {"code": result_file.parents[1].name}
             ecm_parameters = result.ecm_parameters.model_dump()
             eui_result = result.get_eui_summary()

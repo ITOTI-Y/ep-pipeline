@@ -108,7 +108,8 @@ class OptimizationService(ISimulationService):
                 )
                 y = data[TARGET_NAMES].values.astype(np.float32)
                 surrogate_model.train(x, y)
-                self._surrogate_model = surrogate_model
+                if str(building_type) == self._job.building.name:
+                    self._surrogate_model = surrogate_model
                 logger.info(
                     f"Surrogate model trained for building type {building_type}"
                 )
