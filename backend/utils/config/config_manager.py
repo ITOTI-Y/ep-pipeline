@@ -4,8 +4,8 @@ from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from backend.models.config_models import (
-    AnalysisConfig,
     ECMParametersConfig,
+    OptimizationConfig,
     PathsConfig,
     SimulationConfig,
 )
@@ -18,7 +18,7 @@ class ConfigManager:
 
         self.paths = self._parse_paths_config()
         self.simulation = self._parse_simulation_config()
-        self.analysis = self._parse_analysis_config()
+        self.optimization = self._parse_optimization_config()
         self.ecm_parameters = self._parse_ecm_parameters_config()
 
     def _load_config(self) -> ListConfig | DictConfig:
@@ -73,19 +73,19 @@ class ConfigManager:
 
         return SimulationConfig(**sim_dict)  # type: ignore
 
-    def _parse_analysis_config(self) -> AnalysisConfig:
-        analysis_config = OmegaConf.select(self._raw_config, "analysis")
-        if analysis_config is None:
-            logger.warning("Analysis config not found; using defaults")
-            return AnalysisConfig()
+    def _parse_optimization_config(self) -> OptimizationConfig:
+        optimization_config = OmegaConf.select(self._raw_config, "optimization")
+        if optimization_config is None:
+            logger.warning("Optimization config not found; using defaults")
+            return OptimizationConfig()
 
-        analysis_dict = OmegaConf.to_container(
-            analysis_config,
+        optimization_dict = OmegaConf.to_container(
+            optimization_config,
             resolve=True,
             throw_on_missing=False,
         )
 
-        return AnalysisConfig(**analysis_dict)  # type: ignore
+        return OptimizationConfig(**optimization_dict)  # type: ignore
 
     def _parse_ecm_parameters_config(self) -> ECMParametersConfig:
         ecm_parameters_config = OmegaConf.select(self._raw_config, "ecm_parameters")

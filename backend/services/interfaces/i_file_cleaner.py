@@ -10,5 +10,6 @@ class IFileCleaner(ABC):
         self,
         job: SimulationJob,
         config: ConfigManager,
-    ):
+        exclude_files: tuple[str, ...] = (),
+    ) -> None:
         pass

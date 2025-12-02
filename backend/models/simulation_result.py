@@ -80,6 +80,10 @@ class SimulationResult(BaseModel):
         ...,
         description="The type of the building.",
     )
+    weather_code: str | None = Field(
+        default=None,
+        description="The code of the weather.",
+    )
     ecm_parameters: ECMParameters | None = Field(
         default=None,
         description="ECM parameters used in the simulation.",
@@ -133,6 +137,11 @@ class SimulationResult(BaseModel):
         default=None,
         ge=0,
         description="Net site energy intensity (kWh/m²/yr) - calculated by ResultParser",
+    )
+    predicted_eui: float | None = Field(
+        default=None,
+        ge=0,
+        description="Predicted EUI (kWh/m²/yr) - calculated by OptimizationModel",
     )
     surfaces: list[Surface] = Field(
         default_factory=list,

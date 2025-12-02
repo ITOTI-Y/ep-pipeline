@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationContext
+from backend.models import SimulationJob
 
 
 class IApply(ABC):
 
     @abstractmethod
-    def apply(self, context: SimulationContext) -> None:
+    def apply(self, job: SimulationJob) -> None:
         pass
 
     def _remove_objects(self, idf: IDF, object_type: str) -> None:

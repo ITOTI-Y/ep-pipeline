@@ -8,8 +8,13 @@ class ECMApply(IApply):
     def __init__(self):
         super().__init__()
 
-    def apply(self, job: SimulationJob, parameters: ECMParameters) -> None:
+    def apply(self, job: SimulationJob) -> None:
         logger.info("Applying ECM configuration")
+        if job.ecm_parameters is None:
+            logger.error("ECM parameters are not set, skipping")
+            raise ValueError("ECM parameters are not set")
+        parameters = job.ecm_parameters
+
         self._apply_window_parameters(job, parameters)
         self._apply_wall_insulation_parameters(job, parameters)
         self._apply_infiltration_parameters(job, parameters)
