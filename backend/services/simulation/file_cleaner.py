@@ -13,8 +13,10 @@ class FileCleaner(IFileCleaner):
         self,
         job: SimulationJob,
         config: ConfigManager,
+        exclude_files: tuple[str, ...] = (),
     ) -> None:
         cleanup_files = config.simulation.cleanup_files
+        cleanup_files = [file for file in cleanup_files if file not in exclude_files]
         deleted_count = 0
         for pattern in cleanup_files:
             file_paths = job.output_directory.glob(pattern)

@@ -1,6 +1,5 @@
 from datetime import date
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -182,18 +181,22 @@ class ECMParametersConfig(BaseModel):
         return list(self.model_dump().keys())
 
 
-class AnalysisConfig(BaseModel):
+class GeneticAlgorithmConfig(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
-        frozen=False,
+    )
+    population_size: int = Field(default=100, description="Population size")
+    generations: int = Field(default=100, description="Generations")
+    crossover_prob: float = Field(default=0.7, description="Crossover probability")
+    mutation_prob: float = Field(default=0.2, description="Mutation probability")
+
+
+class OptimizationConfig(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
     )
 
-    sensitivity: dict[str, Any] = Field(
-        default_factory=dict, description="Sensitivity analysis configuration"
-    )
-    optimization: dict[str, Any] = Field(
-        default_factory=dict, description="Optimization configuration"
-    )
-    surrogate_models: dict[str, Any] = Field(
-        default_factory=dict, description="Surrogate models configuration"
+    seed: int = Field(default=0, description="Random seed")
+    genetic: GeneticAlgorithmConfig = Field(
+        default_factory=GeneticAlgorithmConfig, description="Genetic configuration"
     )

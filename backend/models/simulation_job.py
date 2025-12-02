@@ -28,7 +28,8 @@ class SimulationJob(BaseModel):
         ..., description="The building object associated with the simulation job."
     )
     weather: Weather = Field(
-        ..., description="The weather file object associated with the simulation job."
+        ...,
+        description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
         ..., description="The type of simulation to be performed."
@@ -136,7 +137,7 @@ class SimulationJob(BaseModel):
 
     def get_cache_key(self) -> str:
         building_id = self.building.get_identifier()
-        weather_file_id = self.weather.get_identifier()
+        weather_file_id = self.weather.get_identifier() if self.weather else None
         ecm_hash = hash(self.ecm_parameters) if self.ecm_parameters else 0
         return (
             f"{building_id}_{weather_file_id}_{self.simulation_type.value}_{ecm_hash}"

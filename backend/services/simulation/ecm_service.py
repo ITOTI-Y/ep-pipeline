@@ -33,7 +33,7 @@ class ECMService(ISimulationService):
         logger.info("ECM preparation started")
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
-        self._ecm_apply.apply(self._job, self._job.ecm_parameters)  # type: ignore
+        self._ecm_apply.apply(self._job)  # type: ignore
         logger.info("ECM preparation completed")
 
     def execute(self) -> SimulationResult:

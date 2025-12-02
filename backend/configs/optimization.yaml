@@ -1,0 +1,8 @@
+optimization:
+  seed: 0
+
+  genetic:
+    generations: 100
+    population_size: 100
+    crossover_prob: 0.7
+    mutation_prob: 0.2
