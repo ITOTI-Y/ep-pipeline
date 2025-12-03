@@ -38,7 +38,6 @@ def base_services_prepare(
             simulation_type=SimulationType.BASELINE,
             output_directory=config.paths.baseline_dir / building.name / weather.code,  # type: ignore
             output_prefix="baseline_",
-            # idf=IDF(str(building.idf_file_path)),
         )
 
         baseline_service = BaselineService(
@@ -74,7 +73,6 @@ def ecm_services_prepare(
                 / weather.code
                 / f"sample_{i:03d}",
                 output_prefix=f"ecm_{i:03d}",
-                # idf=IDF(str(building.idf_file_path)),
                 ecm_parameters=ecm_sample,
             )
             ecm_service = ECMService(
@@ -149,11 +147,11 @@ def main():
         config, buildings_weather_combinations
     )
 
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in chain(base_services, ecm_services)
-    )
-    parse_results_to_csv(config)
+    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+    #     delayed(_single_run)(job, service, config)
+    #     for job, service in chain(base_services, ecm_services)
+    # )
+    # parse_results_to_csv(config)
 
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config)
