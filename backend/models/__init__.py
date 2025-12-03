@@ -1,4 +1,5 @@
 from .building import Building
+from .config_models import PVConfig, StorageConfig
 from .context import BaselineContext, ECMContext, SimulationContext
 from .ecm_parameters import ECMParameters
 from .enums import BuildingType, SimulationStatus, SimulationType
@@ -12,11 +13,13 @@ __all__ = [
     "BuildingType",
     "ECMContext",
     "ECMParameters",
+    "PVConfig",
     "SimulationContext",
     "SimulationJob",
     "SimulationResult",
     "SimulationStatus",
     "SimulationType",
+    "StorageConfig",
     "Surface",
     "Weather",
 ]

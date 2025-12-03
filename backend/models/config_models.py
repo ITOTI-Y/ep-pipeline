@@ -181,6 +181,20 @@ class ECMParametersConfig(BaseModel):
         return list(self.model_dump().keys())
 
 
+class PVConfig(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+    )
+    radiation_threshold: float = Field(default=800.0, description="Radiation threshold")
+
+class StorageConfig(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+    )
+    capacity: dict = Field(default_factory=dict, description="Storage capacity")
+
 class GeneticAlgorithmConfig(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
