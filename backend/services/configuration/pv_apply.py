@@ -109,6 +109,10 @@ class PVApply(IApply):
         self._remove_objects(idf, "ElectricLoadCenter:Generators")
         self._remove_objects(idf, "ElectricLoadCenter:Distribution")
 
+        if not self._generators_and_surfaces:
+            logger.info("No PV generators created; skipping ElectricLoadCenter configuration")
+            return
+
         gen_list = idf.newidfobject("ElectricLoadCenter:Generators")
         gen_list.Name = "PV_Generator_List"
 

@@ -16,6 +16,7 @@ from backend.models import (
     Weather,
 )
 from backend.script.parse_data import parse_optimal_data, parse_results_to_csv
+from backend.services.interfaces import ISimulationService
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
     BaselineService,
@@ -119,7 +120,12 @@ def pv_services_prepare(
 ):
     baseline_dir = config.paths.baseline_dir
     for building, weather in buildings_weather_combinations:
-        idf_file_path = config.paths.optimization_dir / building.name / weather.code / "optimization_.idf"  # type: ignore
+        idf_file_path = (
+            config.paths.optimization_dir  # type: ignore
+            / building.name
+            / weather.code
+            / "optimization_.idf"
+        )
         building.idf_file_path = idf_file_path
         job = SimulationJob(
             building=building,
@@ -129,7 +135,9 @@ def pv_services_prepare(
             output_prefix="pv_",
         )
 
-        baseline_result_path = baseline_dir / building.name / weather.code / "result.pkl"  # type: ignore
+        baseline_result_path = (
+            baseline_dir / building.name / weather.code / "result.pkl"  # type: ignore
+        )
         with open(baseline_result_path, "rb") as f:
             baseline_result = load(f)
 
@@ -194,16 +202,13 @@ def main():
     )
 
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in pv_services
+        delayed(_single_run)(job, service, config) for job, service in pv_services
     )
 
     parse_optimal_data(config)
 
 
-def _single_run(
-    job: SimulationJob, service: BaselineService | ECMService, config: ConfigManager
-):
+def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigManager):
     set_logger(config.paths.log_dir)
     IDF.setiddname(str(config.paths.idd_file))
     job.idf = IDF(str(job.building.idf_file_path))
