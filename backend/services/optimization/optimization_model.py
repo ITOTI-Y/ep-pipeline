@@ -53,7 +53,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return ECMParameters(**params)  # type: ignore[arg-type]
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
-        code_encoded = self._encode_model.transform([[self._code]])
+        code_encoded = self._encode_model.transform([[self._code]]) # type: ignore
         features = [ecm_parameters.model_dump().get(name, 0.0) for name in self._ecm_parameters_names]
 
         features = np.concatenate([[features], code_encoded], axis=1) # type: ignore[arg-type]
@@ -88,15 +88,12 @@ class GeneticAlgorithmModel(IOptimizationModel):
         for i in range(len(ind1)):
             if np.random.random() < cxpb:
                 ind1[i], ind2[i] = ind2[i], ind1[i]
-                del ind1.fitness.values # type: ignore[attr-defined]
-                del ind2.fitness.values # type: ignore[attr-defined]
         return ind1, ind2
 
     def _discrete_mutation(self, individual: list, indpb: float) -> list:
         for i in range(len(individual)):
             if np.random.random() < indpb:
                 individual[i] = np.random.randint(0, self._max_indices[i] + 1)
-                del individual.fitness.values # type: ignore[attr-defined]
         return individual
 
     def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
@@ -117,9 +114,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         population = toolbox.population(n=self._population_size)  # type: ignore[attr-defined]
 
-        fitness = list(map(toolbox.evaluate, population))  # type: ignore[attr-defined]
-        for ind, fit in zip(population, fitness, strict=False):
-            ind.fitness.values = fit
+        hof = tools.HallOfFame(1)
 
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("avg", np.mean)
@@ -131,20 +126,37 @@ class GeneticAlgorithmModel(IOptimizationModel):
         logbook.header = ["gen", "nevals", *stats.fields] # type: ignore[arg-type]
 
         logger.info(f"Starting genetic algorithm optimization for {building_type}")
+
+        fitness = list(map(toolbox.evaluate, population))  # type: ignore[attr-defined]
+        for ind, fit in zip(population, fitness, strict=False):
+            ind.fitness.values = fit
+
+        hof.update(population)
+
         for gen in range(self._generations):
             offspring = toolbox.select(population, len(population))  # type: ignore[attr-defined]
             offspring = list(map(toolbox.clone, offspring))  # type: ignore[attr-defined]
 
             for child1, child2 in zip(offspring[::2], offspring[1::2], strict=False):
-                toolbox.mate(child1, child2, cxpb=self._crossover_prob)  # type: ignore[attr-defined]
+                if np.random.random() < self._crossover_prob:
+                    toolbox.mate(child1, child2, cxpb=0.5)  # type: ignore[attr-defined]
+                    del child1.fitness.values
+                    del child2.fitness.values
 
             for mutant in offspring:
-                toolbox.mutate(mutant, indpb=self._mutation_prob)  # type: ignore[attr-defined]
+                if np.random.random() < self._mutation_prob:
+                    toolbox.mutate(mutant, indpb=0.05)  # type: ignore[attr-defined]
+                    del mutant.fitness.values
 
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
             fitnesses = map(toolbox.evaluate, invalid_ind)  # type: ignore[attr-defined]
             for ind, fit in zip(invalid_ind, fitnesses, strict=False):
                 ind.fitness.values = fit
+
+            hof.update(offspring)
+            if hof:
+                worst_ind_idx = np.argmax([ind.fitness.values[0] for ind in offspring])
+                offspring[worst_ind_idx] = toolbox.clone(hof[0]) # type: ignore[attr-defined]
 
             population[:] = offspring
 

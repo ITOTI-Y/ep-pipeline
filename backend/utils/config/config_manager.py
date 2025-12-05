@@ -7,7 +7,9 @@ from backend.models.config_models import (
     ECMParametersConfig,
     OptimizationConfig,
     PathsConfig,
+    PVConfig,
     SimulationConfig,
+    StorageConfig,
 )
 
 
@@ -20,6 +22,8 @@ class ConfigManager:
         self.simulation = self._parse_simulation_config()
         self.optimization = self._parse_optimization_config()
         self.ecm_parameters = self._parse_ecm_parameters_config()
+        self.pv = self._parse_pv_config()
+        self.storage = self._parse_storage_config()
 
     def _load_config(self) -> ListConfig | DictConfig:
         if not self._config_dir.exists():
@@ -100,6 +104,34 @@ class ConfigManager:
         )
 
         return ECMParametersConfig(**ecm_parameters_dict)  # type: ignore
+
+    def _parse_pv_config(self) -> PVConfig:
+        pv_config = OmegaConf.select(self._raw_config, "pv")
+        if pv_config is None:
+            logger.warning("PV config not found; using defaults")
+            return PVConfig()
+
+        pv_dict = OmegaConf.to_container(
+            pv_config,
+            resolve=True,
+            throw_on_missing=False,
+        )
+
+        return PVConfig(**pv_dict)  # type: ignore
+
+    def _parse_storage_config(self) -> StorageConfig:
+        storage_config = OmegaConf.select(self._raw_config, "storage")
+        if storage_config is None:
+            logger.warning("Storage config not found; using defaults")
+            return StorageConfig()
+
+        storage_dict = OmegaConf.to_container(
+            storage_config,
+            resolve=True,
+            throw_on_missing=False,
+        )
+
+        return StorageConfig(**storage_dict)  # type: ignore
 
     @property
     def value(self):

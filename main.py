@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from itertools import chain, product
 from pathlib import Path
-from pickle import dump
+from pickle import dump, load
 
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
@@ -16,12 +16,14 @@ from backend.models import (
     Weather,
 )
 from backend.script.parse_data import parse_optimal_data, parse_results_to_csv
+from backend.services.interfaces import ISimulationService
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
     BaselineService,
     ECMService,
     FileCleaner,
     OptimizationService,
+    PVService,
     ResultParser,
 )
 from backend.utils.config import ConfigManager, set_logger
@@ -38,7 +40,6 @@ def base_services_prepare(
             simulation_type=SimulationType.BASELINE,
             output_directory=config.paths.baseline_dir / building.name / weather.code,  # type: ignore
             output_prefix="baseline_",
-            # idf=IDF(str(building.idf_file_path)),
         )
 
         baseline_service = BaselineService(
@@ -74,7 +75,6 @@ def ecm_services_prepare(
                 / weather.code
                 / f"sample_{i:03d}",
                 output_prefix=f"ecm_{i:03d}",
-                # idf=IDF(str(building.idf_file_path)),
                 ecm_parameters=ecm_sample,
             )
             ecm_service = ECMService(
@@ -114,6 +114,46 @@ def optimization_services_prepare(
         yield job, optimization_service
 
 
+def pv_services_prepare(
+    config: ConfigManager,
+    buildings_weather_combinations: list[tuple[Building, Weather]],
+):
+    baseline_dir = config.paths.baseline_dir
+    for building, weather in buildings_weather_combinations:
+        idf_file_path = (
+            config.paths.optimization_dir  # type: ignore
+            / building.name
+            / weather.code
+            / "optimization_.idf"
+        )
+        building.idf_file_path = idf_file_path
+        job = SimulationJob(
+            building=building,
+            weather=weather,
+            simulation_type=SimulationType.PV,
+            output_directory=config.paths.pv_dir / building.name / weather.code,  # type: ignore
+            output_prefix="pv_",
+        )
+
+        baseline_result_path = (
+            baseline_dir / building.name / weather.code / "result.pkl"  # type: ignore
+        )
+        with open(baseline_result_path, "rb") as f:
+            baseline_result = load(f)
+
+        surfaces = baseline_result.surfaces
+
+        pv_service = PVService(
+            executor=EnergyPlusExecutor(),
+            result_parser=ResultParser(),
+            file_cleaner=FileCleaner(),
+            config=config,
+            job=job,
+            surfaces=surfaces,
+        )
+        yield job, pv_service
+
+
 def main():
     config = ConfigManager(Path("backend/configs"))
     set_logger(config.paths.log_dir)
@@ -145,25 +185,29 @@ def main():
 
     base_services = base_services_prepare(config, buildings_weather_combinations)
     ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
-    optimization_services = optimization_services_prepare(
-        config, buildings_weather_combinations
-    )
-
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config)
         for job, service in chain(base_services, ecm_services)
     )
     parse_results_to_csv(config)
 
+    optimization_services = optimization_services_prepare(
+        config, buildings_weather_combinations
+    )
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config)
         for job, service in optimization_services
     )
 
+    pv_services = pv_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config) for job, service in pv_services
+    )
 
-def _single_run(
-    job: SimulationJob, service: BaselineService | ECMService, config: ConfigManager
-):
+    parse_optimal_data(config)
+
+
+def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigManager):
     set_logger(config.paths.log_dir)
     IDF.setiddname(str(config.paths.idd_file))
     job.idf = IDF(str(job.building.idf_file_path))
@@ -177,6 +221,4 @@ def _single_run(
 
 
 if __name__ == "__main__":
-    # main()
-    # parse_results_to_csv(ConfigManager(Path("backend/configs")))
-    parse_optimal_data(ConfigManager(Path("backend/configs")))
+    main()

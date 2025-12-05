@@ -52,11 +52,13 @@ class OutputApply(IApply):
         required_variables = [
             ("Site Outdoor Air Drybulb Temperature", "Hourly"),
             ("Zone Mean Air Temperature", "Hourly"),
-            ("Facility Total Electric Demand Power", "Hourly"),
-            ("Facility Total Natural Gas Demand Rate", "Hourly"),
+            ("Facility Total Electricity Demand Rate", "Hourly"),
             ("Surface Outside Face Incident Solar Radiation Rate per Area", "Hourly"),
-            ("Facility Total Purchased Electric Energy", "Monthly"),
-            ("Facility Total Natural Gas Energy", "Monthly"),
+            ("Facility Total Purchased Electricity Rate", "Monthly"),
+            ("Generator Produced DC Electricity Rate", "Hourly"),
+            ("Electric Storage Simple Charge State", "Hourly"),
+            ("Electric Storage Charge Power", "Hourly"),
+            ("Electric Storage Discharge Power", "Hourly"),
         ]
 
         added_count = 0

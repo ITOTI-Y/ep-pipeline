@@ -8,5 +8,5 @@ ecm_parameters:
   cooling_cop: [3.5, 4, 4.5, 5, 5.5, 6]
   heating_cop: [3.5, 4, 4.5, 5, 5.5, 6]
   cooling_air_temperature: [10, 12, 14, 16] # °C
-  heating_air_temperature: [30, 32, 34, 36] # °C
+  heating_air_temperature: [32, 34, 36, 40] # °C
   lighting_power_reduction_level: [1, 2, 3]
