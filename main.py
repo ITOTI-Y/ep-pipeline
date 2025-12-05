@@ -184,7 +184,7 @@ def main():
 
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config)
-        for job, service in ecm_services
+        for job, service in chain(base_services, ecm_services)
     )
     parse_results_to_csv(config)
 
@@ -197,6 +197,8 @@ def main():
         delayed(_single_run)(job, service, config)
         for job, service in pv_services
     )
+
+    parse_optimal_data(config)
 
 
 def _single_run(
@@ -216,5 +218,3 @@ def _single_run(
 
 if __name__ == "__main__":
     main()
-    # parse_results_to_csv(ConfigManager(Path("backend/configs")))
-    # parse_optimal_data(ConfigManager(Path("backend/configs")))
