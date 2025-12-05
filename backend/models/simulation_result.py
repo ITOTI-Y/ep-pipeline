@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID, uuid4
 
 from loguru import logger
@@ -54,10 +53,6 @@ class SimulationResult(BaseModel):
     warnings: list[str] = Field(
         default_factory=list,
         description="List of warning messages encountered during the simulation.",
-    )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata related to the simulation result.",
     )
 
     table_csv_path: Path | None = Field(

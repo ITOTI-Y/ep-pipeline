@@ -193,7 +193,7 @@ class StorageConfig(BaseModel):
         validate_assignment=True,
         frozen=False,
     )
-    capacity: dict = Field(default_factory=dict, description="Storage capacity")
+    capacity: dict = Field(default_factory=lambda: {}, description="Storage capacity")
 
 class GeneticAlgorithmConfig(BaseModel):
     model_config = ConfigDict(

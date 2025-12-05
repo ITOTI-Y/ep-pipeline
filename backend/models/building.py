@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -34,9 +33,6 @@ class Building(BaseModel):
         default_factory=datetime.now,
         description="The timestamp when the building was last modified.",
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for the building."
-    )
     num_floors: int | None = Field(
         default=None, description="The number of floors in the building."
     )
@@ -67,15 +63,6 @@ class Building(BaseModel):
     def get_identifier(self) -> str:
         """Returns a string identifier for the building."""
         return f"{self.location}_{self.building_type.value}"
-
-    def update_metadata(self, key: str, value: Any) -> None:
-        """Updates the metadata dictionary with a new key-value pair."""
-        self.metadata[key] = value
-        self.modified_at = datetime.now()
-
-    def get_metadata(self, key: str, default: Any = None) -> Any:
-        """Retrieves a value from the metadata dictionary by key."""
-        return self.metadata.get(key, default)
 
     def __str__(self) -> str:
         return (
