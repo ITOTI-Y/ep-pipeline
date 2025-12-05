@@ -71,6 +71,7 @@ class PVService(ISimulationService):
         self._file_cleaner.clean(
             job=self._job,
             config=self._config,
+            exclude_files=("*.sql","*.csv")
         )
 
     def run(self) -> SimulationResult:

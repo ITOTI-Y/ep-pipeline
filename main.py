@@ -182,18 +182,18 @@ def main():
     )
     pv_services = pv_services_prepare(config, buildings_weather_combinations)
 
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in chain(base_services, ecm_services)
-    # )
-    # parse_results_to_csv(config)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in chain(base_services, ecm_services)
+    )
+    parse_results_to_csv(config)
 
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in optimization_services
-    # )
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in optimization_services
+    )
 
-    _ = Parallel(n_jobs=1, verbose=10, backend="loky")(
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config)
         for job, service in pv_services
     )

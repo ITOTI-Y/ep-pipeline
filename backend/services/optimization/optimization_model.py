@@ -53,7 +53,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return ECMParameters(**params)  # type: ignore[arg-type]
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
-        code_encoded = self._encode_model.transform([[self._code]])
+        code_encoded = self._encode_model.transform([[self._code]]) # type: ignore
         features = [ecm_parameters.model_dump().get(name, 0.0) for name in self._ecm_parameters_names]
 
         features = np.concatenate([[features], code_encoded], axis=1) # type: ignore[arg-type]
