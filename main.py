@@ -15,7 +15,7 @@ from backend.models import (
     SimulationType,
     Weather,
 )
-from backend.script.parse_data import parse_optimal_data
+from backend.script.parse_data import parse_optimal_data, parse_result_parameters
 from backend.services.interfaces import ISimulationService
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
@@ -191,13 +191,13 @@ def main():
     # )
     # parse_results_to_csv(config)
 
-    optimization_services = optimization_services_prepare(
-        config, buildings_weather_combinations
-    )
-    _ = Parallel(n_jobs=1, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in optimization_services
-    )
+    # optimization_services = optimization_services_prepare(
+    #     config, buildings_weather_combinations
+    # )
+    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+    #     delayed(_single_run)(job, service, config)
+    #     for job, service in optimization_services
+    # )
 
     # pv_services = pv_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
@@ -222,3 +222,4 @@ def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigM
 
 if __name__ == "__main__":
     main()
+    # parse_result_parameters(ConfigManager(Path("backend/configs")))

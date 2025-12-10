@@ -111,8 +111,10 @@ class OptimizationService(ISimulationService):
                 surrogate_model.train(x, y)
 
                 evaluate_metrics = surrogate_model.evaluate()
+                evaluate_file_path = surrogate_model_path.parent / "evaluate.json"
+                evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(
-                    file=surrogate_model_path.parent / "evaluate.json",
+                    file=evaluate_file_path,
                     mode="w",
                     encoding="utf-8",
                 ) as f:

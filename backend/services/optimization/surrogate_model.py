@@ -34,8 +34,8 @@ class XGBoostSurrogateModel(ISurrogateModel):
         self._model = XGBRegressor(
             random_state=self._seed,
             objective="reg:squarederror",
-            max_depth=6,
-            learning_rate=0.1,
+            max_depth=8,
+            learning_rate=0.02,
             subsample=0.8,
             colsample_bytree=0.8,
             multi_strategy="multi_output_tree",

@@ -2,7 +2,7 @@ optimization:
   seed: 1
 
   genetic:
-    generations: 300
+    generations: 200
     population_size: 200
     hall_of_fame_percentage: 0.05 # [0-1]
     # 个体级概率
