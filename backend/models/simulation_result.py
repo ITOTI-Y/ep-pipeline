@@ -100,7 +100,6 @@ class SimulationResult(BaseModel):
     )
     net_source_energy: float | None = Field(
         default=None,
-        ge=0,
         description="Net source energy consumption (kWh) - calculated by ResultParser",
     )
     total_site_energy: float | None = Field(
@@ -110,7 +109,6 @@ class SimulationResult(BaseModel):
     )
     net_site_energy: float | None = Field(
         default=None,
-        ge=0,
         description="Net site energy consumption (kWh) - calculated by ResultParser",
     )
     total_source_eui: float | None = Field(
@@ -120,7 +118,6 @@ class SimulationResult(BaseModel):
     )
     net_source_eui: float | None = Field(
         default=None,
-        ge=0,
         description="Net source energy intensity (kWh/m²/yr) - calculated by ResultParser",
     )
     total_site_eui: float | None = Field(
@@ -130,7 +127,6 @@ class SimulationResult(BaseModel):
     )
     net_site_eui: float | None = Field(
         default=None,
-        ge=0,
         description="Net site energy intensity (kWh/m²/yr) - calculated by ResultParser",
     )
     predicted_eui: float | None = Field(
