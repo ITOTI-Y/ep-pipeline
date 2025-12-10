@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from itertools import product
+from itertools import chain, product
 from pathlib import Path
 from pickle import dump, load
 
@@ -183,12 +183,12 @@ def main():
 
     n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
 
-    # base_services = base_services_prepare(config, buildings_weather_combinations)
-    # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in chain(base_services, ecm_services)
-    # )
+    base_services = base_services_prepare(config, buildings_weather_combinations)
+    ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in base_services
+    )
     # parse_results_to_csv(config)
 
     # optimization_services = optimization_services_prepare(
@@ -199,10 +199,10 @@ def main():
     #     for job, service in optimization_services
     # )
 
-    pv_services = pv_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in pv_services
-    )
+    # pv_services = pv_services_prepare(config, buildings_weather_combinations)
+    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+    #     delayed(_single_run)(job, service, config) for job, service in pv_services
+    # )
 
     parse_optimal_data(config)
 

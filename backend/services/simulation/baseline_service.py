@@ -1,4 +1,3 @@
-from eppy.modeleditor import IDF
 from loguru import logger
 
 from backend.models import SimulationJob, SimulationResult
@@ -59,8 +58,5 @@ class BaselineService(ISimulationService):
 
     def cleanup(self) -> None:
         self._file_cleaner.clean(
-            job=self._job,
-            config=self._config,
-            exclude_files=("*.sql","*.csv")
+            job=self._job, config=self._config, exclude_files=("*.sql", "*.csv")
         )
-

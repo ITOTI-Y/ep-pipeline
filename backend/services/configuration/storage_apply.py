@@ -26,9 +26,9 @@ class StorageApply(IApply):
         storage = idf.newidfobject("ElectricLoadCenter:Storage:Simple")
         storage.Name = "PV_Storage"
         storage.Availability_Schedule_Name = (
-            "Allways_on"
+            "Always_on"
             if self._config.storage.capacity[self._building_type.value] > 0
-            else "Allways_off"
+            else "Always_off"
         )
         storage.Radiative_Fraction_for_Zone_Heat_Gains = 0.0
         storage.Nominal_Energetic_Efficiency_for_Charging = 0.95
