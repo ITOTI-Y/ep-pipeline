@@ -86,9 +86,14 @@ class PVApply(IApply):
                 surface.type in ["Roof", "Wall"]
                 and surface.sum_irradiation > self._config.pv.radiation_threshold
             ):
+                surface_area = self._get_surace_area(idf, surface)
                 pv_generator = idf.newidfobject("Generator:Photovoltaic")
                 pv_generator.Name = pv_parameters["Name"] + f"_generator_{modified_count}"
-                pv_generator.Surface_Name = surface.name
+                surface_object = idf.getobject('BuildingSurface:Detailed', surface.name)
+                if surface_object is None:
+                    logger.error(f"Surface {surface.name} not found")
+                    raise ValueError(f"Surface {surface.name} not found")
+                pv_generator.Surface_Name = surface_object.Name
                 pv_generator.Photovoltaic_Performance_Object_Type = (
                     "PhotovoltaicPerformance:EquivalentOne-Diode"
                 )
@@ -96,8 +101,9 @@ class PVApply(IApply):
                     pv_parameters["Name"] + "_performance"
                 )
                 pv_generator.Heat_Transfer_Integration_Mode = "Decoupled"
+                total_modules = max(1, int(surface_area / pv_parameters["Active_Area"] * 0.8))
                 pv_generator.Number_of_Series_Strings_in_Parallel = 1
-                pv_generator.Number_of_Modules_in_Series = 1
+                pv_generator.Number_of_Modules_in_Series = total_modules
 
                 self._generators_and_surfaces.append((pv_generator, surface))
                 modified_count += 1

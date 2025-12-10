@@ -1,7 +1,7 @@
 storage:
   capacity:
-    OfficeLarge: 16 # kWh
-    OfficeMedium: 8 # kWh
-    ApartmentHighRise: 4 # kWh
-    SingleFamilyResidential: 2 # kWh
-    MultiFamilyResidential: 2 # kWh
+    OfficeLarge: 0 # kWh
+    OfficeMedium: 0 # kWh
+    ApartmentHighRise: 0 # kWh
+    SingleFamilyResidential: 13 # kWh
+    MultiFamilyResidential: 20 # kWh

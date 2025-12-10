@@ -61,20 +61,6 @@ class BaselineService(ISimulationService):
         self._file_cleaner.clean(
             job=self._job,
             config=self._config,
+            exclude_files=("*.sql","*.csv")
         )
 
-    def _configure_simulation_period(self, idf: IDF) -> None:
-        self._remove_objects(idf, "RUNPERIOD")
-
-        idf.newidfobject(
-            "RUNPERIOD",
-            Name="Default Run Period",
-            Begin_Month=self._config.simulation.begin_month,
-            Begin_Day_of_Month=self._config.simulation.begin_day,
-            Begin_Year=self._config.simulation.begin_year,
-            End_Month=self._config.simulation.end_month,
-            End_Day_of_Month=self._config.simulation.end_day,
-            End_Year=self._config.simulation.end_year,
-        )
-
-        logger.success("Simulation period configured successfully")

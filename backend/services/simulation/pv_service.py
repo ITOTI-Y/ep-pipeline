@@ -5,6 +5,7 @@ from backend.services.configuration import (
     OutputApply,
     PeriodApply,
     PVApply,
+    ScheduleApply,
     StorageApply,
 )
 from backend.services.interfaces import (
@@ -37,11 +38,13 @@ class PVService(ISimulationService):
         self._storage_apply = StorageApply(
             config=config, building_type=job.building.building_type
         )
+        self._schedule_apply = ScheduleApply(config=config)
 
     def prepare(self) -> None:
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._pv_apply.apply(self._job)
+        self._schedule_apply.apply(self._job)
         self._storage_apply.apply(self._job)
         logger.info("PV preparation completed successfully")
 
