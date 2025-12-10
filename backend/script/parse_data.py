@@ -30,10 +30,25 @@ def parse_optimal_data(config: ConfigManager):
     baseline_files = list(baseline_dir.glob("**/result.pkl"))
     optimization_files.sort()
     baseline_files.sort()
-    for optimization_file, baseline_file in zip(optimization_files, baseline_files, strict=True):
+    for optimization_file, baseline_file in zip(
+        optimization_files, baseline_files, strict=True
+    ):
         with open(optimization_file, "rb") as f:
             optimization_result = load(f)
         with open(baseline_file, "rb") as f:
             baseline_result = load(f)
         print(optimization_result)
         print(baseline_result)
+
+
+def parse_result_parameters(config: ConfigManager):
+    import json
+
+    optimization_dir = config.paths.optimization_dir
+    optimization_files = list(optimization_dir.glob("**/result.pkl"))
+    optimization_files.sort()
+    for optimization_file in optimization_files:
+        with open(optimization_file, "rb") as f:
+            optimization_result = load(f)
+        with open(optimization_file.with_suffix(".json"), "w") as f:
+            json.dump(optimization_result.ecm_parameters.to_dict(), f, indent=4)

@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from itertools import chain, product
+from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
 
