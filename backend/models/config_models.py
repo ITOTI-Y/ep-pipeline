@@ -201,8 +201,12 @@ class GeneticAlgorithmConfig(BaseModel):
     )
     population_size: int = Field(default=100, description="Population size")
     generations: int = Field(default=100, description="Generations")
-    crossover_prob: float = Field(default=0.7, description="Crossover probability")
-    mutation_prob: float = Field(default=0.2, description="Mutation probability")
+    crossover_prob_start: float = Field(default=0.9, description="Crossover probability at start")
+    crossover_prob_end: float = Field(default=0.6, description="Crossover probability at end")
+    mutation_prob_start: float = Field(default=0.3, description="Mutation probability at start")
+    mutation_prob_end: float = Field(default=0.05, description="Mutation probability at end")
+    gene_crossover_prob: float = Field(default=0.5, description="Per-gene crossover probability")
+    gene_mutation_prob: float = Field(default=0.1, description="Per-gene mutation probability")
 
 
 class OptimizationConfig(BaseModel):

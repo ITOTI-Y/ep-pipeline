@@ -45,7 +45,13 @@ class XGBoostSurrogateModel(ISurrogateModel):
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, test_size=0.2, random_state=self._seed
         )
-        self._model.fit(x_train, y_train, eval_set=[(x_test, y_test)], verbose=False)
+        self._model.fit(
+            x_train,
+            y_train,
+            eval_set=[(x_test, y_test)],
+            early_stopping_rounds=10,
+            verbose=False,
+        )
         self._x_test = x_test  # type: ignore[assignment]
         self._y_test = y_test  # type: ignore[assignment]
 
