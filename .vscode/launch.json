@@ -1,18 +1,6 @@
 {
     "configurations": [
         {
-            "name": "pytest",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "pytest",
-            "args": [
-                "${workspaceFolder}/tests",
-                "-v"
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": false
-        },
-        {
             "name": "single_building_simulation",
             "type": "debugpy",
             "request": "launch",

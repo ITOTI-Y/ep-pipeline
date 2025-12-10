@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from pickle import dump, load
 
@@ -108,6 +109,15 @@ class OptimizationService(ISimulationService):
                 )
                 y = data[TARGET_NAMES].values.astype(np.float32)
                 surrogate_model.train(x, y)
+
+                evaluate_metrics = surrogate_model.evaluate()
+                with open(
+                    file=surrogate_model_path.parent / "evaluate.json",
+                    mode="w",
+                    encoding="utf-8",
+                ) as f:
+                    json.dump(evaluate_metrics, f, indent=4)
+
                 if str(building_type) == self._job.building.name:
                     self._surrogate_model = surrogate_model
                 logger.info(
@@ -123,7 +133,9 @@ class OptimizationService(ISimulationService):
             dump(surrogate_model, f)
             logger.info(f"Surrogate model saved to {surrogate_model_path}")
 
-    def _save_encode_model(self, encode_model: OneHotEncoder, encode_model_path: Path) -> None:
+    def _save_encode_model(
+        self, encode_model: OneHotEncoder, encode_model_path: Path
+    ) -> None:
         encode_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(encode_model_path, "wb") as f:
             dump(encode_model, f)
@@ -140,7 +152,9 @@ class OptimizationService(ISimulationService):
             encode_model=self._one_hot_encoder,
             code=self._job.weather.code,  # type: ignore[arg-type]
         )
-        best_ecm, predicted_eui = optimization_model.optimize(building_type=building_type)
+        best_ecm, predicted_eui = optimization_model.optimize(
+            building_type=building_type
+        )
         self._predicted_eui = predicted_eui
         self._job.ecm_parameters = best_ecm
 
@@ -155,7 +169,7 @@ class OptimizationService(ISimulationService):
         self._file_cleaner.clean(
             job=self._job,
             config=self._config,
-            exclude_files=("*.sql","*.csv"),
+            exclude_files=("*.sql", "*.csv"),
         )
 
     def execute(self) -> SimulationResult:
