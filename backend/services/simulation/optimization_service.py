@@ -8,7 +8,12 @@ from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import SimulationJob, SimulationResult
-from backend.services.configuration import ECMApply, OutputApply, PeriodApply
+from backend.services.configuration import (
+    ECMApply,
+    OutputApply,
+    PeriodApply,
+    SettingApply,
+)
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IFileCleaner,
@@ -69,6 +74,7 @@ class OptimizationService(ISimulationService):
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
+        self._setting_apply = SettingApply(config=config)
         self._executor = executor
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
@@ -165,6 +171,7 @@ class OptimizationService(ISimulationService):
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._ecm_apply.apply(self._job)  # type: ignore
+        self._setting_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
     def cleanup(self) -> None:
