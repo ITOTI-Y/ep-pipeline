@@ -208,19 +208,13 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        self._remove_objects(idf, "ZONEVENTILATION:WindandStackOpenArea")
-        zones = idf.idfobjects.get("ZONE", [])
+        zone_ventilations = idf.idfobjects.get("ZONEVENTILATION:WindandStackOpenArea", [])
         modified_count = 0
 
-        for zone in zones:
-            idf.newidfobject(
-                "ZONEVENTILATION:WindandStackOpenArea",
-                Name=f"WindandStackOpenArea_{zone.Name}_{parameters.natural_ventilation_area:.2f}",
-                Zone_or_Space_Name=zone.Name,
-                Opening_Area=parameters.natural_ventilation_area,
-            )
+        for zone_ventilation in zone_ventilations:
+            zone_ventilation.Opening_Area = parameters.natural_ventilation_area
             logger.debug(
-                f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone.Name}"
+                f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone_ventilation.Name}"
             )
             modified_count += 1
 

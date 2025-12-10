@@ -15,7 +15,6 @@ from backend.models import (
     SimulationType,
     Weather,
 )
-from backend.script.parse_data import parse_optimal_data, parse_result_parameters
 from backend.services.interfaces import ISimulationService
 from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
@@ -187,24 +186,24 @@ def main():
     # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config)
-    #     for job, service in base_services
+    #     for job, service in chain(base_services, ecm_services)
     # )
     # parse_results_to_csv(config)
 
-    optimization_services = optimization_services_prepare(
-        config, buildings_weather_combinations
-    )
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in optimization_services
-    )
-
-    # pv_services = pv_services_prepare(config, buildings_weather_combinations)
+    # optimization_services = optimization_services_prepare(
+    #     config, buildings_weather_combinations
+    # )
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config) for job, service in pv_services
+    #     delayed(_single_run)(job, service, config)
+    #     for job, service in optimization_services
     # )
 
-    parse_optimal_data(config)
+    pv_services = pv_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config) for job, service in pv_services
+    )
+
+    # parse_optimal_data(config)
 
 
 def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigManager):
