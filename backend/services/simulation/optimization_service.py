@@ -83,7 +83,7 @@ class OptimizationService(ISimulationService):
         encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
         if not encode_model_path.exists():
             self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))  # type: ignore
-            self._save_encode_model(self._one_hot_encoder)
+            self._save_encode_model(self._one_hot_encoder, encode_model_path)
         else:
             with open(encode_model_path, "rb") as f:
                 self._one_hot_encoder = load(f)
@@ -113,25 +113,21 @@ class OptimizationService(ISimulationService):
                 logger.info(
                     f"Surrogate model trained for building type {building_type}"
                 )
-                self._save_surrogate_model(surrogate_model, str(building_type))
+                self._save_surrogate_model(surrogate_model, surrogate_model_path)
 
     def _save_surrogate_model(
-        self, surrogate_model: ISurrogateModel, building_type: str
+        self, surrogate_model: ISurrogateModel, surrogate_model_path: Path
     ) -> None:
-        surrogate_model_path = (
-            self._config.paths.optimization_dir / building_type / "surrogate_model.pkl"
-        )
         surrogate_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(surrogate_model_path, "wb") as f:
             dump(surrogate_model, f)
             logger.info(f"Surrogate model saved to {surrogate_model_path}")
 
-    def _save_encode_model(self, encode_model: OneHotEncoder) -> None:
-        encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
+    def _save_encode_model(self, encode_model: OneHotEncoder, encode_model_path: Path) -> None:
         encode_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(encode_model_path, "wb") as f:
             dump(encode_model, f)
-        logger.info(f"Encode model saved to {encode_model_path}")
+            logger.info(f"Encode model saved to {encode_model_path}")
 
     def _get_best_ecm_parameters(self):
         building_type = self._job.building.building_type

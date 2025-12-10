@@ -37,6 +37,8 @@ class XGBoostSurrogateModel(ISurrogateModel):
             subsample=0.8,
             colsample_bytree=0.8,
             multi_strategy="multi_output_tree",
+            eval_metric="rmse",
+            # early_stopping_rounds=10,
         )
         self._x_test: np.ndarray = np.array([])
         self._y_test: np.ndarray = np.array([])
@@ -49,7 +51,6 @@ class XGBoostSurrogateModel(ISurrogateModel):
             x_train,
             y_train,
             eval_set=[(x_test, y_test)],
-            early_stopping_rounds=10,
             verbose=False,
         )
         self._x_test = x_test  # type: ignore[assignment]

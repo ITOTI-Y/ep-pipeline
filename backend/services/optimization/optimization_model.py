@@ -33,6 +33,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         self._mutation_prob_end = config.optimization.genetic.mutation_prob_end
         self._gene_crossover_prob = config.optimization.genetic.gene_crossover_prob
         self._gene_mutation_prob = config.optimization.genetic.gene_mutation_prob
+        self._hall_of_fame_percentage = config.optimization.genetic.hall_of_fame_percentage
         self._seed = config.optimization.seed
         self._ecm_parameters_names = config.ecm_parameters.keys
         self._ecm_parameters = config.ecm_parameters.model_dump()
@@ -81,7 +82,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
             predictions = self._surrogate_model.predict(features)
 
-            fitness_value = float(predictions[0, 0])
+            fitness_value = float(predictions[0,2])
 
             return (fitness_value,)
         except Exception as e:
@@ -125,7 +126,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         population = toolbox.population(n=self._population_size)  # type: ignore[attr-defined]
 
-        hof = tools.HallOfFame(1)
+        hof = tools.HallOfFame(int(self._population_size * self._hall_of_fame_percentage))
 
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("avg", np.mean)
@@ -170,8 +171,10 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
             hof.update(offspring)
             if hof:
-                worst_ind_idx = np.argmax([ind.fitness.values[0] for ind in offspring])
-                offspring[worst_ind_idx] = toolbox.clone(hof[0]) # type: ignore[attr-defined]
+                worst_individuals = tools.selWorst(offspring, k=min(len(hof), len(offspring)))
+                for i, worst_ind in enumerate(worst_individuals):
+                    worst_idx = offspring.index(worst_ind)
+                    offspring[worst_idx] = toolbox.clone(hof[i]) # type: ignore[attr-defined]
 
             population[:] = offspring
 
