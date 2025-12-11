@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from itertools import chain, product  # noqa: F401
+from itertools import chain, product
 from pathlib import Path
 from pickle import dump, load
 
@@ -14,6 +14,11 @@ from backend.models import (
     SimulationJob,
     SimulationType,
     Weather,
+)
+from backend.script.parse_data import (  # noqa: F401
+    parse_optimal_data,
+    parse_result_parameters,
+    parse_results_to_csv,
 )
 from backend.services.interfaces import ISimulationService
 from backend.services.optimization import ParameterSampler

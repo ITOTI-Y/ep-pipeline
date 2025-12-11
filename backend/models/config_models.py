@@ -187,7 +187,7 @@ class PVConfig(BaseModel):
         frozen=False,
     )
     radiation_threshold: float = Field(default=800.0, description="Radiation threshold")
-
+    converage: dict = Field(default_factory=lambda: {}, description="Converage")
 
 class StorageConfig(BaseModel):
     model_config = ConfigDict(
