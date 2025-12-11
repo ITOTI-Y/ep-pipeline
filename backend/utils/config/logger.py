@@ -8,8 +8,8 @@ def set_logger(log_dir: Path) -> None:
     logger.remove()
 
     logger.add(
-        log_dir / "warning.log",
-        level="WARNING",
+        log_dir / "info.log",
+        level="INFO",
         rotation="100 MB",
         retention="7 days",
         encoding="utf-8",

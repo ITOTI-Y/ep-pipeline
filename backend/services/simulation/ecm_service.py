@@ -1,7 +1,12 @@
 from loguru import logger
 
 from backend.models import SimulationJob, SimulationResult
-from backend.services.configuration import ECMApply, OutputApply, PeriodApply
+from backend.services.configuration import (
+    ECMApply,
+    OutputApply,
+    PeriodApply,
+    SettingApply,
+)
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IFileCleaner,
@@ -28,12 +33,14 @@ class ECMService(ISimulationService):
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
+        self._setting_apply = SettingApply(config=config)
 
     def prepare(self) -> None:
         logger.info("ECM preparation started")
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._ecm_apply.apply(self._job)  # type: ignore
+        self._setting_apply.apply(self._job)
         logger.info("ECM preparation completed")
 
     def execute(self) -> SimulationResult:

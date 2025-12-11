@@ -20,24 +20,26 @@ class ScheduleApply(IApply):
         logger.info("Schedule configuration applied successfully")
 
     def _configure_schedule(self, idf: IDF) -> None:
-        idf.newidfobject(
-            "Schedule:Compact",
-            Name="Always_on",
-            Schedule_Type_Limits_Name="On/Off",
-            Field_1="Through: 12/31",
-            Field_2="For: AllDays",
-            Field_3="Until: 24:00",
-            Field_4="1",
-        )
-        logger.success("Always_on schedule configured successfully")
+        if idf.getobject("Schedule:Compact", "Always_on") is None:
+            idf.newidfobject(
+                "Schedule:Compact",
+                Name="Always_on",
+                Schedule_Type_Limits_Name="On/Off",
+                Field_1="Through: 12/31",
+                Field_2="For: AllDays",
+                Field_3="Until: 24:00",
+                Field_4="1",
+            )
+            logger.success("Always_on schedule configured successfully")
 
-        idf.newidfobject(
-            "Schedule:Compact",
-            Name="Always_off",
-            Schedule_Type_Limits_Name="On/Off",
-            Field_1="Through: 12/31",
-            Field_2="For: AllDays",
-            Field_3="Until: 24:00",
-            Field_4="0",
-        )
-        logger.success("Always_off schedule configured successfully")
+        if idf.getobject("Schedule:Compact", "Always_off") is None:
+            idf.newidfobject(
+                "Schedule:Compact",
+                Name="Always_off",
+                Schedule_Type_Limits_Name="On/Off",
+                Field_1="Through: 12/31",
+                Field_2="For: AllDays",
+                Field_3="Until: 24:00",
+                Field_4="0",
+            )
+            logger.success("Always_off schedule configured successfully")

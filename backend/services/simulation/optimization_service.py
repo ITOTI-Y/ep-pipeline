@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from pickle import dump, load
 
@@ -7,7 +8,12 @@ from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import SimulationJob, SimulationResult
-from backend.services.configuration import ECMApply, OutputApply, PeriodApply
+from backend.services.configuration import (
+    ECMApply,
+    OutputApply,
+    PeriodApply,
+    SettingApply,
+)
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IFileCleaner,
@@ -68,6 +74,7 @@ class OptimizationService(ISimulationService):
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
+        self._setting_apply = SettingApply(config=config)
         self._executor = executor
         self._result_parser = result_parser
         self._file_cleaner = file_cleaner
@@ -83,7 +90,7 @@ class OptimizationService(ISimulationService):
         encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
         if not encode_model_path.exists():
             self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))  # type: ignore
-            self._save_encode_model(self._one_hot_encoder)
+            self._save_encode_model(self._one_hot_encoder, encode_model_path)
         else:
             with open(encode_model_path, "rb") as f:
                 self._one_hot_encoder = load(f)
@@ -108,30 +115,39 @@ class OptimizationService(ISimulationService):
                 )
                 y = data[TARGET_NAMES].values.astype(np.float32)
                 surrogate_model.train(x, y)
+
+                evaluate_metrics = surrogate_model.evaluate()
+                evaluate_file_path = surrogate_model_path.parent / "evaluate.json"
+                evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(
+                    file=evaluate_file_path,
+                    mode="w",
+                    encoding="utf-8",
+                ) as f:
+                    json.dump(evaluate_metrics, f, indent=4)
+
                 if str(building_type) == self._job.building.name:
                     self._surrogate_model = surrogate_model
                 logger.info(
                     f"Surrogate model trained for building type {building_type}"
                 )
-                self._save_surrogate_model(surrogate_model, str(building_type))
+                self._save_surrogate_model(surrogate_model, surrogate_model_path)
 
     def _save_surrogate_model(
-        self, surrogate_model: ISurrogateModel, building_type: str
+        self, surrogate_model: ISurrogateModel, surrogate_model_path: Path
     ) -> None:
-        surrogate_model_path = (
-            self._config.paths.optimization_dir / building_type / "surrogate_model.pkl"
-        )
         surrogate_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(surrogate_model_path, "wb") as f:
             dump(surrogate_model, f)
             logger.info(f"Surrogate model saved to {surrogate_model_path}")
 
-    def _save_encode_model(self, encode_model: OneHotEncoder) -> None:
-        encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
+    def _save_encode_model(
+        self, encode_model: OneHotEncoder, encode_model_path: Path
+    ) -> None:
         encode_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(encode_model_path, "wb") as f:
             dump(encode_model, f)
-        logger.info(f"Encode model saved to {encode_model_path}")
+            logger.info(f"Encode model saved to {encode_model_path}")
 
     def _get_best_ecm_parameters(self):
         building_type = self._job.building.building_type
@@ -144,7 +160,9 @@ class OptimizationService(ISimulationService):
             encode_model=self._one_hot_encoder,
             code=self._job.weather.code,  # type: ignore[arg-type]
         )
-        best_ecm, predicted_eui = optimization_model.optimize(building_type=building_type)
+        best_ecm, predicted_eui = optimization_model.optimize(
+            building_type=building_type
+        )
         self._predicted_eui = predicted_eui
         self._job.ecm_parameters = best_ecm
 
@@ -153,13 +171,14 @@ class OptimizationService(ISimulationService):
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._ecm_apply.apply(self._job)  # type: ignore
+        self._setting_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
     def cleanup(self) -> None:
         self._file_cleaner.clean(
             job=self._job,
             config=self._config,
-            exclude_files=("*.sql","*.csv"),
+            exclude_files=("*.sql", "*.csv"),
         )
 
     def execute(self) -> SimulationResult:
