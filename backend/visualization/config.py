@@ -42,7 +42,7 @@ class FigureConfig:
     font_size_legend: int = 6
 
     # Output formats
-    output_formats: list = field(default_factory=lambda: ["pdf", "png"])
+    output_formats: list = field(default_factory=lambda: ["png"])
     max_file_size_mb: int = 10
 
     # Line widths

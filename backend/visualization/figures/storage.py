@@ -95,19 +95,19 @@ class StorageSOCFigure(BaseFigure):
         )
 
         # Highlight curtailment periods
-        if curtailment_series is not None and len(curtailment_series) == len(soc):
-            curtailment_mask = curtailment_series.values > 0
-            if curtailment_mask.any():
-                # Fill curtailment periods at top
-                ax.fill_between(
-                    hours,
-                    soc,
-                    100,
-                    where=curtailment_mask & (soc >= 95),
-                    color=ColorSchemes.ENERGY_COLORS["curtailed"],
-                    alpha=0.5,
-                    label="Curtailment period",
-                )
+        # if curtailment_series is not None and len(curtailment_series) == len(soc):
+        #     curtailment_mask = curtailment_series.values > 0
+        #     if curtailment_mask.any():
+        #         # Fill curtailment periods at top
+        #         ax.fill_between(
+        #             hours,
+        #             soc,
+        #             100,
+        #             where=curtailment_mask & (soc >= 95),
+        #             color=ColorSchemes.ENERGY_COLORS["curtailed"],
+        #             alpha=0.5,
+        #             label="Curtailment period",
+        #         )
 
         # Format
         self.format_axis(
