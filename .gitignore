@@ -14,9 +14,12 @@ wheels/
 .roo
 
 # Output files
-output/
+backend/output/*
+
 data/*
 
 !data/ftmys
 !data/tmys
 !data/prototypes
+
+!backend/output/visualization/

@@ -7,6 +7,14 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "visualization",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/visualization/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
