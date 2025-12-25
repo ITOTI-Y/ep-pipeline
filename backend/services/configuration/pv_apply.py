@@ -106,7 +106,7 @@ class PVApply(IApply):
                     int(
                         surface_area
                         / pv_parameters["Active_Area"]
-                        * self._config.pv.converage[surface.type]
+                        * self._config.pv.coverage[surface.type]
                     ),
                 )
                 pv_generator.Number_of_Series_Strings_in_Parallel = 1
@@ -138,7 +138,7 @@ class PVApply(IApply):
                 * pv_parameters["Module_Voltage_at_Maximum_Power"]
                 * surface_area
                 / pv_parameters["Active_Area"]
-                * self._config.pv.converage[surface.type]
+                * self._config.pv.coverage[surface.type]
             )
             setattr(gen_list, f"Generator_{index + 1}_Name", generator.Name)
             setattr(
