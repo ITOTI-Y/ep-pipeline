@@ -5,7 +5,6 @@ Provides publication-quality figures for energy simulation results.
 """
 
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -84,7 +83,7 @@ class ChartGenerator:
         fig, axs = uplt.subplots(ncols=2, refwidth=3, refheight=2, share=False)
 
         for ax, day_df, season in zip(
-            axs, [summer_df, winter_df], ["Summer", "Winter"]
+            axs, [summer_df, winter_df], ["Summer", "Winter"], strict=True
         ):
             hours = np.arange(min(24, len(day_df)))
             if "pv_generation_kw" in day_df.columns:
@@ -181,7 +180,7 @@ class ChartGenerator:
         ax.bar(range(len(stages)), values, color=colors, edgecolor="white", width=0.6)
 
         # Add reduction annotations
-        for i, (v, s) in enumerate(zip(values, stages)):
+        for i, (v, _) in enumerate(zip(values, stages, strict=True)):
             ax.text(i, v + 2, f"{v:.1f}", ha="center", fontsize=8)
 
         ax.format(
