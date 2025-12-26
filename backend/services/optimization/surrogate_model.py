@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from loguru import logger
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor  # type: ignore[possibly-missing-import]
 
@@ -17,7 +19,7 @@ class ISurrogateModel(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self) -> None:
+    def evaluate(self) -> dict[str, float]:
         pass
 
     @abstractmethod
@@ -32,11 +34,13 @@ class XGBoostSurrogateModel(ISurrogateModel):
         self._model = XGBRegressor(
             random_state=self._seed,
             objective="reg:squarederror",
-            max_depth=6,
-            learning_rate=0.1,
+            max_depth=8,
+            learning_rate=0.02,
             subsample=0.8,
             colsample_bytree=0.8,
             multi_strategy="multi_output_tree",
+            eval_metric="rmse",
+            # early_stopping_rounds=10,
         )
         self._x_test: np.ndarray = np.array([])
         self._y_test: np.ndarray = np.array([])
@@ -45,12 +49,42 @@ class XGBoostSurrogateModel(ISurrogateModel):
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, test_size=0.2, random_state=self._seed
         )
-        self._model.fit(x_train, y_train, eval_set=[(x_test, y_test)], verbose=False)
+        self._model.fit(
+            x_train,
+            y_train,
+            eval_set=[(x_test, y_test)],
+            verbose=False,
+        )
         self._x_test = x_test  # type: ignore[assignment]
         self._y_test = y_test  # type: ignore[assignment]
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self._model.predict(x)
 
-    def evaluate(self) -> None:
-        pass
+    def evaluate(self) -> dict[str, float]:
+        if self._x_test.size == 0 or self._y_test.size == 0:
+            logger.error("Test data not set")
+            return {}
+
+        y_pred = self.predict(self._x_test)
+        r2 = r2_score(self._y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(self._y_test, y_pred))
+        mae = mean_absolute_error(self._y_test, y_pred)
+
+        metrics = {
+            "r2": r2,
+            "rmse": rmse,
+            "mae": mae,
+        }
+
+        if self._y_test.ndim > 1 and self._y_test.shape[1] > 1:
+            for i in range(self._y_test.shape[1]):
+                r2_i = r2_score(self._y_test[:, i], y_pred[:, i])
+                rmse_i = np.sqrt(mean_squared_error(self._y_test[:, i], y_pred[:, i]))
+                mae_i = mean_absolute_error(self._y_test[:, i], y_pred[:, i])
+
+                metrics[f"output_{i+1}_r2_score"] = float(r2_i)
+                metrics[f"output_{i+1}_rmse"] = float(rmse_i)
+                metrics[f"output_{i+1}_mae"] = float(mae_i)
+
+        return metrics

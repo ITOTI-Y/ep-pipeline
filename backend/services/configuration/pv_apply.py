@@ -72,9 +72,7 @@ class PVApply(IApply):
 
         logger.success("PV performance configured successfully")
 
-    def _configure_pv_generator(
-        self, idf: IDF, pv_parameters: dict
-    ) -> None:
+    def _configure_pv_generator(self, idf: IDF, pv_parameters: dict) -> None:
         self._remove_objects(idf, "Generator:PVWatts")
         self._remove_objects(idf, "Generator:Photovoltaic")
         self._remove_objects(idf, "ElectricLoadCenter:Generators")
@@ -88,8 +86,10 @@ class PVApply(IApply):
             ):
                 surface_area = self._get_surace_area(idf, surface)
                 pv_generator = idf.newidfobject("Generator:Photovoltaic")
-                pv_generator.Name = pv_parameters["Name"] + f"_generator_{modified_count}"
-                surface_object = idf.getobject('BuildingSurface:Detailed', surface.name)
+                pv_generator.Name = (
+                    pv_parameters["Name"] + f"_generator_{modified_count}"
+                )
+                surface_object = idf.getobject("BuildingSurface:Detailed", surface.name)
                 if surface_object is None:
                     logger.error(f"Surface {surface.name} not found")
                     raise ValueError(f"Surface {surface.name} not found")
@@ -101,7 +101,14 @@ class PVApply(IApply):
                     pv_parameters["Name"] + "_performance"
                 )
                 pv_generator.Heat_Transfer_Integration_Mode = "Decoupled"
-                total_modules = max(1, int(surface_area / pv_parameters["Active_Area"] * 0.8))
+                total_modules = max(
+                    1,
+                    int(
+                        surface_area
+                        / pv_parameters["Active_Area"]
+                        * self._config.pv.coverage[surface.type]
+                    ),
+                )
                 pv_generator.Number_of_Series_Strings_in_Parallel = 1
                 pv_generator.Number_of_Modules_in_Series = total_modules
 
@@ -116,34 +123,51 @@ class PVApply(IApply):
         self._remove_objects(idf, "ElectricLoadCenter:Distribution")
 
         if not self._generators_and_surfaces:
-            logger.info("No PV generators created; skipping ElectricLoadCenter configuration")
+            logger.info(
+                "No PV generators created; skipping ElectricLoadCenter configuration"
+            )
             return
 
         gen_list = idf.newidfobject("ElectricLoadCenter:Generators")
         gen_list.Name = "PV_Generator_List"
 
         for index, (generator, surface) in enumerate(self._generators_and_surfaces):
-
             surface_area = self._get_surace_area(idf, surface)
-            power_output = pv_parameters["Module_Current_at_Maximum_Power"] * pv_parameters["Module_Voltage_at_Maximum_Power"] * surface_area / pv_parameters["Active_Area"]
+            power_output = (
+                pv_parameters["Module_Current_at_Maximum_Power"]
+                * pv_parameters["Module_Voltage_at_Maximum_Power"]
+                * surface_area
+                / pv_parameters["Active_Area"]
+                * self._config.pv.coverage[surface.type]
+            )
             setattr(gen_list, f"Generator_{index + 1}_Name", generator.Name)
-            setattr(gen_list, f"Generator_{index + 1}_Object_Type", "Generator:Photovoltaic")
-            setattr(gen_list, f"Generator_{index + 1}_Rated_Electric_Power_Output", power_output)
+            setattr(
+                gen_list, f"Generator_{index + 1}_Object_Type", "Generator:Photovoltaic"
+            )
+            setattr(
+                gen_list,
+                f"Generator_{index + 1}_Rated_Electric_Power_Output",
+                power_output,
+            )
 
-        logger.info(f"Added {index + 1} generator objects to ElectricLoadCenter:Generators")
+        logger.info(
+            f"Added {index + 1} generator objects to ElectricLoadCenter:Generators"
+        )
 
         self._remove_objects(idf, "ElectricLoadCenter:Distribution")
         distribution = idf.newidfobject("ElectricLoadCenter:Distribution")
         distribution.Name = "PV_Distribution"
         distribution.Generator_List_Name = gen_list.Name
         distribution.Generator_Operation_Scheme_Type = "Baseload"
-        distribution.Generator_Demand_Limit_Scheme_Purchased_Electric_Demand_Limit = ''
-        distribution.Generator_Track_Schedule_Name_Scheme_Schedule_Name = ''
-        distribution.Generator_Track_Meter_Scheme_Meter_Name = ''
-        distribution.Electrical_Buss_Type = 'AlternatingCurrentWithStorage'
+        distribution.Generator_Demand_Limit_Scheme_Purchased_Electric_Demand_Limit = ""
+        distribution.Generator_Track_Schedule_Name_Scheme_Schedule_Name = ""
+        distribution.Generator_Track_Meter_Scheme_Meter_Name = ""
+        distribution.Electrical_Buss_Type = "AlternatingCurrentWithStorage"
         distribution.Inverter_Name = "PV_Inverter"
-        distribution.Electrical_Storage_Object_Name = 'PV_Storage'
-        distribution.Storage_Operation_Scheme = 'TrackFacilityElectricDemandStoreExcessOnSite'
+        distribution.Electrical_Storage_Object_Name = "PV_Storage"
+        distribution.Storage_Operation_Scheme = (
+            "TrackFacilityElectricDemandStoreExcessOnSite"
+        )
 
         logger.info("Added ElectricLoadCenter:Distribution object")
         logger.success("PV loadcenter configured successfully")

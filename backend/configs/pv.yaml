@@ -1,2 +1,7 @@
 pv:
   radiation_threshold: 800 # kWh/m²
+  coverage: {
+    "Roof": 0.5,
+    "Wall": 0.4,
+    "Default": 0.5,
+  }
