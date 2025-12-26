@@ -17,49 +17,44 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib
+
 matplotlib.use("Agg")  # Non-interactive backend
-import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 from loguru import logger
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from backend.visualization.config import (
-    FigureConfig,
-    ColorSchemes,
     ALL_BUILDINGS,
     ALL_CLIMATES,
     BUILDINGS_WITH_STORAGE,
-    STORAGE_CAPACITY,
     GRID_EMISSION_FACTOR,
+    FigureConfig,
 )
 from backend.visualization.data_loader import DataLoader
-from backend.visualization.data_processor import DataProcessor, extract_eui_summary
-from backend.visualization.metrics import MetricsCalculator
+from backend.visualization.data_processor import DataProcessor
 from backend.visualization.figures import (
-    StorageSOCFigure,
-    TypicalDayStorageFigure,
+    CarbonReductionFigure,
+    ClimateComparisonFigure,
+    ClimateEUITrendFigure,
+    ECMCorrelationMatrix,
+    ECMSensitivityHeatmap,
+    EnergySankeyFigure,
+    EUIWaterfallFigure,
+    LoadClusteringFigure,
+    LoadPVMatchFigure,
     MonthlyCurtailmentFigure,
     MonthlyPVGenerationFigure,
-    ClimateComparisonFigure,
-    LoadPVMatchFigure,
-    ECMSensitivityHeatmap,
-    SensitivityIndexFigure,
-    EUIWaterfallFigure,
-    ClimateEUITrendFigure,
-    SelfConsumptionFigure,
     PeakReductionFigure,
-    EnergyBreakdownFigure,
-    ECMCorrelationMatrix,
-    ClimateResilienceRadar,
-    PVEfficiencyTempFigure,
-    EnergySankeyFigure,
-    LoadClusteringFigure,
-    CarbonReductionFigure,
     PerformanceRadarFigure,
+    PVEfficiencyTempFigure,
+    SelfConsumptionFigure,
+    SensitivityIndexFigure,
+    StorageSOCFigure,
+    TypicalDayStorageFigure,
 )
+from backend.visualization.metrics import MetricsCalculator
 
 
 class VisualizationReport:
@@ -100,7 +95,7 @@ class VisualizationReport:
 
     def generate_all(self) -> None:
         """Generate all visualization figures."""
-        logger.info(f"Starting visualization report generation")
+        logger.info("Starting visualization report generation")
         logger.info(f"Output directory: {self.output_dir}")
 
         # Check data availability
