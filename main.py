@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from itertools import chain, product
+from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
 
@@ -225,5 +225,8 @@ def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigM
 
 
 if __name__ == "__main__":
-    main()
+    from backend.visualization.charts import ChartGenerator
+    chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
+    chart_generator.generate_all()
+    # main()
     # parse_result_parameters(ConfigManager(Path("backend/configs")))

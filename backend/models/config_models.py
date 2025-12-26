@@ -21,6 +21,7 @@ class PathsConfig(BaseModel):
     optimization_dir: Path = Field(
         ..., description="Optimization result output directory"
     )
+    visualization_dir: Path = Field(..., description="Visualization output directory")
     log_dir: Path = Field(..., description="Log directory")
     eplus_executable: Path = Field(..., description="EnergyPlus executable path")
     idd_file: Path = Field(..., description="IDD file path")
@@ -51,6 +52,7 @@ class PathsConfig(BaseModel):
         "optimization_dir",
         "temp_dir",
         "log_dir",
+        "visualization_dir",
     )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""

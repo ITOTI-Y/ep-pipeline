@@ -3,5 +3,5 @@ storage:
     OfficeLarge: 0 # kWh
     OfficeMedium: 363 # kWh
     ApartmentHighRise: 570 # kWh
-    SingleFamilyResidential: 240 # kWh
+    SingleFamilyResidential: 24 # kWh
     MultiFamilyResidential: 27 # kWh
