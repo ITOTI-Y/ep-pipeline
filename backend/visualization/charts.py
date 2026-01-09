@@ -18,15 +18,15 @@ def hour_of_year(dt: datetime) -> int:
     return int(delta.total_seconds() // 3600)
 
 
-query = Query()
-
-
 class ChartGenerator:
+    """Chart generator for PV simulation results visualization."""
+
     def __init__(self, config: ConfigManager):
         self.config = config
         self.paths = config.paths
         self.output_dir = config.paths.visualization_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.query = Query()
         uplt.rc.update(
             {
                 "font.family": "serif",
@@ -53,6 +53,11 @@ class ChartGenerator:
         return path
 
     def storage_soc(self, pv_result: SimulationResult) -> None:
+        """Generate storage state of charge chart for a simulation result.
+
+        Args:
+            pv_result: Simulation result containing SQL path and building type.
+        """
         fig, ax = uplt.subplots(refwidth=6, refheight=2)
 
         try:
@@ -64,8 +69,8 @@ class ChartGenerator:
             building_type = pv_result.building_type
             capacity = self.config.storage.capacity[pv_result.building_type]
 
-            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore
-            soc_data = pd.read_sql_query(query.STORAGE_SOC_QUERY, engine)
+            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore[arg-type]
+            soc_data = pd.read_sql_query(self.query.STORAGE_SOC_QUERY, engine)
             soc_data["time"] = pd.to_datetime(  # type: ignore
                 {
                     "year": 2017,
@@ -140,11 +145,19 @@ class ChartGenerator:
             uplt.close(fig)
 
     def typical_day_storage_soc(self, pv_result: SimulationResult) -> None:
+        """Generate typical day storage operation comparison chart.
+
+        Compares summer (July 12-18) and winter (January 12-18) typical days,
+        showing demand, PV generation, and storage charge/discharge patterns.
+
+        Args:
+            pv_result: Simulation result containing SQL path and building type.
+        """
         fig, axs = uplt.subplots(ncols=2, refwidth=4, refheight=2, sharey=True)
         titles = ["Summer (July 12-18)", "Winter Day (January 12-18)"]
-        querys = [
-            query.TYPICAL_SUMMER_DAY_SOC_QUERY,
-            query.TYPICAL_WINTER_DAY_SOC_QUERY,
+        queries = [
+            self.query.TYPICAL_SUMMER_DAY_SOC_QUERY,
+            self.query.TYPICAL_WINTER_DAY_SOC_QUERY,
         ]
 
         def _plot_single_day(
@@ -200,8 +213,8 @@ class ChartGenerator:
                 loc="upper left", bbox_to_anchor=(0, -0.2), ncol=3, frameon=False
             )
 
-            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore
-            for ax, q, title in zip(axs, querys, titles, strict=True):
+            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore[arg-type]
+            for ax, q, title in zip(axs, queries, titles, strict=True):
                 typical_df = pd.read_sql_query(q, engine)
                 _plot_single_day(
                     ax,
@@ -222,5 +235,5 @@ class ChartGenerator:
 
     def generate_all(self) -> None:
         for pv_result in self.pv_results:
-            # self.storage_soc(pv_result)
+            self.storage_soc(pv_result)
             self.typical_day_storage_soc(pv_result)

@@ -1,13 +1,13 @@
 storage:
   capacity:
     OfficeLarge: 0 # kWh
-    OfficeMedium: 363 # kWh
-    ApartmentHighRise: 570 # kWh
-    SingleFamilyResidential: 27 # kWh
-    MultiFamilyResidential: 235 # kWh
+    OfficeMedium: 324.3 # kWh
+    ApartmentHighRise: 545.1 # kWh
+    SingleFamilyResidential: 27.6 # kWh
+    MultiFamilyResidential: 220.8 # kWh
   max_power:
     OfficeLarge: 0 # KW
-    OfficeMedium: 165 # KW
+    OfficeMedium: 164.5 # KW
     ApartmentHighRise: 215 # KW
     SingleFamilyResidential: 10.5 # KW PCS limit
     MultiFamilyResidential: 112 # KW

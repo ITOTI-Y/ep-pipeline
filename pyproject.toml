@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pvlib>=0.13.1",
     "pydantic>=2.12.3",
+    "pyright>=1.1.408",
     "pytest>=8.4.2",
     "scikit-learn>=1.7.2",
     "scipy>=1.16.3",
