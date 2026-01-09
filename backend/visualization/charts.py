@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from pickle import load
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,12 @@ from sqlalchemy import create_engine
 
 from backend.models import BuildingType, SimulationResult
 from backend.utils.config import ConfigManager
+from backend.visualization.journal_style import (
+    BUILDING_AND_ENVIRONMENT_STYLE,
+    FigureWidth,
+    ImageType,
+    JournalStyle,
+)
 from backend.visualization.query import Query
 
 
@@ -21,19 +28,18 @@ def hour_of_year(dt: datetime) -> int:
 class ChartGenerator:
     """Chart generator for PV simulation results visualization."""
 
-    def __init__(self, config: ConfigManager):
+    def __init__(
+        self,
+        config: ConfigManager,
+        style: JournalStyle | None = None,
+    ):
         self.config = config
         self.paths = config.paths
         self.output_dir = config.paths.visualization_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.query = Query()
-        uplt.rc.update(
-            {
-                "font.family": "serif",
-                "font.size": 8,
-                "savefig.dpi": 300,
-            }
-        )
+        self.style = style or BUILDING_AND_ENVIRONMENT_STYLE
+        uplt.rc.update(self.style.get_rc_params())
         self.pv_results = self._pv_data_prepare()
 
     def _pv_data_prepare(self) -> list[SimulationResult]:
@@ -45,11 +51,46 @@ class ChartGenerator:
                 pv_results.append(pv_data)
         return pv_results
 
-    def save(self, fig: uplt.Figure, building_type: BuildingType, name: str) -> Path:
+    def create_figure(
+        self,
+        width: FigureWidth = FigureWidth.SINGLE_COLUMN,
+        aspect_ratio: float = 0.3,
+        ncols: int = 1,
+        nrows: int = 1,
+        **kwargs,
+    ) -> tuple[uplt.Figure, Any]:
+        """Create figure with journal-compliant dimensions.
+
+        Args:
+            width: Total figure width (not per-subplot).
+            aspect_ratio: Height/width ratio for each subplot.
+            ncols: Number of columns.
+            nrows: Number of rows.
+        """
+        subplot_width = width.value / ncols
+        subplot_height = subplot_width * aspect_ratio
+        return uplt.subplots(
+            ncols=ncols,
+            nrows=nrows,
+            refwidth=subplot_width,
+            refheight=subplot_height,
+            **kwargs,
+        )
+
+    def save(
+        self,
+        fig: uplt.Figure,
+        building_type: BuildingType,
+        name: str,
+        image_type: ImageType = ImageType.LINE_ART,
+        fmt: str | None = None,
+    ) -> Path:
+        """Save figure with journal-compliant format and DPI."""
         image_dir = self.output_dir / building_type.value
         image_dir.mkdir(parents=True, exist_ok=True)
-        path = image_dir / f"{name}.png"
-        fig.save(path)
+        output_format = fmt or self.style.default_format
+        path = image_dir / f"{name}.{output_format}"
+        fig.save(path, dpi=image_type.value)
         return path
 
     def storage_soc(self, pv_result: SimulationResult) -> None:
@@ -58,7 +99,10 @@ class ChartGenerator:
         Args:
             pv_result: Simulation result containing SQL path and building type.
         """
-        fig, ax = uplt.subplots(refwidth=6, refheight=2)
+        fig, ax = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.35,
+        )
 
         try:
             weather_code = (
@@ -91,9 +135,9 @@ class ChartGenerator:
                     hours,
                     soc,
                     label="State of Charge",
-                    linewidth=0.3,
+                    linewidth=self.style.line_width,
                     alpha=0.8,
-                    color="#9b59b6",
+                    color=self.style.get_color(0),
                 )
                 ax.set_xlabel("Hour of Year")
                 ax.set_ylabel("State of Charge (%)")
@@ -101,16 +145,16 @@ class ChartGenerator:
 
                 ax.axhline(
                     y=100,
-                    color="#27ae60",
+                    color=self.style.get_color(2),
                     linestyle="--",
-                    linewidth=1.0,
+                    linewidth=self.style.line_width_thick,
                     label="Full capacity (100%)",
                 )
                 ax.axhline(
                     y=50,
-                    color="#aaaaaa",
+                    color="#888888",
                     linestyle=":",
-                    linewidth=1.0,
+                    linewidth=self.style.line_width,
                     alpha=0.5,
                     label="Half capacity (50%)",
                 )
@@ -122,7 +166,7 @@ class ChartGenerator:
 
                 ax.legend(
                     loc="upper left",
-                    bbox_to_anchor=(0, -0.2),
+                    bbox_to_anchor=(0, -0.15),
                     ncol=3,
                     frameon=False,
                 )
@@ -133,7 +177,7 @@ class ChartGenerator:
                     xycoords="axes fraction",
                     ha="left",
                     va="top",
-                    fontsize=8,
+                    fontsize=self.style.font_size_small,
                 )
 
                 self.save(
@@ -153,7 +197,12 @@ class ChartGenerator:
         Args:
             pv_result: Simulation result containing SQL path and building type.
         """
-        fig, axs = uplt.subplots(ncols=2, refwidth=4, refheight=2, sharey=True)
+        fig, axs = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.618,
+            ncols=2,
+            sharey=True,
+        )
         titles = ["Summer (July 12-18)", "Winter Day (January 12-18)"]
         queries = [
             self.query.TYPICAL_SUMMER_DAY_SOC_QUERY,
@@ -171,19 +220,23 @@ class ChartGenerator:
             ax.plot(
                 hours,
                 demand,
-                linewidth=1.0,
-                color="#34495e",
+                linewidth=self.style.line_width_thick,
+                color=self.style.get_color(0),
                 label="Demand",
             )
             ax.fill_between(
-                hours, pv, alpha=0.6, color="#f1c40f", label="PV Generation"
+                hours,
+                pv,
+                alpha=0.6,
+                color=self.style.get_color(4),
+                label="PV Generation",
             )
             ax.bar(
                 hours,
                 storage_charge,
                 width=0.6,
                 alpha=0.7,
-                color="#9b59b6",
+                color=self.style.get_color(3),
                 label="Storage Charge",
             )
             ax.bar(
@@ -191,7 +244,7 @@ class ChartGenerator:
                 storage_discharge,
                 width=0.6,
                 alpha=0.7,
-                color="#1abc9c",
+                color=self.style.get_color(2),
                 label="Storage Discharge",
             )
             ax.set_xlabel("Hour of Day")
@@ -210,7 +263,7 @@ class ChartGenerator:
                 suptitle=f"{weather_code} - {building_type} - Typical Day Operation",
             )
             axs[0].legend(
-                loc="upper left", bbox_to_anchor=(0, -0.2), ncol=3, frameon=False
+                loc="upper left", bbox_to_anchor=(0, -0.15), ncol=4, frameon=False
             )
 
             engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore[arg-type]
