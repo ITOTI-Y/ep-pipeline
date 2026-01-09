@@ -191,12 +191,14 @@ class PVConfig(BaseModel):
     radiation_threshold: float = Field(default=800.0, description="Radiation threshold")
     coverage: dict = Field(default_factory=dict, description="Coverage")
 
+
 class StorageConfig(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
     )
-    capacity: dict = Field(default_factory=lambda: {}, description="Storage capacity")
+    capacity: dict = Field(default_factory={}, description="Storage capacity")
+    max_power: dict = Field(default_factory={}, description="Storage max power")
 
 
 class GeneticAlgorithmConfig(BaseModel):

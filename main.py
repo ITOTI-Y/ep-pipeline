@@ -225,8 +225,8 @@ def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigM
 
 
 if __name__ == "__main__":
-    from backend.visualization.charts import ChartGenerator
-    chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
-    chart_generator.generate_all()
-    # main()
+    # from backend.visualization.charts import ChartGenerator
+    # chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
+    # chart_generator.generate_all()
+    main()
     # parse_result_parameters(ConfigManager(Path("backend/configs")))

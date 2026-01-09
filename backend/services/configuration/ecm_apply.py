@@ -208,7 +208,9 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        zone_ventilations = idf.idfobjects.get("ZONEVENTILATION:WindandStackOpenArea", [])
+        zone_ventilations = idf.idfobjects.get(
+            "ZONEVENTILATION:WindandStackOpenArea", []
+        )
         modified_count = 0
 
         for zone_ventilation in zone_ventilations:

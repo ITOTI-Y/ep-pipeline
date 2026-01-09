@@ -33,7 +33,9 @@ class GeneticAlgorithmModel(IOptimizationModel):
         self._mutation_prob_end = config.optimization.genetic.mutation_prob_end
         self._gene_crossover_prob = config.optimization.genetic.gene_crossover_prob
         self._gene_mutation_prob = config.optimization.genetic.gene_mutation_prob
-        self._hall_of_fame_percentage = config.optimization.genetic.hall_of_fame_percentage
+        self._hall_of_fame_percentage = (
+            config.optimization.genetic.hall_of_fame_percentage
+        )
         self._seed = config.optimization.seed
         self._ecm_parameters_names = config.ecm_parameters.keys
         self._ecm_parameters = config.ecm_parameters.model_dump()
@@ -46,7 +48,6 @@ class GeneticAlgorithmModel(IOptimizationModel):
         self._encode_model = encode_model
         self._code = code
 
-
     def _decode_chromosome(
         self, individual: list, building_type: BuildingType
     ) -> ECMParameters:
@@ -58,12 +59,14 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return ECMParameters(**params)  # type: ignore[arg-type]
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
-        code_encoded = self._encode_model.transform([[self._code]]) # type: ignore
-        features = [ecm_parameters.model_dump().get(name, 0.0) for name in self._ecm_parameters_names]
+        code_encoded = self._encode_model.transform([[self._code]])  # type: ignore
+        features = [
+            ecm_parameters.model_dump().get(name, 0.0)
+            for name in self._ecm_parameters_names
+        ]
 
-        features = np.concatenate([[features], code_encoded], axis=1) # type: ignore[arg-type]
+        features = np.concatenate([[features], code_encoded], axis=1)  # type: ignore[arg-type]
         return features
-
 
     def _create_individual(self, icls: type[list]) -> list:
         individual = icls(
@@ -82,7 +85,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
             predictions = self._surrogate_model.predict(features)
 
-            fitness_value = float(predictions[0,2])
+            fitness_value = float(predictions[0, 2])
 
             return (fitness_value,)
         except Exception as e:
@@ -98,13 +101,15 @@ class GeneticAlgorithmModel(IOptimizationModel):
     def _get_adaptive_params(self, gen: int, max_gen: int) -> tuple[float, float]:
         progress = gen / max_gen
 
-        crossover_prob = self._crossover_prob_start - (
-            self._crossover_prob_start - self._crossover_prob_end
-        ) * progress
+        crossover_prob = (
+            self._crossover_prob_start
+            - (self._crossover_prob_start - self._crossover_prob_end) * progress
+        )
 
-        mutation_prob = self._mutation_prob_start - (
-            self._mutation_prob_start - self._mutation_prob_end
-        ) * progress
+        mutation_prob = (
+            self._mutation_prob_start
+            - (self._mutation_prob_start - self._mutation_prob_end) * progress
+        )
 
         return crossover_prob, mutation_prob
 
@@ -126,7 +131,9 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         population = toolbox.population(n=self._population_size)  # type: ignore[attr-defined]
 
-        hof = tools.HallOfFame(int(self._population_size * self._hall_of_fame_percentage))
+        hof = tools.HallOfFame(
+            int(self._population_size * self._hall_of_fame_percentage)
+        )
 
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("avg", np.mean)
@@ -135,7 +142,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         stats.register("max", np.max)
 
         logbook = tools.Logbook()
-        logbook.header = ["gen", "nevals", *stats.fields] # type: ignore[arg-type]
+        logbook.header = ["gen", "nevals", *stats.fields]  # type: ignore[arg-type]
 
         logger.info(f"Starting genetic algorithm optimization for {building_type}")
 
@@ -171,10 +178,12 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
             hof.update(offspring)
             if hof:
-                worst_individuals = tools.selWorst(offspring, k=min(len(hof), len(offspring)))
+                worst_individuals = tools.selWorst(
+                    offspring, k=min(len(hof), len(offspring))
+                )
                 for i, worst_ind in enumerate(worst_individuals):
                     worst_idx = offspring.index(worst_ind)
-                    offspring[worst_idx] = toolbox.clone(hof[i]) # type: ignore[attr-defined]
+                    offspring[worst_idx] = toolbox.clone(hof[i])  # type: ignore[attr-defined]
 
             population[:] = offspring
 

@@ -87,17 +87,19 @@ class ParameterSampler:
                 f"LHS produced {len(ecm_samples)} unique samples, "
                 f"supplementing to reach {n_samples}"
             )
-            self._supplement_samples(ecm_samples, n_samples, seen_samples, building_type)
+            self._supplement_samples(
+                ecm_samples, n_samples, seen_samples, building_type
+            )
 
         logger.success(f"Generated {len(ecm_samples)} valid ECM parameter samples")
         return ecm_samples
 
     def _supplement_samples(
-            self,
-            ecm_samples: list[ECMParameters],
-            n_samples: int,
-            seen_samples: set[tuple],
-            building_type: BuildingType,
+        self,
+        ecm_samples: list[ECMParameters],
+        n_samples: int,
+        seen_samples: set[tuple],
+        building_type: BuildingType,
     ):
         attempts = 0
         max_attempts = (n_samples - len(ecm_samples)) * 10

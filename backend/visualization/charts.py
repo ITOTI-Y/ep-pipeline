@@ -237,7 +237,9 @@ class ChartGenerator:
                 abcloc="ul",
                 suptitle=f"{weather_code} - {building_type} - Typical Day Operation",
             )
-            axs[0].legend(loc="upper left", bbox_to_anchor=(0, -0.2), ncol=3, frameon=False)
+            axs[0].legend(
+                loc="upper left", bbox_to_anchor=(0, -0.2), ncol=3, frameon=False
+            )
 
             engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore
             for ax, query, title in zip(axs, querys, titles, strict=True):

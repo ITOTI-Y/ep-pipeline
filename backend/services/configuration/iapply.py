@@ -7,7 +7,6 @@ from backend.models import SimulationJob
 
 
 class IApply(ABC):
-
     @abstractmethod
     def apply(self, job: SimulationJob) -> None:
         pass

@@ -83,8 +83,8 @@ class XGBoostSurrogateModel(ISurrogateModel):
                 rmse_i = np.sqrt(mean_squared_error(self._y_test[:, i], y_pred[:, i]))
                 mae_i = mean_absolute_error(self._y_test[:, i], y_pred[:, i])
 
-                metrics[f"output_{i+1}_r2_score"] = float(r2_i)
-                metrics[f"output_{i+1}_rmse"] = float(rmse_i)
-                metrics[f"output_{i+1}_mae"] = float(mae_i)
+                metrics[f"output_{i + 1}_r2_score"] = float(r2_i)
+                metrics[f"output_{i + 1}_rmse"] = float(rmse_i)
+                metrics[f"output_{i + 1}_mae"] = float(mae_i)
 
         return metrics
