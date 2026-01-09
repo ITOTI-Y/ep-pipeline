@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 
 from backend.models import BuildingType, SimulationResult
 from backend.utils.config import ConfigManager
+from backend.visualization.query import Query
 
 
 def hour_of_year(dt: datetime) -> int:
@@ -17,55 +18,10 @@ def hour_of_year(dt: datetime) -> int:
     return int(delta.total_seconds() // 3600)
 
 
+query = Query()
+
+
 class ChartGenerator:
-    STORAGE_SOC_QUERY = """
-            SELECT
-                keyvalue,
-                month,
-                day,
-                hour,
-                value,
-                interval,
-                units
-            FROM
-                `ReportVariableWithTime`
-            WHERE name = 'Electric Storage Simple Charge State'
-            """
-
-    TYPICAL_SUMMER_DAY_SOC_QUERY = """
-                SELECT
-            month,
-                day,
-                hour,
-                sum(case when name = 'Generator Produced DC Electricity Rate' then value else 0 end) as pv_value,
-                sum(case when name = 'Electric Storage Charge Power' then value else 0 end) as storage_charge_value,
-                sum(case when name = 'Electric Storage Discharge Power' then value else 0 end) as storage_discharge_value,
-                sum(case when name = 'Facility Total Electricity Demand Rate' then value else 0 end) as demand_value
-            FROM
-                `ReportVariableWithTime`
-            WHERE
-                name in ('Generator Produced DC Electricity Rate', 'Electric Storage Charge Power', 'Electric Storage Discharge Power', 'Facility Total Electricity Demand Rate') and month = 7 and day in (12,13,14,15,16,17,18)
-            GROUP BY
-                month, day, hour
-    """
-
-    TYPICAL_WINTER_DAY_SOC_QUERY = """
-                SELECT
-            month,
-                day,
-                hour,
-                sum(case when name = 'Generator Produced DC Electricity Rate' then value else 0 end) as pv_value,
-                sum(case when name = 'Electric Storage Charge Power' then value else 0 end) as storage_charge_value,
-                sum(case when name = 'Electric Storage Discharge Power' then value else 0 end) as storage_discharge_value,
-                sum(case when name = 'Facility Total Electricity Demand Rate' then value else 0 end) as demand_value
-            FROM
-                `ReportVariableWithTime`
-            WHERE
-                name in ('Generator Produced DC Electricity Rate', 'Electric Storage Charge Power', 'Electric Storage Discharge Power', 'Facility Total Electricity Demand Rate') and month = 1 and day in (12,13,14,15,16,17,18)
-            GROUP BY
-                month, day, hour
-    """
-
     def __init__(self, config: ConfigManager):
         self.config = config
         self.paths = config.paths
@@ -109,7 +65,7 @@ class ChartGenerator:
             capacity = self.config.storage.capacity[pv_result.building_type]
 
             engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore
-            soc_data = pd.read_sql_query(self.STORAGE_SOC_QUERY, engine)
+            soc_data = pd.read_sql_query(query.STORAGE_SOC_QUERY, engine)
             soc_data["time"] = pd.to_datetime(  # type: ignore
                 {
                     "year": 2017,
@@ -186,7 +142,10 @@ class ChartGenerator:
     def typical_day_storage_soc(self, pv_result: SimulationResult) -> None:
         fig, axs = uplt.subplots(ncols=2, refwidth=4, refheight=2, sharey=True)
         titles = ["Summer (July 12-18)", "Winter Day (January 12-18)"]
-        querys = [self.TYPICAL_SUMMER_DAY_SOC_QUERY, self.TYPICAL_WINTER_DAY_SOC_QUERY]
+        querys = [
+            query.TYPICAL_SUMMER_DAY_SOC_QUERY,
+            query.TYPICAL_WINTER_DAY_SOC_QUERY,
+        ]
 
         def _plot_single_day(
             ax: uplt.Axes,
@@ -242,8 +201,8 @@ class ChartGenerator:
             )
 
             engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore
-            for ax, query, title in zip(axs, querys, titles, strict=True):
-                typical_df = pd.read_sql_query(query, engine)
+            for ax, q, title in zip(axs, querys, titles, strict=True):
+                typical_df = pd.read_sql_query(q, engine)
                 _plot_single_day(
                     ax,
                     typical_df.index.values.astype(int),
