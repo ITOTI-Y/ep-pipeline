@@ -59,13 +59,13 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return ECMParameters(**params)  # type: ignore[arg-type]
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
-        code_encoded = self._encode_model.transform([[self._code]])  # type: ignore
+        code_encoded = self._encode_model.transform([[self._code]])
         features = [
             ecm_parameters.model_dump().get(name, 0.0)
             for name in self._ecm_parameters_names
         ]
 
-        features = np.concatenate([[features], code_encoded], axis=1)  # type: ignore[arg-type]
+        features = np.concatenate([[features], code_encoded], axis=1)
         return features
 
     def _create_individual(self, icls: type[list]) -> list:
@@ -142,11 +142,11 @@ class GeneticAlgorithmModel(IOptimizationModel):
         stats.register("max", np.max)
 
         logbook = tools.Logbook()
-        logbook.header = ["gen", "nevals", *stats.fields]  # type: ignore[arg-type]
+        logbook.header = ["gen", "nevals", *stats.fields]
 
         logger.info(f"Starting genetic algorithm optimization for {building_type}")
 
-        fitness = list(map(toolbox.evaluate, population))  # type: ignore[attr-defined]
+        fitness = list(map(toolbox.evaluate, population))
         for ind, fit in zip(population, fitness, strict=False):
             ind.fitness.values = fit
 

@@ -89,7 +89,7 @@ class OptimizationService(ISimulationService):
         )
         encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
         if not encode_model_path.exists():
-            self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))  # type: ignore
+            self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))
             self._save_encode_model(self._one_hot_encoder, encode_model_path)
         else:
             with open(encode_model_path, "rb") as f:
@@ -104,12 +104,12 @@ class OptimizationService(ISimulationService):
             for building_type, data in group_data:
                 surrogate_model = XGBoostSurrogateModel(config=self._config)
                 categorical_features = self._one_hot_encoder.transform(
-                    data["code"].values.reshape(-1, 1)  # type: ignore
+                    data["code"].values.reshape(-1, 1)
                 )
                 x = np.concatenate(
                     [
                         data[FEATURE_NAMES].values.astype(np.float32),
-                        categorical_features,  # type: ignore
+                        categorical_features,
                     ],
                     axis=1,
                 )
@@ -170,7 +170,7 @@ class OptimizationService(ISimulationService):
         self._get_best_ecm_parameters()
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
-        self._ecm_apply.apply(self._job)  # type: ignore
+        self._ecm_apply.apply(self._job)
         self._setting_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
