@@ -146,7 +146,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         logger.info(f"Starting genetic algorithm optimization for {building_type}")
 
-        fitness = list(map(toolbox.evaluate, population))
+        fitness = list(map(toolbox.evaluate, population))  # type: ignore[attr-defined]
         for ind, fit in zip(population, fitness, strict=False):
             ind.fitness.values = fit
 
