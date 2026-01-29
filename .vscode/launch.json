@@ -1,12 +1,22 @@
 {
     "configurations": [
                 {
-            "name": "main",
+            "name": "Simulation",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "args": ["simulation-all"]
+        },
+        {
+            "name": "Visualization",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["visualization"]
         }
     ]
 }

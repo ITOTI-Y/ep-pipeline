@@ -1,4 +1,7 @@
+import math
+from dataclasses import dataclass
 from datetime import datetime
+from itertools import groupby
 from pathlib import Path
 from pickle import load
 from typing import Any
@@ -17,6 +20,15 @@ from backend.visualization.journal_style import (
     JournalStyle,
 )
 from backend.visualization.query import Query
+
+ORDER = ["TMY", "SSP126", "SSP245", "SSP370", "SSP434", "SSP585"]
+
+
+@dataclass
+class Prefix:
+    baseline: str = "B"
+    pv: str = "P"
+    optimization: str = "O"
 
 
 def hour_of_year(dt: datetime) -> int:
@@ -41,6 +53,7 @@ class ChartGenerator:
         self.style = style or BUILDING_AND_ENVIRONMENT_STYLE
         uplt.rc.update(self.style.get_rc_params())
         self.pv_results = self._pv_data_prepare()
+        self.baseline_results = self._baseline_data_prepare()
 
     def _pv_data_prepare(self) -> list[SimulationResult]:
         pv_results = []
@@ -50,6 +63,15 @@ class ChartGenerator:
                 pv_data = load(f)
                 pv_results.append(pv_data)
         return pv_results
+
+    def _baseline_data_prepare(self) -> list[SimulationResult]:
+        baseline_results = []
+        baseline_dir = self.paths.baseline_dir
+        for baseline_file in baseline_dir.glob("**/result.pkl"):
+            with open(baseline_file, "rb") as f:
+                baseline_data = load(f)
+                baseline_results.append(baseline_data)
+        return baseline_results
 
     def create_figure(
         self,
@@ -80,13 +102,13 @@ class ChartGenerator:
     def save(
         self,
         fig: uplt.Figure,
-        building_type: BuildingType,
         name: str,
+        building_type: BuildingType | None = None,
         image_type: ImageType = ImageType.LINE_ART,
         fmt: str | None = None,
     ) -> Path:
         """Save figure with journal-compliant format and DPI."""
-        image_dir = self.output_dir / building_type.value
+        image_dir = self.output_dir / (building_type.value if building_type else "")
         image_dir.mkdir(parents=True, exist_ok=True)
         output_format = fmt or self.style.default_format
         path = image_dir / f"{name}.{output_format}"
@@ -182,8 +204,8 @@ class ChartGenerator:
 
                 self.save(
                     fig,
+                    f"{Prefix.pv}-{weather_code}-{building_type}-{keyvalue}-Storage SOC",
                     building_type,
-                    f"F01-{weather_code}-{building_type}-{keyvalue}-Storage SOC",
                 )
         finally:
             uplt.close(fig)
@@ -258,7 +280,7 @@ class ChartGenerator:
             )
             building_type = pv_result.building_type
             axs.format(
-                abc="a.",
+                abc="a",
                 abcloc="ul",
                 suptitle=f"{weather_code} - {building_type} - Typical Day Operation",
             )
@@ -280,13 +302,64 @@ class ChartGenerator:
                 ax.set_title(title)
             self.save(
                 fig,
+                f"{Prefix.pv}-{weather_code}-{building_type}-Typical Day Storage SOC",
                 building_type,
-                f"F02-{weather_code}-{building_type}-Typical Day Storage SOC",
             )
         finally:
             uplt.close(fig)
 
+    def baseline_result(self, baseline_results: list[SimulationResult]) -> None:
+        """Generate baseline result chart.
+
+        Args:
+            baseline_result: Baseline result containing SQL path and building type.
+        """
+        grouped_baseline_results = groupby(
+            baseline_results, key=lambda x: x.building_type
+        )
+        fig, axs = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.15,
+            ncols=1,
+            nrows=5,
+        )
+        axs.format(
+            abc="a",
+            abcloc="ul",
+            suptitle="Baseline EUI Comparison",
+        )
+        for i, building_group in enumerate(grouped_baseline_results):
+            building_type, group = building_group
+            eui = {}
+            for baseline_result in group:
+                weather_code = baseline_result.sql_path.parent.name
+                eui[weather_code] = baseline_result.total_source_eui
+            sorted_eui = {k: eui[k] for k in ORDER if k in eui}
+            labels = list(sorted_eui.keys())
+            values = list(sorted_eui.values())
+            axs[i].bar(
+                labels,
+                values,
+                color=self.style.get_color(i),
+                bar_labels=True,
+                bar_labels_kw={"fmt": "%.1f"},
+            )
+            y_min = math.floor(min(values) / 100) * 100
+            y_max = math.ceil(max(values) / 100) * 100
+            axs[i].set_ylim(y_min, y_max)
+            axs[i].set_yticks(np.arange(y_min, y_max + 1, 25))
+            axs[i].set_title(building_type.value)
+            axs[i].set_xlabel("Weather Code")
+            axs[i].set_ylabel("EUI (kWh/m²/yr)")
+
+        self.save(
+            fig,
+            f"{Prefix.baseline}-Baseline EUI Comparison",
+            building_type=None,
+        )
+
     def generate_all(self) -> None:
+        self.baseline_result(self.baseline_results)
         for pv_result in self.pv_results:
             self.storage_soc(pv_result)
             self.typical_day_storage_soc(pv_result)
