@@ -82,6 +82,12 @@ class OptimizationService(ISimulationService):
         self._predicted_eui = None
 
     def _prepare_surrogate_models(self) -> None:
+        surrogate_model_path = (
+            self._config.paths.optimization_dir
+            / self._job.building.name
+            / "surrogate_model.pkl"
+        )
+
         encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
         if not encode_model_path.exists():
             self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))
@@ -89,6 +95,11 @@ class OptimizationService(ISimulationService):
         else:
             with open(encode_model_path, "rb") as f:
                 self._one_hot_encoder = load(f)
+
+        if surrogate_model_path.exists():
+            with open(surrogate_model_path, "rb") as f:
+                self._surrogate_model = load(f)
+            return
 
         group_data = self._ecm_data.groupby("building_type")
         for building_type, data in group_data:
