@@ -82,11 +82,6 @@ class OptimizationService(ISimulationService):
         self._predicted_eui = None
 
     def _prepare_surrogate_models(self) -> None:
-        surrogate_model_path = (
-            self._config.paths.optimization_dir
-            / self._job.building.name
-            / "surrogate_model.pkl"
-        )
         encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
         if not encode_model_path.exists():
             self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))
@@ -95,43 +90,44 @@ class OptimizationService(ISimulationService):
             with open(encode_model_path, "rb") as f:
                 self._one_hot_encoder = load(f)
 
-        if surrogate_model_path.exists():
-            with open(surrogate_model_path, "rb") as f:
-                self._surrogate_model = load(f)
-            return
-        else:
-            group_data = self._ecm_data.groupby("building_type")
-            for building_type, data in group_data:
-                surrogate_model = XGBoostSurrogateModel(config=self._config)
-                categorical_features = self._one_hot_encoder.transform(
-                    data["code"].values.reshape(-1, 1)
-                )
-                x = np.concatenate(
-                    [
-                        data[FEATURE_NAMES].values.astype(np.float32),
-                        categorical_features,
-                    ],
-                    axis=1,
-                )
-                y = data[TARGET_NAMES].values.astype(np.float32)
-                surrogate_model.train(x, y)
+        group_data = self._ecm_data.groupby("building_type")
+        for building_type, data in group_data:
+            surrogate_model = XGBoostSurrogateModel(config=self._config)
+            categorical_features = self._one_hot_encoder.transform(
+                data["code"].values.reshape(-1, 1)
+            )
+            x = np.concatenate(
+                [
+                    data[FEATURE_NAMES].values.astype(np.float32),
+                    categorical_features,
+                ],
+                axis=1,
+            )
+            y = data[TARGET_NAMES].values.astype(np.float32)
+            surrogate_model.train(x, y)
 
+            bt_model_path = (
+                self._config.paths.optimization_dir
+                / str(building_type)
+                / "surrogate_model.pkl"
+            )
+
+            evaluate_file_path = bt_model_path.parent / "evaluate.json"
+            evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(
+                file=evaluate_file_path,
+                mode="w",
+                encoding="utf-8",
+            ) as f:
                 evaluate_metrics = surrogate_model.evaluate()
-                evaluate_file_path = surrogate_model_path.parent / "evaluate.json"
-                evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
-                with open(
-                    file=evaluate_file_path,
-                    mode="w",
-                    encoding="utf-8",
-                ) as f:
-                    json.dump(evaluate_metrics, f, indent=4)
+                json.dump(evaluate_metrics, f, indent=4)
 
-                if str(building_type) == self._job.building.name:
-                    self._surrogate_model = surrogate_model
-                logger.info(
-                    f"Surrogate model trained for building type {building_type}"
-                )
-                self._save_surrogate_model(surrogate_model, surrogate_model_path)
+            if str(building_type) == self._job.building.name:
+                self._surrogate_model = surrogate_model
+            logger.info(
+                f"Surrogate model trained for building type {building_type}"
+            )
+            self._save_surrogate_model(surrogate_model, bt_model_path)
 
     def _save_surrogate_model(
         self, surrogate_model: ISurrogateModel, surrogate_model_path: Path
