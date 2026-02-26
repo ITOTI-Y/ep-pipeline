@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class BuildingType(str, Enum):
+class BuildingType(StrEnum):
     OFFICE_LARGE = "OfficeLarge"
     OFFICE_MEDIUM = "OfficeMedium"
     MULTI_FAMILY_RESIDENTIAL = "MultiFamilyResidential"
@@ -19,7 +19,7 @@ class BuildingType(str, Enum):
         return BuildingType.OFFICE_LARGE
 
 
-class SimulationStatus(str, Enum):
+class SimulationStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -37,7 +37,7 @@ class SimulationStatus(str, Enum):
         }
 
 
-class SimulationType(str, Enum):
+class SimulationType(StrEnum):
     BASELINE = "baseline"
     PV = "pv"
     OPTIMIZATION = "optimization"

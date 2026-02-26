@@ -113,7 +113,7 @@ class ChartGenerator:
             building_type = pv_result.building_type
             capacity = self.config.storage.capacity[pv_result.building_type]
 
-            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore[arg-type]
+            engine = create_engine(f"sqlite:///{pv_result.sql_path}")
             soc_data = pd.read_sql_query(self.query.STORAGE_SOC_QUERY, engine)
             soc_data["time"] = pd.to_datetime(  # type: ignore
                 {
@@ -266,7 +266,7 @@ class ChartGenerator:
                 loc="upper left", bbox_to_anchor=(0, -0.15), ncol=4, frameon=False
             )
 
-            engine = create_engine(f"sqlite:///{pv_result.sql_path}")  # type: ignore[arg-type]
+            engine = create_engine(f"sqlite:///{pv_result.sql_path}")
             for ax, q, title in zip(axs, queries, titles, strict=True):
                 typical_df = pd.read_sql_query(q, engine)
                 _plot_single_day(
