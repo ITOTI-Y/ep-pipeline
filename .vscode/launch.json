@@ -10,6 +10,15 @@
             "args": ["simulation-all"]
         },
         {
+            "name": "Parse Result",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["parse-result"]
+        },
+        {
             "name": "Visualization",
             "type": "debugpy",
             "request": "launch",

@@ -135,9 +135,7 @@ class OptimizationService(ISimulationService):
 
             if str(building_type) == self._job.building.name:
                 self._surrogate_model = surrogate_model
-            logger.info(
-                f"Surrogate model trained for building type {building_type}"
-            )
+            logger.info(f"Surrogate model trained for building type {building_type}")
             self._save_surrogate_model(surrogate_model, bt_model_path)
 
     def _save_surrogate_model(
