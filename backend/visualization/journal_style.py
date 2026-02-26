@@ -55,6 +55,8 @@ class JournalStyle:
     default_dpi: int = 1000
     default_format: str = "png"
 
+    show_grid: bool = False
+
     def get_rc_params(self) -> dict:
         """Return matplotlib/ultraplot rc parameters."""
         return {
@@ -75,6 +77,7 @@ class JournalStyle:
             "savefig.dpi": self.default_dpi,
             "savefig.bbox": "tight",
             "savefig.pad_inches": 0.02,
+            "axes.grid": self.show_grid,
         }
 
     def get_color(self, index: int) -> str:
