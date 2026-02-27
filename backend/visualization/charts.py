@@ -537,9 +537,9 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        # self.data_to_csv()
-        # self.baseline_result()
-        # self.optimal_improvement_comparison()
-        # self.optimal_improvement_boxplot()
-        # self.storage_soc()
+        self.data_to_csv()
+        self.baseline_result()
+        self.optimal_improvement_comparison()
+        self.optimal_improvement_boxplot()
+        self.storage_soc()
         self.typical_day_storage_soc()
