@@ -21,3 +21,4 @@ data/*
 !data/tmys
 !data/prototypes
 .claude/
+docs/_dev/
