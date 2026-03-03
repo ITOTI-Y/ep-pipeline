@@ -38,6 +38,19 @@ BUILDING_NAME = {
     "ApartmentHighRise": "High-Rise Apt.",
 }
 
+style = JournalStyle()
+
+BUILDING_COLOR = {
+    "OfficeLarge": style.get_color(0),
+    "OfficeMedium": style.get_color(1),
+    "MultiFamilyResidential": style.get_color(2),
+    "SingleFamilyResidential": style.get_color(3),
+    "ApartmentHighRise": style.get_color(4),
+}
+
+GAS_BUILDING_TYPE = ["OfficeLarge", "OfficeMedium", "ApartmentHighRise"]
+
+
 @dataclass
 class Prefix:
     baseline: str = "B"
@@ -61,6 +74,7 @@ class ChartGenerator:
     ):
         self.config = config
         self.paths = config.paths
+        self.csv_dir = config.paths.csv_dir
         self.output_dir = config.paths.visualization_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.query = Query()
@@ -492,14 +506,151 @@ class ChartGenerator:
         )
 
     def neutrality_timeline(self) -> None:
-        fig, axs = self.create_figure(
-            width=FigureWidth.DOUBLE_COLUMN,
-            aspect_ratio=0.15,
-            ncols=1,
-            nrows=1,
+        df_a = pd.read_csv(self.csv_dir / "06_carbon_mode_a.csv")
+
+        df_mid = df_a[df_a["cambium_scenario"] == "MidCase"].copy()
+        df_avg = (
+            df_mid.groupby(["building_type", "cambium_year"])
+            .agg(carbon=("carbon_intensity_kgm2", "mean"))
+            .reset_index()
         )
 
-        
+        df_all = (
+            df_a.groupby(["building_type", "cambium_year"])
+            .agg(
+                carbon_min=("carbon_intensity_kgm2", "min"),
+                carbon_max=("carbon_intensity_kgm2", "max"),
+            )
+            .reset_index()
+        )
+
+        df_bc = pd.read_csv(self.csv_dir / "05_carbon_mode_bc.csv")
+        df_c_r1 = (
+            df_bc[
+                (df_bc["mode"] == "mode_c")
+                & (df_bc["stage"] == "pv")
+                & (df_bc["R"] == 1.0)
+            ]
+            .groupby("building_type")["carbon_gas_intensity_kgm2"]
+            .mean()
+        )
+
+        fig, ax = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.55,
+        )
+
+        ymax = df_all["carbon_max"].max() * 1.15
+
+        for building_type in BUILDING_ORDER:
+            color = BUILDING_COLOR[building_type]
+            sub = df_avg[df_avg["building_type"] == building_type].sort_values(
+                "cambium_year"
+            )
+            sub_all = df_all[df_all["building_type"] == building_type].sort_values(
+                "cambium_year"
+            )
+
+            ax.fill_between(
+                sub_all["cambium_year"],
+                sub_all["carbon_min"],
+                sub_all["carbon_max"],
+                color=color,
+                alpha=0.12,
+                label="_nolegend_",
+            )
+            ax.plot(
+                sub["cambium_year"],
+                sub["carbon"],
+                color=color,
+                linewidth=self.style.line_width,
+                marker="o",
+                markersize=5,
+                label=BUILDING_NAME[building_type],
+                zorder=5,
+            )
+
+            last = sub.iloc[-1]
+            ax.text(
+                last["cambium_year"] + 0.5,
+                last["carbon"],
+                f"{last['carbon']:.1f}",
+                ha="left",
+                va="center",
+                fontsize=self.style.font_size_small,
+                color=color,
+            )
+
+        for building_type in GAS_BUILDING_TYPE:
+            color = BUILDING_COLOR[building_type]
+            gas_value = df_c_r1[building_type]
+            ax.axhline(
+                gas_value,
+                color=color,
+                linestyle="--",
+                linewidth=self.style.line_width,
+                alpha=0.4,
+            )
+            ax.text(
+                2051.2,
+                gas_value + 0.2,
+                f"Gas: {gas_value:.1f}",
+                fontsize=self.style.font_size_small,
+                color=color,
+                alpha=0.8,
+                ha="left",
+                va="bottom",
+            )
+
+        ax.axhline(0, color="black", linewidth=self.style.line_width)
+        ax.text(
+            2024.5,
+            0.5,
+            "Carbon Neutral",
+            fontsize=self.style.font_size,
+            fontweight="bold",
+            ha="left",
+            va="bottom",
+            color="green",
+        )
+
+        policy = {
+            2030: ("Illinois RPS\n40%", "grey"),
+            2040: ("Illinois RPS\n50%", "grey"),
+            2045: ("CEJA\n100% Clean", self.style.get_color(4)),
+        }
+        for year, (label, color) in policy.items():
+            ax.axvline(
+                year,
+                color=color,
+                linestyle=":",
+                linewidth=self.style.line_width,
+                alpha=0.6,
+            )
+            ax.text(
+                year,
+                ymax * 0.97,
+                label,
+                ha="center",
+                va="top",
+                fontsize=self.style.font_size_small,
+                color=color,
+                fontweight="bold" if year == 2045 else "normal",
+            )
+
+        ax.format(
+            xlabel="Year",
+            ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
+            xlim=(2024, 2053),
+            ylim=(-10, ymax),
+            title="Carbon Neutrality Pathway Timeline (Mode A, MidCase with Scenario Bands)",
+            titleweight="bold",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
+        )
+        ax.legend(loc="ur", ncol=1)
+
+        self.save(fig, "Carbon Neutrality Pathway Timeline", building_type=None)
 
     def data_to_csv(self) -> None:
         data = []
@@ -545,8 +696,10 @@ class ChartGenerator:
         result["net_building_area"] = data.net_building_area
         result["total_source_energy"] = data.total_source_energy
         result["total_site_energy"] = data.total_site_energy
+        result["net_site_energy"] = data.net_site_energy
         result["net_source_energy"] = data.net_source_energy
         result["total_source_eui"] = data.total_source_eui
+        result["net_source_eui"] = data.net_source_eui
         result["total_site_eui"] = data.total_site_eui
         result["net_source_eui"] = data.net_source_eui
         result["net_site_eui"] = data.net_site_eui
@@ -557,6 +710,7 @@ class ChartGenerator:
         # self.data_to_csv()
         # self.baseline_result()
         # self.optimal_improvement_comparison()
-        self.optimal_improvement_boxplot()
+        # self.optimal_improvement_boxplot()
         # self.storage_soc()
         # self.typical_day_storage_soc()
+        self.neutrality_timeline()

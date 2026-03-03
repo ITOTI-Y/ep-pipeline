@@ -44,9 +44,9 @@ class JournalStyle:
             "#E69F00", # Orange
             "#009E73", # Green
             "#CC79A7", # Pink
+            "#D55E00", # Red-orange
             "#F0E442", # Yellow
             "#56B4E9", # Light Blue
-            "#D55E00", # Red-orange
         )
     )
 

@@ -22,6 +22,8 @@ class PathsConfig(BaseModel):
         ..., description="Optimization result output directory"
     )
     visualization_dir: Path = Field(..., description="Visualization output directory")
+    csv_dir: Path = Field(..., description="CSV output directory")
+    data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
     eplus_executable: Path = Field(..., description="EnergyPlus executable path")
     idd_file: Path = Field(..., description="IDD file path")
