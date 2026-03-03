@@ -40,13 +40,13 @@ class JournalStyle:
     # Color-blind friendly palette (Wong)
     colors: tuple[str, ...] = field(
         default_factory=lambda: (
-            "#0072B2",
-            "#D55E00",
-            "#009E73",
-            "#CC79A7",
-            "#F0E442",
-            "#56B4E9",
-            "#E69F00",
+            "#0072B2", # Blue
+            "#E69F00", # Orange
+            "#009E73", # Green
+            "#CC79A7", # Pink
+            "#F0E442", # Yellow
+            "#56B4E9", # Light Blue
+            "#D55E00", # Red-orange
         )
     )
 

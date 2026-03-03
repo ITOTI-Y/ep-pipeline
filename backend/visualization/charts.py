@@ -30,6 +30,13 @@ BUILDING_ORDER = [
     "ApartmentHighRise",
 ]
 
+BUILDING_NAME = {
+    "OfficeLarge": "Large Office",
+    "OfficeMedium": "Medium Office",
+    "MultiFamilyResidential": "Multi-Family",
+    "SingleFamilyResidential": "Single-Family",
+    "ApartmentHighRise": "High-Rise Apt.",
+}
 
 @dataclass
 class Prefix:
@@ -196,7 +203,7 @@ class ChartGenerator:
 
                 axs[i].set_xlabel("Hour of Year")
                 axs[i].set_ylabel("State of Charge (%)")
-                axs[i].set_title(f"{weather_code} - {building_type}")
+                axs[i].set_title(f"{weather_code} - {BUILDING_NAME[building_type]}")
 
                 axs[i].axhline(
                     y=100,
@@ -374,7 +381,7 @@ class ChartGenerator:
             y_max = math.ceil(max(values) / 100) * 100
             axs[i].set_ylim(y_min, y_max)
             axs[i].set_yticks(np.arange(y_min, y_max + 1, 25))
-            axs[i].set_title(building_type)
+            axs[i].set_title(BUILDING_NAME[building_type])
             axs[i].set_xlabel("Weather Code")
             axs[i].set_ylabel("EUI (kWh/m²/yr)")
 
@@ -433,7 +440,7 @@ class ChartGenerator:
             )
             axs[i].set_ylim(-10, 100)
             axs[i].set_yticks(np.arange(0, 100 + 1, 25))
-            axs[i].set_title(building_type)
+            axs[i].set_title(BUILDING_NAME[building_type])
             axs[i].set_xlabel("Weather Code")
             axs[i].set_ylabel("Improvement (%)")
 
@@ -461,7 +468,7 @@ class ChartGenerator:
                 baseline_result = baseline_data[building_type][weather_code]
                 assert baseline_result.total_source_eui is not None
                 assert optimization_result.total_source_eui is not None
-                improvements[building_type].append(
+                improvements[BUILDING_NAME[building_type]].append(
                     (
                         baseline_result.total_source_eui
                         - optimization_result.total_source_eui
@@ -473,16 +480,26 @@ class ChartGenerator:
         df = pd.DataFrame(improvements)
         axs.box(df, marker="x", meancolor="r", fillcolor="gray4")
         axs.format(
-            ylim=(-10, 50),
+            ylim=(0, 50),
             yticks=np.arange(0, 50 + 1, 10),
             ylabel="Improvement (%)",
-            xlabel="Building Type",
+            # xlabel="Building Type",
         )
         self.save(
             fig,
             f"{Prefix.optimization}-Optimal Improvement Boxplot",
             building_type=None,
         )
+
+    def neutrality_timeline(self) -> None:
+        fig, axs = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.15,
+            ncols=1,
+            nrows=1,
+        )
+
+        
 
     def data_to_csv(self) -> None:
         data = []
@@ -537,9 +554,9 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        self.data_to_csv()
-        self.baseline_result()
-        self.optimal_improvement_comparison()
+        # self.data_to_csv()
+        # self.baseline_result()
+        # self.optimal_improvement_comparison()
         self.optimal_improvement_boxplot()
-        self.storage_soc()
-        self.typical_day_storage_soc()
+        # self.storage_soc()
+        # self.typical_day_storage_soc()
