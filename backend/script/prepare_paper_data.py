@@ -183,6 +183,29 @@ def query_hourly_power(db_path: Path) -> pd.DataFrame:
     ].rename(columns={"Month": "month", "Day": "day", "Hour": "hour"})
 
 
+def query_baseline_hourly_demand(db_path: Path) -> np.ndarray:
+    """Extract 8760 hourly electricity demand (kWh/h) for baseline/ecm (no PV).
+
+    For stages without PV/storage, all demand = purchased from grid, export = 0.
+    """
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql_query(
+        """
+        SELECT Month, Day, Hour,
+            max(CASE WHEN Name='Facility Total Electricity Demand Rate'
+                THEN Value ELSE 0 END) as demand_w
+        FROM ReportVariableWithTime
+        WHERE Name = 'Facility Total Electricity Demand Rate'
+        GROUP BY Month, Day, Hour
+        ORDER BY Month, Day, Hour
+        """,
+        conn,
+    )
+    conn.close()
+    assert len(df) == 8760, f"Expected 8760 hours, got {len(df)} from {db_path}"
+    return df["demand_w"].values / 1000  # W → kW = kWh/h
+
+
 # ── CSV 1: Energy Summary ───────────────────────────────────────────────────
 
 
@@ -491,7 +514,12 @@ def load_cambium(scenario: str, year: int) -> pd.DataFrame:
 def prepare_carbon_mode_a(
     df_hourly: pd.DataFrame, df_elec: pd.DataFrame, df_energy: pd.DataFrame
 ) -> pd.DataFrame:
-    """Prepare Mode A carbon accounting using Cambium hourly emission factors."""
+    """Prepare Mode A carbon accounting using Cambium hourly emission factors.
+
+    Processes both baseline and pv stages:
+    - baseline: all demand = purchased, no export (query SQL directly)
+    - pv: use 04_hourly_power data (purchased/exported from PV+storage dispatch)
+    """
     logger.info("Preparing CSV 6: Carbon Mode A (Cambium)")
 
     # Pre-load all Cambium data
@@ -504,7 +532,64 @@ def prepare_carbon_mode_a(
     rows = []
     for bt in BUILDING_TYPES:
         for wc in WEATHER_CODES:
-            # Get hourly data for this building+weather (PV stage)
+            # Get building area
+            area_row = df_energy[
+                (df_energy["building_type"] == bt)
+                & (df_energy["weather_code"] == wc)
+                & (df_energy["stage"] == "baseline")
+            ]
+            area = (
+                area_row.iloc[0]["total_building_area"] if not area_row.empty else 1.0
+            )
+
+            # --- Baseline stage: query SQL directly ---
+            bl_db = sql_path("baseline", bt, wc)
+            if bl_db.exists():
+                bl_demand_kwh = query_baseline_hourly_demand(bl_db)
+
+                bl_gas_row = df_elec[
+                    (df_elec["building_type"] == bt)
+                    & (df_elec["weather_code"] == wc)
+                    & (df_elec["stage"] == "baseline")
+                ]
+                bl_gas = (
+                    bl_gas_row.iloc[0]["total_natural_gas_kwh"]
+                    if not bl_gas_row.empty
+                    else 0.0
+                )
+
+                for scen in CAMBIUM_SCENARIOS:
+                    for yr in CAMBIUM_YEARS:
+                        cam = cambium_cache[(scen, yr)]
+                        distloss = cam["distloss_rate_avg"].values
+                        aer = cam["aer_load_co2e"].values / (1 - distloss) / 1000
+                        lrmer = cam["lrmer_co2e"].values / (1 - distloss) / 1000
+
+                        carbon_purchased = (bl_demand_kwh * aer).sum()
+                        carbon_credit = 0.0  # baseline has no export
+                        carbon_gas = bl_gas * EF_GAS
+                        carbon_net = carbon_purchased - carbon_credit + carbon_gas
+
+                        rows.append(
+                            {
+                                "building_type": bt,
+                                "weather_code": wc,
+                                "stage": "baseline",
+                                "cambium_scenario": scen,
+                                "cambium_year": yr,
+                                "aer_annual_mean": cam["aer_load_co2e"].mean(),
+                                "lrmer_annual_mean": cam["lrmer_co2e"].mean(),
+                                "carbon_elec_purchased_kg": carbon_purchased,
+                                "carbon_elec_exported_credit_kg": carbon_credit,
+                                "carbon_gas_kg": carbon_gas,
+                                "carbon_net_kg": carbon_net,
+                                "carbon_intensity_kgm2": carbon_net / area,
+                            }
+                        )
+            else:
+                logger.warning(f"  Missing baseline SQL: {bl_db}")
+
+            # --- PV stage: use hourly power data ---
             mask = (df_hourly["building_type"] == bt) & (
                 df_hourly["weather_code"] == wc
             )
@@ -517,10 +602,9 @@ def prepare_carbon_mode_a(
                 f"Expected 8760 hours, got {len(hourly)} for {bt}/{wc}"
             )
 
-            purchased_kwh = hourly["purchased_kw"].values  # kWh/h = kW
+            purchased_kwh = hourly["purchased_kw"].values
             exported_kwh = hourly["exported_kw"].values
 
-            # Get annual gas from electricity balance
             gas_row = df_elec[
                 (df_elec["building_type"] == bt)
                 & (df_elec["weather_code"] == wc)
@@ -530,23 +614,11 @@ def prepare_carbon_mode_a(
                 gas_row.iloc[0]["total_natural_gas_kwh"] if not gas_row.empty else 0.0
             )
 
-            # Get building area
-            area_row = df_energy[
-                (df_energy["building_type"] == bt)
-                & (df_energy["weather_code"] == wc)
-                & (df_energy["stage"] == "baseline")
-            ]
-            area = (
-                area_row.iloc[0]["total_building_area"] if not area_row.empty else 1.0
-            )
-
             for scen in CAMBIUM_SCENARIOS:
                 for yr in CAMBIUM_YEARS:
                     cam = cambium_cache[(scen, yr)]
                     distloss = cam["distloss_rate_avg"].values
-
-                    # Convert busbar → end-use: divide by (1 - distloss_rate_avg)
-                    aer = cam["aer_load_co2e"].values / (1 - distloss) / 1000  # kg/kWh
+                    aer = cam["aer_load_co2e"].values / (1 - distloss) / 1000
                     lrmer = cam["lrmer_co2e"].values / (1 - distloss) / 1000
 
                     carbon_purchased = (purchased_kwh * aer).sum()
@@ -558,6 +630,7 @@ def prepare_carbon_mode_a(
                         {
                             "building_type": bt,
                             "weather_code": wc,
+                            "stage": "pv",
                             "cambium_scenario": scen,
                             "cambium_year": yr,
                             "aer_annual_mean": cam["aer_load_co2e"].mean(),
@@ -571,7 +644,9 @@ def prepare_carbon_mode_a(
                     )
 
     df = pd.DataFrame(rows)
-    logger.info(f"  → {len(df)} rows")
+    n_bl = len(df[df["stage"] == "baseline"])
+    n_pv = len(df[df["stage"] == "pv"])
+    logger.info(f"  → {len(df)} rows (baseline: {n_bl}, pv: {n_pv})")
     return df
 
 
@@ -625,18 +700,38 @@ def prepare_bcrc_summary(
             bcrc_cb = (bl_cb - pv_cb) / bl_cb * 100 if bl_cb else np.nan
 
             # Mode A carbon intensity (MidCase, 2025)
-            a_row = df_carbon_a[
+            # PV stage
+            a_pv_row = df_carbon_a[
                 (df_carbon_a["building_type"] == bt)
                 & (df_carbon_a["weather_code"] == wc)
+                & (df_carbon_a["stage"] == "pv")
                 & (df_carbon_a["cambium_scenario"] == "MidCase")
                 & (df_carbon_a["cambium_year"] == 2025)
             ]
             pv_ca = (
-                a_row.iloc[0]["carbon_intensity_kgm2"] if not a_row.empty else np.nan
+                a_pv_row.iloc[0]["carbon_intensity_kgm2"]
+                if not a_pv_row.empty
+                else np.nan
             )
+
+            # Baseline stage (Mode A)
+            a_bl_row = df_carbon_a[
+                (df_carbon_a["building_type"] == bt)
+                & (df_carbon_a["weather_code"] == wc)
+                & (df_carbon_a["stage"] == "baseline")
+                & (df_carbon_a["cambium_scenario"] == "MidCase")
+                & (df_carbon_a["cambium_year"] == 2025)
+            ]
+            bl_ca = (
+                a_bl_row.iloc[0]["carbon_intensity_kgm2"]
+                if not a_bl_row.empty
+                else np.nan
+            )
+
+            # BCRC_carbon_A: Mode A baseline as denominator
             bcrc_ca = (
-                (bl_cb - pv_ca) / bl_cb * 100
-                if (bl_cb and not np.isnan(pv_ca))
+                (bl_ca - pv_ca) / bl_ca * 100
+                if (not np.isnan(bl_ca) and bl_ca != 0 and not np.isnan(pv_ca))
                 else np.nan
             )
 
@@ -672,6 +767,7 @@ def prepare_bcrc_summary(
                     "ecm_carbon_mode_b": ecm_cb,
                     "pv_carbon_mode_b": pv_cb,
                     "bcrc_carbon_mode_b_pct": bcrc_cb,
+                    "baseline_carbon_mode_a_mid2025": bl_ca,
                     "pv_carbon_mode_a_mid2025": pv_ca,
                     "bcrc_carbon_mode_a_pct": bcrc_ca,
                     "r_neutrality_mode_c": r_neutrality,
@@ -815,7 +911,7 @@ def main() -> None:
     # Validate
     validate(df_energy, df_elec, df_hourly, df_carbon_bc, df_bcrc)
 
-    logger.info("Done! All CSV files saved to %s", PAPER_DIR)
+    logger.info(f"Done! All CSV files saved to {PAPER_DIR}")
 
 
 if __name__ == "__main__":
