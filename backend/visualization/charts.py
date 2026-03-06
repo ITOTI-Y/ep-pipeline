@@ -1,3 +1,4 @@
+import functools
 import math
 from collections import defaultdict
 from dataclasses import dataclass
@@ -18,7 +19,6 @@ from backend.visualization.journal_style import (
     ImageType,
     JournalStyle,
 )
-from backend.visualization.query import Query
 
 WEATHER_ORDER = ["TMY", "SSP126", "SSP245", "SSP370", "SSP434", "SSP585"]
 BUILDING_ORDER = [
@@ -37,14 +37,12 @@ BUILDING_NAME = {
     "ApartmentHighRise": "High-Rise Apt.",
 }
 
-style = JournalStyle()
-
 BUILDING_COLOR = {
-    "OfficeLarge": style.get_color(0),
-    "OfficeMedium": style.get_color(1),
-    "MultiFamilyResidential": style.get_color(2),
-    "SingleFamilyResidential": style.get_color(3),
-    "ApartmentHighRise": style.get_color(4),
+    "OfficeLarge": BUILDING_AND_ENVIRONMENT_STYLE.get_color(0),
+    "OfficeMedium": BUILDING_AND_ENVIRONMENT_STYLE.get_color(1),
+    "MultiFamilyResidential": BUILDING_AND_ENVIRONMENT_STYLE.get_color(2),
+    "SingleFamilyResidential": BUILDING_AND_ENVIRONMENT_STYLE.get_color(3),
+    "ApartmentHighRise": BUILDING_AND_ENVIRONMENT_STYLE.get_color(4),
 }
 
 GAS_BUILDING_TYPE = ["OfficeLarge", "OfficeMedium", "ApartmentHighRise"]
@@ -106,48 +104,35 @@ class ChartGenerator:
         self.csv_dir = config.paths.csv_dir
         self.output_dir = config.paths.visualization_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.query = Query()
         self.style = style or BUILDING_AND_ENVIRONMENT_STYLE
         uplt.rc.update(self.style.get_rc_params())
-        self.pv_results: dict[str, dict[str, SimulationResult]] = defaultdict(dict)
-        self._pv_data_prepare()
-        self.baseline_results: dict[str, dict[str, SimulationResult]] = defaultdict(
-            dict
-        )
-        self._baseline_data_prepare()
-        self.optimization_results: dict[str, dict[str, SimulationResult]] = defaultdict(
-            dict
-        )
-        self._optimization_data_prepare()
+        self.pv_results = self._load_results(self.paths.pv_dir)
+        self.baseline_results = self._load_results(self.paths.baseline_dir)
+        self.optimization_results = self._load_results(self.paths.optimization_dir)
 
-    def _pv_data_prepare(self) -> None:
-        pv_dir = self.paths.pv_dir
-        for pv_file in pv_dir.glob("**/result.pkl"):
-            with open(pv_file, "rb") as f:
-                pv_data = load(f)
-                building_type = pv_data.building_type
-                weather_code = pv_data.sql_path.parent.name
-                self.pv_results[building_type][weather_code] = pv_data
+    def _load_results(self, directory: Path) -> dict[str, dict[str, SimulationResult]]:
+        results: dict[str, dict[str, SimulationResult]] = defaultdict(dict)
+        for pkl_file in directory.glob("**/result.pkl"):
+            with open(pkl_file, "rb") as f:
+                data = load(f)
+                results[data.building_type][data.sql_path.parent.name] = data
+        return results
 
-    def _baseline_data_prepare(self) -> None:
-        baseline_dir = self.paths.baseline_dir
-        for baseline_file in baseline_dir.glob("**/result.pkl"):
-            with open(baseline_file, "rb") as f:
-                baseline_data = load(f)
-                building_type = baseline_data.building_type
-                weather_code = baseline_data.sql_path.parent.name
-                self.baseline_results[building_type][weather_code] = baseline_data
+    @functools.cached_property
+    def _hourly_power(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "04_hourly_power.csv")
 
-    def _optimization_data_prepare(self) -> None:
-        optimization_dir = self.paths.optimization_dir
-        for optimization_file in optimization_dir.glob("**/result.pkl"):
-            with open(optimization_file, "rb") as f:
-                optimization_data = load(f)
-                building_type = optimization_data.building_type
-                weather_code = optimization_data.sql_path.parent.name
-                self.optimization_results[building_type][weather_code] = (
-                    optimization_data
-                )
+    @functools.cached_property
+    def _carbon_mode_bc(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "05_carbon_mode_bc.csv")
+
+    @functools.cached_property
+    def _carbon_mode_a(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "06_carbon_mode_a.csv")
+
+    @functools.cached_property
+    def _bcrc_summary(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "07_bcrc_summary.csv")
 
     def create_figure(
         self,
@@ -192,7 +177,7 @@ class ChartGenerator:
         return path
 
     def storage_soc(self, weather_code: str = "TMY", smooth_window: int = 7) -> None:
-        df = pd.read_csv(self.csv_dir / "04_hourly_power.csv")
+        df = self._hourly_power
         df = df[df["weather_code"] == weather_code]
         fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
@@ -207,10 +192,10 @@ class ChartGenerator:
                 ["month", "day", "hour"]
             )
             capacity = self.config.storage.capacity[building_type]
-            soc_pct = sub["storage_soc_kwh"].values / capacity * 100
-
             if capacity == 0:
                 continue
+
+            soc_pct = sub["storage_soc_kwh"].values / capacity * 100
 
             soc_daily = soc_pct.reshape(365, 24)
             day_min = soc_daily.min(axis=1)
@@ -335,7 +320,7 @@ class ChartGenerator:
         ax.set_ylim(ylim[0], ylim[1] * 1.2)
 
     def typical_day_storage_soc(self, weather_code: str = "TMY") -> None:
-        df = pd.read_csv(self.csv_dir / "04_hourly_power.csv")
+        df = self._hourly_power
         fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
             aspect_ratio=0.25,
@@ -406,9 +391,9 @@ class ChartGenerator:
             abcloc="ul",
             suptitle="Baseline EUI Comparison",
         )
-        data = self.baseline_results.copy()
-
-        for i, (building_type, weather_codes) in enumerate(data.items()):
+        for i, (building_type, weather_codes) in enumerate(
+            self.baseline_results.items()
+        ):
             eui = {}
             for weather_code, baseline_result in weather_codes.items():
                 eui[weather_code] = baseline_result.total_source_eui
@@ -454,13 +439,11 @@ class ChartGenerator:
             abcloc="ul",
             suptitle="Optimization EUI Comparison",
         )
-        baseline_data = self.baseline_results.copy()
-        optimization_data = self.optimization_results.copy()
         for i, building_type in enumerate(BUILDING_ORDER):
-            weather_codes = optimization_data[building_type]
+            weather_codes = self.optimization_results[building_type]
             improvement = {}
             for weather_code, optimization_result in weather_codes.items():
-                baseline_result = baseline_data[building_type][weather_code]
+                baseline_result = self.baseline_results[building_type][weather_code]
                 assert baseline_result.total_source_eui is not None
                 assert optimization_result.total_source_eui is not None
                 improvement[weather_code] = (
@@ -504,13 +487,11 @@ class ChartGenerator:
         axs.format(
             suptitle="Optimal Improvement Boxplot",
         )
-        baseline_data = self.baseline_results.copy()
-        optimization_data = self.optimization_results.copy()
         improvements: dict[str, list[float]] = defaultdict(list)
         for building_type in BUILDING_ORDER:
-            weather_codes = optimization_data[building_type]
+            weather_codes = self.optimization_results[building_type]
             for weather_code, optimization_result in weather_codes.items():
-                baseline_result = baseline_data[building_type][weather_code]
+                baseline_result = self.baseline_results[building_type][weather_code]
                 assert baseline_result.total_source_eui is not None
                 assert optimization_result.total_source_eui is not None
                 improvements[BUILDING_NAME[building_type]].append(
@@ -537,7 +518,7 @@ class ChartGenerator:
         )
 
     def neutrality_timeline(self, stage: Literal["pv", "baseline"] = "pv") -> None:
-        df_a = pd.read_csv(self.csv_dir / "06_carbon_mode_a.csv")
+        df_a = self._carbon_mode_a
         df_a = df_a[df_a["stage"] == stage]
 
         df_mid = df_a[df_a["cambium_scenario"] == "MidCase"].copy()
@@ -556,7 +537,7 @@ class ChartGenerator:
             .reset_index()
         )
 
-        df_bc = pd.read_csv(self.csv_dir / "05_carbon_mode_bc.csv")
+        df_bc = self._carbon_mode_bc
         df_c_r1 = (
             df_bc[
                 (df_bc["mode"] == "mode_c")
@@ -690,7 +671,7 @@ class ChartGenerator:
         )
 
     def waterfall(self) -> None:
-        df = pd.read_csv(self.csv_dir / "07_bcrc_summary.csv")
+        df = self._bcrc_summary
         means = (
             df.groupby("building_type")[
                 [
@@ -905,8 +886,8 @@ class ChartGenerator:
         self.save(fig, f"Fig12. {Prefix.pv}-Waterfall Chart", building_type=None)
 
     def carbon_three_plane(self, weather_code: str = "TMY") -> None:
-        mc_bc = pd.read_csv(self.csv_dir / "05_carbon_mode_bc.csv")
-        ma = pd.read_csv(self.csv_dir / "06_carbon_mode_a.csv")
+        mc_bc = self._carbon_mode_bc
+        ma = self._carbon_mode_a
 
         mode_c_tmy = mc_bc[
             (mc_bc["mode"] == "mode_c") & (mc_bc["weather_code"] == weather_code)
@@ -1165,18 +1146,17 @@ class ChartGenerator:
         result["total_source_eui"] = data.total_source_eui
         result["net_source_eui"] = data.net_source_eui
         result["total_site_eui"] = data.total_site_eui
-        result["net_source_eui"] = data.net_source_eui
         result["net_site_eui"] = data.net_site_eui
         result["predicted_eui"] = data.predicted_eui
         return result
 
     def generate_all(self) -> None:
-        # self.data_to_csv()
-        # self.baseline_result()
-        # self.optimal_improvement_comparison()
-        # self.optimal_improvement_boxplot()
-        # self.storage_soc()
-        # self.waterfall()
+        self.data_to_csv()
+        self.baseline_result()
+        self.optimal_improvement_comparison()
+        self.optimal_improvement_boxplot()
+        self.storage_soc()
+        self.waterfall()
         self.carbon_three_plane()
-        # self.typical_day_storage_soc(weather_code="TMY")
-        # self.neutrality_timeline()
+        self.typical_day_storage_soc(weather_code="TMY")
+        self.neutrality_timeline()

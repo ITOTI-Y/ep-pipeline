@@ -9,6 +9,7 @@ Usage: uv run python -m backend.script.prepare_paper_data
 
 import json
 import sqlite3
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -63,31 +64,38 @@ def cambium_path(scenario: str, year: int) -> Path:
     return DATA_DIR / "cambium" / f"Cambium24_{scenario}_hourly_PJM_West_{year}.csv"
 
 
+def _build_area_map(df_energy: pd.DataFrame) -> dict[tuple[str, str], float]:
+    """Build (building_type, weather_code) → total_building_area lookup from baseline rows."""
+    bl = df_energy[df_energy["stage"] == "baseline"]
+    return {
+        (row["building_type"], row["weather_code"]): row["total_building_area"]
+        for _, row in bl.iterrows()
+    }
+
+
 # ── SQL helpers ──────────────────────────────────────────────────────────────
 
 
 def query_end_uses(db_path: Path) -> dict[str, float]:
     """Extract annual electricity and natural gas from End Uses table."""
-    conn = sqlite3.connect(db_path)
-    rows = conn.execute(
-        "SELECT ColumnName, CAST(Value AS REAL) FROM TabularDataWithStrings "
-        "WHERE ReportName='AnnualBuildingUtilityPerformanceSummary' "
-        "AND TableName='End Uses' AND RowName='Total End Uses' AND Units='kWh'"
-    ).fetchall()
-    conn.close()
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT ColumnName, CAST(Value AS REAL) FROM TabularDataWithStrings "
+            "WHERE ReportName='AnnualBuildingUtilityPerformanceSummary' "
+            "AND TableName='End Uses' AND RowName='Total End Uses' AND Units='kWh'"
+        ).fetchall()
     return {r[0].strip(): r[1] for r in rows}
 
 
 def query_electric_loads(db_path: Path) -> dict[str, float]:
     """Extract Electric Loads Satisfied table values."""
-    conn = sqlite3.connect(db_path)
-    rows = conn.execute(
-        "SELECT RowName, CAST(Value AS REAL) FROM TabularDataWithStrings "
-        "WHERE ReportName='AnnualBuildingUtilityPerformanceSummary' "
-        "AND TableName='Electric Loads Satisfied' "
-        "AND ColumnName='Electricity' AND Units='kWh'"
-    ).fetchall()
-    conn.close()
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT RowName, CAST(Value AS REAL) FROM TabularDataWithStrings "
+            "WHERE ReportName='AnnualBuildingUtilityPerformanceSummary' "
+            "AND TableName='Electric Loads Satisfied' "
+            "AND ColumnName='Electricity' AND Units='kWh'"
+        ).fetchall()
     return {r[0].strip(): r[1] for r in rows if r[0].strip()}
 
 
@@ -98,56 +106,54 @@ def query_hourly_power(db_path: Path) -> pd.DataFrame:
     compute net grid exchange from: demand - PV + charge - discharge (verified
     to match ElectricityNet:Facility where both exist).
     """
-    conn = sqlite3.connect(db_path)
+    with sqlite3.connect(db_path) as conn:
+        # Check if ElectricityNet:Facility exists
+        has_net = (
+            conn.execute(
+                "SELECT count(*) FROM ReportVariableWithTime "
+                "WHERE Name='ElectricityNet:Facility'"
+            ).fetchone()[0]
+            > 0
+        )
 
-    # Check if ElectricityNet:Facility exists
-    has_net = (
-        conn.execute(
-            "SELECT count(*) FROM ReportVariableWithTime "
-            "WHERE Name='ElectricityNet:Facility'"
-        ).fetchone()[0]
-        > 0
-    )
+        target_vars = [
+            "Facility Total Electricity Demand Rate",
+            "Generator Produced DC Electricity Rate",
+            "Electric Storage Charge Power",
+            "Electric Storage Discharge Power",
+            "Electric Storage Simple Charge State",
+        ]
+        if has_net:
+            target_vars.append("ElectricityNet:Facility")
 
-    target_vars = [
-        "Facility Total Electricity Demand Rate",
-        "Generator Produced DC Electricity Rate",
-        "Electric Storage Charge Power",
-        "Electric Storage Discharge Power",
-        "Electric Storage Simple Charge State",
-    ]
-    if has_net:
-        target_vars.append("ElectricityNet:Facility")
+        placeholders = ",".join(f"'{v}'" for v in target_vars)
+        net_col = (
+            "max(CASE WHEN Name='ElectricityNet:Facility' THEN Value END) as net_j,"
+            if has_net
+            else ""
+        )
 
-    placeholders = ",".join(f"'{v}'" for v in target_vars)
-    net_col = (
-        "max(CASE WHEN Name='ElectricityNet:Facility' THEN Value END) as net_j,"
-        if has_net
-        else ""
-    )
-
-    df = pd.read_sql_query(
-        f"""
-        SELECT Month, Day, Hour,
-            max(CASE WHEN Name='Facility Total Electricity Demand Rate'
-                THEN Value ELSE 0 END) as demand_w,
-            sum(CASE WHEN Name='Generator Produced DC Electricity Rate'
-                THEN Value ELSE 0 END) as pv_w,
-            {net_col}
-            max(CASE WHEN Name='Electric Storage Charge Power'
-                THEN Value ELSE 0 END) as charge_w,
-            max(CASE WHEN Name='Electric Storage Discharge Power'
-                THEN Value ELSE 0 END) as discharge_w,
-            max(CASE WHEN Name='Electric Storage Simple Charge State'
-                THEN Value ELSE 0 END) as soc_j
-        FROM ReportVariableWithTime
-        WHERE Name IN ({placeholders})
-        GROUP BY Month, Day, Hour
-        ORDER BY Month, Day, Hour
-        """,
-        conn,
-    )
-    conn.close()
+        df = pd.read_sql_query(
+            f"""
+            SELECT Month, Day, Hour,
+                max(CASE WHEN Name='Facility Total Electricity Demand Rate'
+                    THEN Value ELSE 0 END) as demand_w,
+                sum(CASE WHEN Name='Generator Produced DC Electricity Rate'
+                    THEN Value ELSE 0 END) as pv_w,
+                {net_col}
+                max(CASE WHEN Name='Electric Storage Charge Power'
+                    THEN Value ELSE 0 END) as charge_w,
+                max(CASE WHEN Name='Electric Storage Discharge Power'
+                    THEN Value ELSE 0 END) as discharge_w,
+                max(CASE WHEN Name='Electric Storage Simple Charge State'
+                    THEN Value ELSE 0 END) as soc_j
+            FROM ReportVariableWithTime
+            WHERE Name IN ({placeholders})
+            GROUP BY Month, Day, Hour
+            ORDER BY Month, Day, Hour
+            """,
+            conn,
+        )
 
     # Compute net grid exchange in J
     if has_net:
@@ -188,20 +194,19 @@ def query_baseline_hourly_demand(db_path: Path) -> np.ndarray:
 
     For stages without PV/storage, all demand = purchased from grid, export = 0.
     """
-    conn = sqlite3.connect(db_path)
-    df = pd.read_sql_query(
-        """
-        SELECT Month, Day, Hour,
-            max(CASE WHEN Name='Facility Total Electricity Demand Rate'
-                THEN Value ELSE 0 END) as demand_w
-        FROM ReportVariableWithTime
-        WHERE Name = 'Facility Total Electricity Demand Rate'
-        GROUP BY Month, Day, Hour
-        ORDER BY Month, Day, Hour
-        """,
-        conn,
-    )
-    conn.close()
+    with sqlite3.connect(db_path) as conn:
+        df = pd.read_sql_query(
+            """
+            SELECT Month, Day, Hour,
+                max(CASE WHEN Name='Facility Total Electricity Demand Rate'
+                    THEN Value ELSE 0 END) as demand_w
+            FROM ReportVariableWithTime
+            WHERE Name = 'Facility Total Electricity Demand Rate'
+            GROUP BY Month, Day, Hour
+            ORDER BY Month, Day, Hour
+            """,
+            conn,
+        )
     assert len(df) == 8760, f"Expected 8760 hours, got {len(df)} from {db_path}"
     return df["demand_w"].values / 1000  # W → kW = kWh/h
 
@@ -219,20 +224,23 @@ def prepare_energy_summary() -> pd.DataFrame:
     stage_map = {"baseline": "baseline", "optimization": "ecm", "pv": "pv"}
     df["stage"] = df["data_type"].map(stage_map)
 
-    out = pd.DataFrame()
-    out["building_type"] = df["building_type"]
-    out["weather_code"] = df["weather_code"]
-    out["stage"] = df["stage"]
-    out["total_building_area"] = df["total_building_area"]
-    out["total_site_energy"] = df["total_site_energy"]
-    out["total_source_energy"] = df["total_source_energy"]
-    out["net_site_energy"] = df["net_site_energy"]
-    out["net_source_energy"] = df["net_source_energy"]
-    out["total_site_eui"] = df["total_site_eui"]
-    out["total_source_eui"] = df["total_source_eui"]
-    out["net_site_eui"] = df["net_site_eui"]
-    out["net_source_eui"] = df["net_source_eui"]
-    out["predicted_eui"] = df["predicted_eui"]
+    out = df[
+        [
+            "building_type",
+            "weather_code",
+            "stage",
+            "total_building_area",
+            "total_site_energy",
+            "total_source_energy",
+            "net_site_energy",
+            "net_source_energy",
+            "total_site_eui",
+            "total_source_eui",
+            "net_site_eui",
+            "net_source_eui",
+            "predicted_eui",
+        ]
+    ].copy()
 
     # Compute ecm_improvement_pct (source EUI reduction vs baseline)
     ecm_improve = []
@@ -420,6 +428,8 @@ def prepare_carbon_mode_bc(
     """Prepare carbon Mode B (90 rows) + Mode C (330 rows)."""
     logger.info("Preparing CSV 5: Carbon Mode B + C")
 
+    area_map = _build_area_map(df_energy)
+
     # --- Part A: Mode B (all 3 stages x 30 scenarios = 90 rows) ---
     mode_b_rows = []
     for _, r in df_elec.iterrows():
@@ -437,13 +447,7 @@ def prepare_carbon_mode_bc(
         carbon_gas = gas * EF_GAS
         carbon_net = carbon_purchased - carbon_credit + carbon_gas
 
-        # Get building area
-        area_row = df_energy[
-            (df_energy["building_type"] == bt)
-            & (df_energy["weather_code"] == wc)
-            & (df_energy["stage"] == "baseline")
-        ]
-        area = area_row.iloc[0]["total_building_area"] if not area_row.empty else 1.0
+        area = area_map.get((bt, wc), 1.0)
 
         mode_b_rows.append(
             {
@@ -471,12 +475,7 @@ def prepare_carbon_mode_bc(
         net_elec = r["net_electricity_from_utility_kwh"]
         gas = r["total_natural_gas_kwh"]
 
-        area_row = df_energy[
-            (df_energy["building_type"] == bt)
-            & (df_energy["weather_code"] == wc)
-            & (df_energy["stage"] == "baseline")
-        ]
-        area = area_row.iloc[0]["total_building_area"] if not area_row.empty else 1.0
+        area = area_map.get((bt, wc), 1.0)
 
         for r_val in R_VALUES:
             elec_intensity = max(0, net_elec) * EF_ELEC_AVG * (1 - r_val) / area
@@ -504,11 +503,32 @@ def prepare_carbon_mode_bc(
 # ── CSV 6: Carbon Mode A (Cambium hourly) ───────────────────────────────────
 
 
-def load_cambium(scenario: str, year: int) -> pd.DataFrame:
-    """Load Cambium CSV, return 8760 rows with emission factors and distloss (kg/MWh)."""
+@dataclass
+class CambiumFactors:
+    """Pre-computed Cambium emission factors adjusted for distribution loss (kg/kWh)."""
+
+    aer: np.ndarray  # 8760 hourly average emission rate
+    lrmer: np.ndarray  # 8760 hourly long-run marginal emission rate
+    aer_raw_mean: float  # raw aer_load_co2e annual mean (kg/MWh)
+    lrmer_raw_mean: float  # raw lrmer_co2e annual mean (kg/MWh)
+
+
+def load_cambium(scenario: str, year: int) -> CambiumFactors:
+    """Load Cambium CSV and pre-compute distloss-adjusted emission factors."""
     path = cambium_path(scenario, year)
-    df = pd.read_csv(path, skiprows=5)
-    return df[["aer_load_co2e", "lrmer_co2e", "distloss_rate_avg"]]
+    df = pd.read_csv(  # ty: ignore[no-matching-overload]
+        path,
+        skiprows=5,
+        usecols=["aer_load_co2e", "lrmer_co2e", "distloss_rate_avg"],
+    )
+    distloss = df["distloss_rate_avg"].values
+    factor = 1 / (1 - distloss) / 1000  # kg/MWh → kg/kWh with distloss adj
+    return CambiumFactors(
+        aer=df["aer_load_co2e"].values * factor,
+        lrmer=df["lrmer_co2e"].values * factor,
+        aer_raw_mean=df["aer_load_co2e"].mean(),
+        lrmer_raw_mean=df["lrmer_co2e"].mean(),
+    )
 
 
 def prepare_carbon_mode_a(
@@ -522,25 +542,21 @@ def prepare_carbon_mode_a(
     """
     logger.info("Preparing CSV 6: Carbon Mode A (Cambium)")
 
-    # Pre-load all Cambium data
-    cambium_cache: dict[tuple[str, int], pd.DataFrame] = {}
+    # Pre-load all Cambium data (emission factors pre-adjusted for distloss)
+    cambium_cache: dict[tuple[str, int], CambiumFactors] = {}
     for scen in CAMBIUM_SCENARIOS:
         for yr in CAMBIUM_YEARS:
             cambium_cache[(scen, yr)] = load_cambium(scen, yr)
     logger.info(f"  Loaded {len(cambium_cache)} Cambium files")
 
+    # Pre-build area and gas lookups
+    area_map = _build_area_map(df_energy)
+    hourly_groups = dict(list(df_hourly.groupby(["building_type", "weather_code"])))
+
     rows = []
     for bt in BUILDING_TYPES:
         for wc in WEATHER_CODES:
-            # Get building area
-            area_row = df_energy[
-                (df_energy["building_type"] == bt)
-                & (df_energy["weather_code"] == wc)
-                & (df_energy["stage"] == "baseline")
-            ]
-            area = (
-                area_row.iloc[0]["total_building_area"] if not area_row.empty else 1.0
-            )
+            area = area_map.get((bt, wc), 1.0)
 
             # --- Baseline stage: query SQL directly ---
             bl_db = sql_path("baseline", bt, wc)
@@ -561,14 +577,10 @@ def prepare_carbon_mode_a(
                 for scen in CAMBIUM_SCENARIOS:
                     for yr in CAMBIUM_YEARS:
                         cam = cambium_cache[(scen, yr)]
-                        distloss = cam["distloss_rate_avg"].values
-                        aer = cam["aer_load_co2e"].values / (1 - distloss) / 1000
-                        lrmer = cam["lrmer_co2e"].values / (1 - distloss) / 1000
 
-                        carbon_purchased = (bl_demand_kwh * aer).sum()
-                        carbon_credit = 0.0  # baseline has no export
+                        carbon_purchased = (bl_demand_kwh * cam.aer).sum()
                         carbon_gas = bl_gas * EF_GAS
-                        carbon_net = carbon_purchased - carbon_credit + carbon_gas
+                        carbon_net = carbon_purchased + carbon_gas
 
                         rows.append(
                             {
@@ -577,10 +589,10 @@ def prepare_carbon_mode_a(
                                 "stage": "baseline",
                                 "cambium_scenario": scen,
                                 "cambium_year": yr,
-                                "aer_annual_mean": cam["aer_load_co2e"].mean(),
-                                "lrmer_annual_mean": cam["lrmer_co2e"].mean(),
+                                "aer_annual_mean": cam.aer_raw_mean,
+                                "lrmer_annual_mean": cam.lrmer_raw_mean,
                                 "carbon_elec_purchased_kg": carbon_purchased,
-                                "carbon_elec_exported_credit_kg": carbon_credit,
+                                "carbon_elec_exported_credit_kg": 0.0,
                                 "carbon_gas_kg": carbon_gas,
                                 "carbon_net_kg": carbon_net,
                                 "carbon_intensity_kgm2": carbon_net / area,
@@ -590,11 +602,8 @@ def prepare_carbon_mode_a(
                 logger.warning(f"  Missing baseline SQL: {bl_db}")
 
             # --- PV stage: use hourly power data ---
-            mask = (df_hourly["building_type"] == bt) & (
-                df_hourly["weather_code"] == wc
-            )
-            hourly = df_hourly[mask]
-            if hourly.empty:
+            hourly = hourly_groups.get((bt, wc))
+            if hourly is None or hourly.empty:
                 logger.warning(f"  No hourly data for {bt}/{wc}")
                 continue
 
@@ -617,12 +626,9 @@ def prepare_carbon_mode_a(
             for scen in CAMBIUM_SCENARIOS:
                 for yr in CAMBIUM_YEARS:
                     cam = cambium_cache[(scen, yr)]
-                    distloss = cam["distloss_rate_avg"].values
-                    aer = cam["aer_load_co2e"].values / (1 - distloss) / 1000
-                    lrmer = cam["lrmer_co2e"].values / (1 - distloss) / 1000
 
-                    carbon_purchased = (purchased_kwh * aer).sum()
-                    carbon_credit = (exported_kwh * lrmer).sum()
+                    carbon_purchased = (purchased_kwh * cam.aer).sum()
+                    carbon_credit = (exported_kwh * cam.lrmer).sum()
                     carbon_gas = gas_annual * EF_GAS
                     carbon_net = carbon_purchased - carbon_credit + carbon_gas
 
@@ -633,8 +639,8 @@ def prepare_carbon_mode_a(
                             "stage": "pv",
                             "cambium_scenario": scen,
                             "cambium_year": yr,
-                            "aer_annual_mean": cam["aer_load_co2e"].mean(),
-                            "lrmer_annual_mean": cam["lrmer_co2e"].mean(),
+                            "aer_annual_mean": cam.aer_raw_mean,
+                            "lrmer_annual_mean": cam.lrmer_raw_mean,
                             "carbon_elec_purchased_kg": carbon_purchased,
                             "carbon_elec_exported_credit_kg": carbon_credit,
                             "carbon_gas_kg": carbon_gas,
@@ -664,39 +670,35 @@ def prepare_bcrc_summary(
     mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
     mode_c = df_carbon_bc[df_carbon_bc["mode"] == "mode_c"]
 
+    # Build indexed lookups for fast access
+    energy_idx = df_energy.set_index(["building_type", "weather_code", "stage"])
+    mode_b_idx = mode_b.set_index(["building_type", "weather_code", "stage"])
+
+    def get_eui(bt: str, wc: str, stage: str, col: str = "net_site_eui") -> float:
+        try:
+            return energy_idx.loc[(bt, wc, stage), col]
+        except KeyError:
+            return np.nan
+
+    def get_carbon_b(bt: str, wc: str, stage: str) -> float:
+        try:
+            return mode_b_idx.loc[(bt, wc, stage), "carbon_intensity_kgm2"]
+        except KeyError:
+            return np.nan
+
     rows = []
     for bt in BUILDING_TYPES:
         for wc in WEATHER_CODES:
-            # Energy EUI lookup
-            def get_eui(
-                stage: str, col: str = "net_site_eui", _bt: str = bt, _wc: str = wc
-            ) -> float:
-                r = df_energy[
-                    (df_energy["building_type"] == _bt)
-                    & (df_energy["weather_code"] == _wc)
-                    & (df_energy["stage"] == stage)
-                ]
-                return r.iloc[0][col] if not r.empty else np.nan
-
-            bl_eui = get_eui("baseline", "total_site_eui")
-            ecm_eui = get_eui("ecm", "total_site_eui")
-            pv_net_eui = get_eui("pv", "net_site_eui")
+            bl_eui = get_eui(bt, wc, "baseline", "total_site_eui")
+            ecm_eui = get_eui(bt, wc, "ecm", "total_site_eui")
+            pv_net_eui = get_eui(bt, wc, "pv", "net_site_eui")
             bcrc_energy = (
                 (bl_eui - max(0, pv_net_eui)) / bl_eui * 100 if bl_eui else np.nan
             )
 
-            # Mode B carbon intensity lookup
-            def get_carbon_b(stage: str, _bt: str = bt, _wc: str = wc) -> float:
-                r = mode_b[
-                    (mode_b["building_type"] == _bt)
-                    & (mode_b["weather_code"] == _wc)
-                    & (mode_b["stage"] == stage)
-                ]
-                return r.iloc[0]["carbon_intensity_kgm2"] if not r.empty else np.nan
-
-            bl_cb = get_carbon_b("baseline")
-            ecm_cb = get_carbon_b("ecm")
-            pv_cb = get_carbon_b("pv")
+            bl_cb = get_carbon_b(bt, wc, "baseline")
+            ecm_cb = get_carbon_b(bt, wc, "ecm")
+            pv_cb = get_carbon_b(bt, wc, "pv")
             bcrc_cb = (bl_cb - pv_cb) / bl_cb * 100 if bl_cb else np.nan
 
             # Mode A carbon intensity (MidCase, 2025)
