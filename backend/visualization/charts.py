@@ -1,5 +1,4 @@
 import functools
-import math
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -77,6 +76,14 @@ CAMBIUM_SCENARIOS = {
     "HighRECost_LowNGPrice": (":", "High RE+Low Gas"),
 }
 
+STAGE_LABEL = {"baseline": "Baseline", "ecm": "Post-ECM", "pv": "Post-PV"}
+
+STAGE_CFG = {
+    "baseline": "total_site_eui",
+    "ecm": "total_site_eui",
+    "pv": "net_site_eui",
+}
+
 
 @dataclass
 class Prefix:
@@ -133,6 +140,10 @@ class ChartGenerator:
     @functools.cached_property
     def _bcrc_summary(self) -> pd.DataFrame:
         return pd.read_csv(self.csv_dir / "07_bcrc_summary.csv")
+
+    @functools.cached_property
+    def _energy_summary(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "01_energy_summary.csv")
 
     def create_figure(
         self,
@@ -374,148 +385,153 @@ class ChartGenerator:
 
         self.save(fig, f"Fig10. {Prefix.pv}-Typical Day Storage SOC - {weather_code}")
 
-    def baseline_result(self) -> None:
-        """Generate baseline result chart.
+    def baseline_eui_heatmap(self) -> None:
+        df = self._energy_summary
+        df = df[df["stage"] == "baseline"]
+        pivot = df.pivot(
+            index="building_type", columns="weather_code", values="total_site_eui"
+        ).loc[BUILDING_ORDER, WEATHER_ORDER]
 
-        Args:
-            baseline_result: Baseline result containing SQL path and building type.
-        """
-        fig, axs = self.create_figure(
+        pivot.index = [BUILDING_NAME[i] for i in pivot.index]
+
+        fig, ax = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
-            aspect_ratio=0.15,
-            ncols=1,
-            nrows=5,
+            aspect_ratio=0.5,
         )
-        axs.format(
-            abc="a",
-            abcloc="ul",
-            suptitle="Baseline EUI Comparison",
+        ax.heatmap(
+            pivot,
+            cmap="YlOrRd",
+            colorbar="r",
+            labels=True,
+            precision=1,
         )
-        for i, (building_type, weather_codes) in enumerate(
-            self.baseline_results.items()
-        ):
-            eui = {}
-            for weather_code, baseline_result in weather_codes.items():
-                eui[weather_code] = baseline_result.total_source_eui
-            sorted_eui = {k: eui[k] for k in WEATHER_ORDER if k in eui}
-            labels = list(sorted_eui.keys())
-            values = list(sorted_eui.values())
-            axs[i].bar(
-                labels,
-                values,
-                color=self.style.get_color(i),
-                bar_labels=True,
-                bar_labels_kw={"fmt": "%.1f"},
-            )
-            y_min = math.floor(min(values) / 100) * 100
-            y_max = math.ceil(max(values) / 100) * 100
-            axs[i].set_ylim(y_min, y_max)
-            axs[i].set_yticks(np.arange(y_min, y_max + 1, 25))
-            axs[i].set_title(BUILDING_NAME[building_type])
-            axs[i].set_xlabel("Weather Code")
-            axs[i].set_ylabel("EUI (kWh/m²/yr)")
-
-        self.save(
-            fig,
-            f"{Prefix.baseline}-Baseline EUI Comparison",
-            building_type=None,
+        ax.format(
+            aspect="auto",
+            xlabel="",
+            title="Baseline Site EUI (kWh m$^{-2}$ yr$^{-1}$)",
+            titleweight="bold",
+            titleloc="l",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
         )
+        self.save(fig, f"Fig05. {Prefix.baseline}-Baseline EUI Heatmap")
 
-    def optimal_improvement_comparison(self) -> None:
-        """Generate optimization result chart.
+    def ecm_improvement_heatmap(self) -> None:
+        df = self._energy_summary
+        df = df[df["stage"] == "ecm"]
+        pivot = df.pivot(
+            index="building_type", columns="weather_code", values="ecm_improvement_pct"
+        ).loc[BUILDING_ORDER, WEATHER_ORDER]
 
-        Args:
-            baseline_results: Baseline result containing SQL path and building type.
-            optimization_results: Optimization result containing SQL path and building type.
-        """
-        fig, axs = self.create_figure(
+        pivot.index = [BUILDING_NAME[i] for i in pivot.index]
+
+        fig, ax = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
-            aspect_ratio=0.15,
+            aspect_ratio=0.5,
+        )
+        ax.heatmap(
+            pivot,
+            cmap="Blues",
+            colorbar="r",
+            labels=True,
+            formatter="simple",
+            precision=1,
+            formatter_kw={"suffix": "%"},
+        )
+        ax.format(
+            aspect="auto",
+            xlabel="",
+            title="Source EUI Improvement by ECM Optimization (%)",
+            titleweight="bold",
+            titleloc="l",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
+        )
+        self.save(fig, f"Fig06. {Prefix.optimization}-ECM Improvement Heatmap")
+
+    def optimal_improvement_violin(self) -> None:
+        base = np.arange(len(BUILDING_ORDER))
+        offset = {"baseline": -0.25, "ecm": 0.0, "pv": 0.25}
+        df = self._energy_summary
+        fig, ax = self.create_figure(
+            width=FigureWidth.DOUBLE_COLUMN,
+            aspect_ratio=0.5,
             ncols=1,
-            nrows=5,
         )
-        axs.format(
-            abc="a",
-            abcloc="ul",
-            suptitle="Optimization EUI Comparison",
-        )
-        for i, building_type in enumerate(BUILDING_ORDER):
-            weather_codes = self.optimization_results[building_type]
-            improvement = {}
-            for weather_code, optimization_result in weather_codes.items():
-                baseline_result = self.baseline_results[building_type][weather_code]
-                assert baseline_result.total_source_eui is not None
-                assert optimization_result.total_source_eui is not None
-                improvement[weather_code] = (
-                    (
-                        baseline_result.total_source_eui
-                        - optimization_result.total_source_eui
+        width = 0.2
+        for i, (stage, col) in enumerate(STAGE_CFG.items()):
+            pos = base + offset[stage]
+            sub = df[df["stage"] == stage]
+            data = pd.concat(
+                [
+                    sub.loc[sub["building_type"] == building_type, col].reset_index(
+                        drop=True
                     )
-                    / baseline_result.total_source_eui
-                    * 100
-                )
-            sorted_improvement = {
-                k: improvement[k] for k in WEATHER_ORDER if k in improvement
-            }
-            labels = list(sorted_improvement.keys())
-            values = list(sorted_improvement.values())
-            axs[i].bar(
-                labels,
-                values,
-                color=self.style.get_color(i),
-                bar_labels=True,
-                bar_labels_kw={"fmt": "%.1f"},
+                    for building_type in BUILDING_ORDER
+                ],
+                axis=1,
             )
-            axs[i].set_ylim(-10, 100)
-            axs[i].set_yticks(np.arange(0, 100 + 1, 25))
-            axs[i].set_title(BUILDING_NAME[building_type])
-            axs[i].set_xlabel("Weather Code")
-            axs[i].set_ylabel("Improvement (%)")
+            bodies = ax.violinplot(
+                pos,
+                data,
+                widths=width,
+                edgecolor="white",
+                showmedians=False,
+                showmeans=False,
+                showextrema=False,
+                bw_method=0.3,
+                labels=[STAGE_LABEL[stage]],
+            )
+            color = self.style.get_color(i)
+            for body in bodies:
+                body.set_facecolor(color)
+                body.set_alpha(0.7)
 
-        self.save(
-            fig,
-            f"{Prefix.optimization}-Optimal Improvement Comparison",
-            building_type=None,
-        )
-
-    def optimal_improvement_boxplot(self) -> None:
-        fig, axs = self.create_figure(
-            width=FigureWidth.DOUBLE_COLUMN,
-            aspect_ratio=0.15,
-            ncols=1,
-        )
-        axs.format(
-            suptitle="Optimal Improvement Boxplot",
-        )
-        improvements: dict[str, list[float]] = defaultdict(list)
-        for building_type in BUILDING_ORDER:
-            weather_codes = self.optimization_results[building_type]
-            for weather_code, optimization_result in weather_codes.items():
-                baseline_result = self.baseline_results[building_type][weather_code]
-                assert baseline_result.total_source_eui is not None
-                assert optimization_result.total_source_eui is not None
-                improvements[BUILDING_NAME[building_type]].append(
-                    (
-                        baseline_result.total_source_eui
-                        - optimization_result.total_source_eui
-                    )
-                    / baseline_result.total_source_eui
-                    * 100
+            for j, _ in enumerate(BUILDING_ORDER):
+                y = data.iloc[:, j].dropna()
+                jitter = np.random.uniform(-width * 0.3, width * 0.3, size=len(y))
+                ax.scatter(
+                    pos[j] + jitter,
+                    y,
+                    s=20,
+                    color=color,
+                    alpha=0.8,
+                    edgecolor="white",
+                    zorder=3,
+                    label="_nolegend_",
                 )
+        for i in range(len(BUILDING_ORDER)):
+            ax.axvline(
+                i + 0.5,
+                color="grey",
+                linestyle=":",
+                alpha=0.8,
+            )
+        ax.axhline(
+            0,
+            color="black",
+            linestyle="--",
+            alpha=0.8,
+            linewidth=self.style.line_width,
+            zorder=1,
+        )
+        xticks = np.arange(len(BUILDING_ORDER))
+        xticklabels = [BUILDING_NAME[building_type] for building_type in BUILDING_ORDER]
+        ax.format(
+            xticks=xticks,
+            xticklabels=xticklabels,
+            xlim=(-0.5, len(BUILDING_ORDER) - 0.5),
+            title="Optimization Potential Distribution Across Climate Scenarios",
+            titleweight="bold",
+            titleloc="l",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
+            xlabel="",
+            ylabel="Site EUI (kWh m$^{-2}$ yr$^{-1}$)",
+        )
+        ax.legend(loc="upper right", ncols=3, frameon=False)
 
-        df = pd.DataFrame(improvements)
-        axs.box(df, marker="x", meancolor="r", fillcolor="gray4")
-        axs.format(
-            ylim=(0, 50),
-            yticks=np.arange(0, 50 + 1, 10),
-            ylabel="Improvement (%)",
-            # xlabel="Building Type",
-        )
-        self.save(
-            fig,
-            f"{Prefix.optimization}-Optimal Improvement Boxplot",
-            building_type=None,
-        )
+        self.save(fig, f"Fig09. {Prefix.pv}-Optimal Improvement Violin")
 
     def neutrality_timeline(self, stage: Literal["pv", "baseline"] = "pv") -> None:
         df_a = self._carbon_mode_a
@@ -1152,9 +1168,9 @@ class ChartGenerator:
 
     def generate_all(self) -> None:
         self.data_to_csv()
-        self.baseline_result()
-        self.optimal_improvement_comparison()
-        self.optimal_improvement_boxplot()
+        self.baseline_eui_heatmap()
+        self.ecm_improvement_heatmap()
+        self.optimal_improvement_violin()
         self.storage_soc()
         self.waterfall()
         self.carbon_three_plane()
