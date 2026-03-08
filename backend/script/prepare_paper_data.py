@@ -242,7 +242,7 @@ def prepare_energy_summary() -> pd.DataFrame:
         ]
     ].copy()
 
-    # Compute ecm_improvement_pct (source EUI reduction vs baseline)
+    # Compute ecm_improvement_pct (site EUI reduction vs baseline)
     ecm_improve = []
     pv_reduce = []
     for _, row in out.iterrows():
@@ -254,9 +254,9 @@ def prepare_energy_summary() -> pd.DataFrame:
                 & (out["stage"] == "baseline")
             ]
             if not bl.empty:
-                bl_eui = bl.iloc[0]["total_source_eui"]
+                bl_eui = bl.iloc[0]["total_site_eui"]
                 ecm_improve.append(
-                    (bl_eui - row["total_source_eui"]) / bl_eui * 100
+                    (bl_eui - row["total_site_eui"]) / bl_eui * 100
                     if bl_eui
                     else np.nan
                 )

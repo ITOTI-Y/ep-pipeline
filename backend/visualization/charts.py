@@ -441,7 +441,7 @@ class ChartGenerator:
         ax.format(
             aspect="auto",
             xlabel="",
-            title="Source EUI Improvement by ECM Optimization (%)",
+            title="Site EUI Improvement by ECM Optimization (%)",
             titleweight="bold",
             titleloc="l",
             titlesize=self.style.font_size_title,
