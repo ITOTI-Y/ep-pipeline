@@ -6,9 +6,17 @@ from pathlib import Path
 from pickle import load
 from typing import Any, Literal
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 import ultraplot as uplt
+from cartopy.io import shapereader
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from shapely import union_all
+from shapely.geometry import box
 
 from backend.models import SimulationResult
 from backend.utils.config import ConfigManager
@@ -83,6 +91,71 @@ STAGE_CFG = {
     "ecm": "total_site_eui",
     "pv": "net_site_eui",
 }
+
+RFCW_STATES = ["Illinois", "Indiana", "Ohio", "West Virginia", "Pennsylvania"]
+RFCW_PARTIAL = ["Maryland", "Virginia", "Kentucky", "Michigan"]
+C_RFCW, C_RFCWC_EDGE = "#56B4E9", "#009E73"
+C_COMED, C_ASHRAE = "#E69F00", "#CC79A7"
+C_CHICAGO, C_LAKE = "#D55E00", "#c5dff0"
+C_BG_LAND, C_STATE_EDGE, C_COUNTY_EDGE = "#f5f5f0", "#888888", "#bbbbbb"
+COMED_COUNTY_FIPS = [
+    "17031",
+    "17043",
+    "17089",
+    "17097",
+    "17111",
+    "17197",
+    "17037",
+    "17063",
+    "17093",
+    "17007",
+    "17201",
+    "17177",
+    "17141",
+    "17103",
+    "17099",
+    "17105",
+    "17091",
+    "17075",
+    "17085",
+    "17015",
+    "17195",
+    "17161",
+    "17073",
+    "17011",
+    "17155",
+    "17123",
+    "17175",
+    "17095",
+    "17187",
+    "17071",
+    "17131",
+    "17143",
+    "17179",
+    "17203",
+    "17113",
+    "17039",
+    "17107",
+    "17115",
+    "17053",
+    "17019",
+    "17183",
+    "17147",
+    "17041",
+    "17029",
+    "17045",
+    "17035",
+    "17023",
+    "17139",
+    "17173",
+    "17021",
+    "17167",
+    "17125",
+    "17135",
+]
+CHI_FIPS = ["17031", "17043", "17089", "17097", "17111", "17197"]
+ASHRAE_5A_LT = 39.5
+CHICAGO_LON, CHICAGO_LAT = -87.6298, 41.8781
 
 
 @dataclass
@@ -1117,6 +1190,568 @@ class ChartGenerator:
             fig, f"Fig14. {Prefix.pv}-Carbon Intensity Three-Plane", building_type=None
         )
 
+    def _region_map(self, ax: Any) -> None:
+        path = shapereader.natural_earth(
+            resolution="50m",
+            category="cultural",
+            name="admin_1_states_provinces",
+        )
+        reader = shapereader.Reader(path)
+
+        lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "50m")
+        ocean_50m = cfeature.NaturalEarthFeature("physical", "ocean", "50m")
+        ohter_states = [
+            rec.geometry
+            for rec in reader.records()
+            if rec.attributes.get("admin") == "United States of America"
+            and rec.attributes.get("name") not in RFCW_STATES + RFCW_PARTIAL
+        ]
+        rfcw_partial = [
+            rec.geometry
+            for rec in reader.records()
+            if rec.attributes.get("admin") == "United States of America"
+            and rec.attributes.get("name") in RFCW_PARTIAL
+        ]
+        rfcw_cores = [
+            rec.geometry
+            for rec in reader.records()
+            if rec.attributes.get("admin") == "United States of America"
+            and rec.attributes.get("name") in RFCW_STATES
+        ]
+        il_state = [
+            rec.geometry
+            for rec in reader.records()
+            if rec.attributes.get("admin") == "United States of America"
+            and rec.attributes.get("name") == "Illinois"
+        ]
+        ashrae_box = [box(-94, ASHRAE_5A_LT, -74, 43.5)]
+
+        ax.set_extent([-94, -74, 35.5, 47.5], crs=ccrs.PlateCarree())
+        ax.add_feature(
+            ocean_50m, facecolor=C_LAKE, edgecolor="#88aabb", linewidth=0.3, alpha=0.3
+        )
+        ax.add_feature(
+            lakes_50m, facecolor=C_LAKE, edgecolor="#88aabb", linewidth=0.3, alpha=0.6
+        )
+
+        ax.add_geometries(
+            ohter_states,
+            ccrs.PlateCarree(),
+            facecolor=C_BG_LAND,
+            edgecolor=C_STATE_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=0.3,
+        )
+        ax.add_geometries(
+            rfcw_cores,
+            ccrs.PlateCarree(),
+            facecolor=C_RFCW,
+            edgecolor=C_STATE_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=0.5,
+        )
+        ax.add_geometries(
+            rfcw_partial,
+            ccrs.PlateCarree(),
+            facecolor=C_RFCW,
+            edgecolor=C_STATE_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=0.3,
+        )
+        ax.add_geometries(
+            union_all(rfcw_cores),
+            ccrs.PlateCarree(),
+            facecolor="none",
+            edgecolor=C_RFCWC_EDGE,
+            linewidth=self.style.line_width,
+            linestyle="--",
+            alpha=0.9,
+        )
+        ax.add_geometries(
+            il_state,
+            ccrs.PlateCarree(),
+            facecolor=C_COMED,
+            alpha=0.4,
+        )
+        ax.add_geometries(
+            ashrae_box,
+            ccrs.PlateCarree(),
+            facecolor="none",
+            edgecolor=C_ASHRAE,
+            linewidth=self.style.line_width,
+            linestyle=":",
+            alpha=0.9,
+        )
+
+        ax.text(
+            -84,
+            43.4,
+            "ASHRAE 5A",
+            transform=ccrs.PlateCarree(),
+            fontsize=self.style.font_size_small / 2,
+            ha="center",
+            va="center",
+            fontweight="bold",
+            color=C_ASHRAE,
+        )
+
+        ax.plot(
+            CHICAGO_LON,
+            CHICAGO_LAT,
+            marker="*",
+            transform=ccrs.PlateCarree(),
+            ms=8,
+            color=C_CHICAGO,
+            zorder=10,
+            mec="white",
+            mew=0.6,
+        )
+        ax.text(
+            CHICAGO_LON + 0.5,
+            CHICAGO_LAT + 0.5,
+            "Chicago",
+            transform=ccrs.PlateCarree(),
+            ha="left",
+            va="center",
+            fontsize=self.style.font_size_small * 0.6,
+            color=C_CHICAGO,
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+
+        for ab, (ln, lt) in {
+            "IL": (-89.5, 39.5),
+            "IN": (-86.1, 39.8),
+            "OH": (-82.8, 40.2),
+            "PA": (-77.8, 41),
+            "WV": (-80.5, 38.6),
+            "MI": (-84.5, 44.5),
+            "KY": (-85, 37.5),
+            "VA": (-79, 37.5),
+            "MD": (-76.8, 39.2),
+            "WI": (-89.5, 44.5),
+            "IA": (-93.2, 42),
+            "MO": (-92.5, 38.5),
+            "NY": (-75.5, 43),
+            "NJ": (-74.5, 40),
+        }.items():
+            ax.text(
+                ln,
+                lt,
+                ab,
+                transform=ccrs.PlateCarree(),
+                fontsize=self.style.font_size_small * 0.5,
+                color="#555",
+                ha="center",
+                va="center",
+                fontstyle="italic",
+                path_effects=[
+                    path_effects.withStroke(linewidth=0.8, foreground="white")
+                ],
+            )
+
+        ax.text(
+            -84,
+            41,
+            "Cambium GEA: RFCWc",
+            transform=ccrs.PlateCarree(),
+            ha="center",
+            va="center",
+            fontsize=self.style.font_size_small * 0.5,
+            fontstyle="italic",
+            color=C_RFCWC_EDGE,
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+
+        ax.format(
+            title="eGRID & Cambium RFCWc Region",
+            fontsize=self.style.font_size_small * 0.8,
+        )
+
+    def _illinois_map(self, ax: Any) -> None:
+        state_path = shapereader.natural_earth(
+            resolution="50m",
+            category="cultural",
+            name="admin_1_states_provinces",
+        )
+        county_path = shapereader.natural_earth(
+            resolution="10m",
+            category="cultural",
+            name="admin_2_counties_lakes",
+        )
+        state_reader = shapereader.Reader(state_path)
+        county_reader = shapereader.Reader(county_path)
+        lakes_10m = cfeature.NaturalEarthFeature("physical", "lakes", "10m")
+
+        il_county_records = [
+            rec
+            for rec in county_reader.records()
+            if rec.attributes.get("REGION") == "IL"
+        ]
+        non_comed_counties = [
+            rec.geometry
+            for rec in il_county_records
+            if rec.attributes.get("CODE_LOCAL") not in COMED_COUNTY_FIPS
+        ]
+        comed_counties = [
+            rec.geometry
+            for rec in il_county_records
+            if rec.attributes.get("CODE_LOCAL") in COMED_COUNTY_FIPS
+        ]
+        other_states = [
+            rec.geometry
+            for rec in state_reader.records()
+            if rec.attributes.get("admin") == "United States of America"
+            and rec.attributes.get("name")
+            in ["Indiana", "Iowa", "Missouri", "Kentucky", "Wisconsin", "Michigan"]
+        ]
+
+        ax.set_extent([-92, -87, 36.8, 42.7], crs=ccrs.PlateCarree())
+        ax.add_feature(
+            lakes_10m, facecolor=C_LAKE, edgecolor="#88aabb", linewidth=0.3, alpha=0.6
+        )
+        ax.add_geometries(
+            other_states,
+            ccrs.PlateCarree(),
+            facecolor=C_BG_LAND,
+            edgecolor=C_STATE_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=0.3,
+        )
+        ax.add_geometries(
+            non_comed_counties,
+            ccrs.PlateCarree(),
+            facecolor="#e0e0e0",
+            edgecolor=C_COUNTY_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=1.0,
+        )
+        ax.add_geometries(
+            comed_counties,
+            ccrs.PlateCarree(),
+            facecolor=C_COMED,
+            edgecolor=C_COUNTY_EDGE,
+            linewidth=self.style.line_width / 2,
+            alpha=0.4,
+        )
+        ax.add_geometries(
+            union_all(comed_counties),
+            ccrs.PlateCarree(),
+            facecolor="none",
+            edgecolor="#c47600",
+            linewidth=self.style.line_width * 1.2,
+            alpha=0.8,
+        )
+        ax.add_geometries(
+            union_all(comed_counties + non_comed_counties),
+            ccrs.PlateCarree(),
+            facecolor="none",
+            edgecolor="#333",
+            linewidth=self.style.line_width * 1.2,
+            alpha=0.8,
+        )
+        ax.plot(
+            [-92, -87],
+            [ASHRAE_5A_LT, ASHRAE_5A_LT],
+            transform=ccrs.PlateCarree(),
+            color=C_ASHRAE,
+            linewidth=self.style.line_width * 1.2,
+            linestyle=":",
+            alpha=0.8,
+        )
+        ax.text(
+            -91.6,
+            ASHRAE_5A_LT + 0.2,
+            "5A ↑",
+            transform=ccrs.PlateCarree(),
+            color=C_ASHRAE,
+            fontsize=self.style.font_size_small * 0.5,
+            fontweight="bold",
+            ha="center",
+            va="center",
+        )
+        ax.text(
+            -91.6,
+            ASHRAE_5A_LT - 0.2,
+            "4A ↓",
+            transform=ccrs.PlateCarree(),
+            color=C_ASHRAE,
+            fontsize=self.style.font_size_small * 0.5,
+            fontweight="bold",
+            ha="center",
+            va="center",
+        )
+        ax.plot(
+            CHICAGO_LON,
+            CHICAGO_LAT,
+            transform=ccrs.PlateCarree(),
+            color=C_CHICAGO,
+            marker="*",
+            ms=8,
+            mec="white",
+            mew=0.6,
+            alpha=0.8,
+        )
+        ax.text(
+            CHICAGO_LON - 0.8,
+            CHICAGO_LAT + 0.3,
+            "Chicago",
+            transform=ccrs.PlateCarree(),
+            ha="left",
+            va="center",
+            fontsize=self.style.font_size_small * 0.6,
+            color=C_CHICAGO,
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.text(
+            CHICAGO_LON - 1.2,
+            CHICAGO_LAT - 1.2,
+            "ComEd\nService\nTerritory",
+            transform=ccrs.PlateCarree(),
+            ha="right",
+            va="center",
+            fontsize=self.style.font_size_small * 0.6,
+            color=C_CHICAGO,
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.text(
+            CHICAGO_LON - 1.2,
+            CHICAGO_LAT - 3.5,
+            "Ameren\nIllinois",
+            transform=ccrs.PlateCarree(),
+            ha="center",
+            va="center",
+            fontsize=self.style.font_size_small * 0.5,
+            color="#888",
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.format(
+            title="Illinois: ComEd Service Territory",
+            fontsize=self.style.font_size_small * 0.8,
+        )
+
+    def _chicago_map(self, ax: Any) -> None:
+        lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "10m")
+        county_path = shapereader.natural_earth(
+            resolution="10m",
+            category="cultural",
+            name="admin_2_counties_lakes",
+        )
+        view_box = box(-88.4, 41.55, -87.25, 42.2)
+        county_reader = shapereader.Reader(county_path)
+        nearby_counties = [
+            rec.geometry
+            for rec in county_reader.records()
+            if rec.attributes.get("REGION") == "IL"
+            and rec.attributes.get("CODE_LOCAL") not in CHI_FIPS
+            and rec.geometry.intersects(view_box)
+        ]
+        illinois_counties = [
+            rec.geometry
+            for rec in county_reader.records()
+            if rec.attributes.get("REGION") == "IL"
+            and rec.attributes.get("CODE_LOCAL") in CHI_FIPS
+            and rec.attributes.get("CODE_LOCAL") != "17031"
+        ]
+        cook_counties = [
+            rec.geometry
+            for rec in county_reader.records()
+            if rec.attributes.get("REGION") == "IL"
+            and rec.attributes.get("CODE_LOCAL") == "17031"
+        ]
+
+        ax.set_extent([-88.4, -87.25, 41.55, 42.2], crs=ccrs.PlateCarree())
+        ax.add_feature(
+            lakes_50m,
+            facecolor=C_LAKE,
+            edgecolor="#88aabb",
+            linewidth=0.3,
+            alpha=0.6,
+        )
+        ax.add_geometries(
+            nearby_counties,
+            ccrs.PlateCarree(),
+            facecolor="#eee",
+            edgecolor="#aaa",
+            linewidth=self.style.line_width,
+            alpha=0.5,
+        )
+        ax.add_geometries(
+            illinois_counties,
+            ccrs.PlateCarree(),
+            facecolor="#f0dda0",
+            edgecolor="#888",
+            linewidth=self.style.line_width,
+            alpha=0.35,
+        )
+        ax.add_geometries(
+            cook_counties,
+            ccrs.PlateCarree(),
+            facecolor=C_COMED,
+            edgecolor="#888",
+            linewidth=self.style.line_width,
+            alpha=0.55,
+        )
+        for nm, (ln, lt) in {
+            "Cook": (-87.78, 41.85),
+            "DuPage": (-88.10, 41.85),
+            "Lake": (-87.99, 42.18),
+            "Kane": (-88.35, 41.92),
+            "McHenry": (-88.28, 42.18),
+            "Will": (-88.15, 41.60),
+        }.items():
+            ax.text(
+                ln,
+                lt,
+                nm,
+                transform=ccrs.PlateCarree(),
+                ha="center",
+                va="center",
+                fontsize=self.style.font_size_small * 0.8,
+                color="#888",
+                fontweight="bold",
+                path_effects=[
+                    path_effects.withStroke(linewidth=0.8, foreground="white")
+                ],
+            )
+        ax.plot(
+            CHICAGO_LON,
+            CHICAGO_LAT,
+            transform=ccrs.PlateCarree(),
+            color=C_CHICAGO,
+            marker="*",
+            ms=12,
+            mec="white",
+            mew=0.6,
+            alpha=0.8,
+            zorder=10,
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.text(
+            CHICAGO_LON - 0.15,
+            CHICAGO_LAT + 0.05,
+            "Chicago",
+            transform=ccrs.PlateCarree(),
+            ha="left",
+            va="center",
+            fontsize=self.style.font_size_small * 0.8,
+            color=C_CHICAGO,
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.text(
+            0.04,
+            0.04,
+            "Location: 41.88°N, 87.63°W\n"
+            "ASHRAE Zone: 5A (Cool-Humid)\n"
+            "eGRID Subregion: RFCW\n"
+            "Cambium GEA: RFCWc\n"
+            "Utility: ComEd (Exelon)\n"
+            "Grid: PJM Interconnection",
+            transform=ax.transAxes,
+            fontsize=self.style.font_size_small * 0.5,
+            color="#888",
+            fontweight="bold",
+            path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
+        )
+        ax.format(
+            title="Chicago Metropolitan Area",
+            fontsize=self.style.font_size_small * 0.8,
+        )
+
+    def _map_legend(self) -> list[Line2D | Patch]:
+        legend_handles = [
+            Patch(
+                facecolor=C_RFCW,
+                edgecolor=C_STATE_EDGE,
+                alpha=0.5,
+                label="eGRID RFCW subregion (core)",
+            ),
+            Patch(
+                facecolor=C_RFCW,
+                edgecolor=C_STATE_EDGE,
+                alpha=0.3,
+                label="eGRID RFCW (partial coverage)",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=C_RFCWC_EDGE,
+                linestyle="--",
+                linewidth=self.style.line_width,
+                label="Cambium GEA RFCWc boundary",
+            ),
+            Patch(
+                facecolor=C_COMED,
+                edgecolor=C_COUNTY_EDGE,
+                alpha=0.5,
+                label="ComEd service territory",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=C_ASHRAE,
+                linestyle=":",
+                linewidth=self.style.line_width,
+                label="ASHRAE climate zone boundary",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=C_CHICAGO,
+                marker="*",
+                markersize=8,
+                linewidth=0,
+                markeredgecolor="white",
+                markeredgewidth=0.6,
+                label="Study location (Chicago)",
+            ),
+        ]
+        return legend_handles
+
+    def chicago_location_map(self) -> None:
+        fig, axs = self.create_figure(
+            aspect_ratio=1.0,
+            width=FigureWidth.DOUBLE_COLUMN,
+            ncols=3,
+            nrows=1,
+            sharey=False,
+            sharex=False,
+            wratios=[38, 24.5, 51],
+            wspace=0.8,
+            proj=["aea", "pcarree", "pcarree"],
+            proj_kw={
+                1: {
+                    "central_longitude": -85,
+                    "central_latitude": 40,
+                    "standard_parallels": (30, 50),
+                }
+            },
+        )
+        ax_a, ax_b, ax_c = axs
+
+        self._region_map(ax_a)
+        self._illinois_map(ax_b)
+        self._chicago_map(ax_c)
+        handles = self._map_legend()
+
+        axs.format(
+            abc="a",
+            abcloc="ul",
+        )
+        fig.legend(
+            handles,
+            loc="b",
+            frame=False,
+            fontsize=self.style.font_size_small,
+        )
+        self.save(fig, "Fig04. Chicago Location Map", building_type=None)
+
+        pass
+
     def data_to_csv(self) -> None:
         data = []
         for building_type in BUILDING_ORDER:
@@ -1171,12 +1806,13 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        self.data_to_csv()
-        self.baseline_eui_heatmap()
-        self.ecm_improvement_heatmap()
-        self.optimal_improvement_violin()
-        self.storage_soc()
-        self.waterfall()
-        self.carbon_three_plane()
-        self.typical_day_storage_soc(weather_code="TMY")
-        self.neutrality_timeline()
+        # self.data_to_csv()
+        # self.baseline_eui_heatmap()
+        # self.ecm_improvement_heatmap()
+        # self.optimal_improvement_violin()
+        # self.storage_soc()
+        # self.waterfall()
+        # self.carbon_three_plane()
+        # self.typical_day_storage_soc(weather_code="TMY")
+        # self.neutrality_timeline()
+        self.chicago_location_map()
