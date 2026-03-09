@@ -901,7 +901,7 @@ class ChartGenerator:
 
         self.save(fig, f"Fig12. {Prefix.pv}-Waterfall Chart", building_type=None)
 
-    def carbon_three_plane(self, weather_code: str = "TMY") -> None:
+    def carbon_three_plane(self) -> None:
         mc_bc = self._carbon_mode_bc
         ma = self._carbon_mode_a
 
@@ -993,9 +993,12 @@ class ChartGenerator:
 
         ax2 = axs[1]
         for building_type in BUILDING_ORDER:
-            sub = (mode_c_tmy[mode_c_tmy["building_type"] == building_type]
+            sub = (
+                mode_c_tmy[mode_c_tmy["building_type"] == building_type]
                 .groupby("R", as_index=False)
-                .agg(carbon_total_intensity_kgm2=("carbon_total_intensity_kgm2", "mean"))
+                .agg(
+                    carbon_total_intensity_kgm2=("carbon_total_intensity_kgm2", "mean")
+                )
                 .sort_values("R")
             )
             ax2.plot(
@@ -1047,8 +1050,8 @@ class ChartGenerator:
                 & (ma_pv_tmy["cambium_year"] == 2025)
             ]
             b_row = mode_b_pv_tmy[mode_b_pv_tmy["building_type"] == building_type]
-            value_a = a_row["carbon_intensity_kgm2"].mean()
-            value_b = b_row["carbon_intensity_kgm2"].mean()
+            value_a = a_row["carbon_intensity_kgm2"].values[0]
+            value_b = b_row["carbon_intensity_kgm2"].values[0]
             ratio = value_b / value_a
 
             ax3.bar(
@@ -1107,7 +1110,7 @@ class ChartGenerator:
             xticklabels=list(BUILDING_NAME.values()),
             xrotation=45,
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title="eGRID vs Cambium - 2025 mean",
+            title="eGRID vs Cambium - 2025",
         )
 
         self.save(
@@ -1168,12 +1171,12 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        # self.data_to_csv()
-        # self.baseline_eui_heatmap()
-        # self.ecm_improvement_heatmap()
-        # self.optimal_improvement_violin()
-        # self.storage_soc()
-        # self.waterfall()
+        self.data_to_csv()
+        self.baseline_eui_heatmap()
+        self.ecm_improvement_heatmap()
+        self.optimal_improvement_violin()
+        self.storage_soc()
+        self.waterfall()
         self.carbon_three_plane()
-        # self.typical_day_storage_soc(weather_code="TMY")
-        # self.neutrality_timeline()
+        self.typical_day_storage_soc(weather_code="TMY")
+        self.neutrality_timeline()
