@@ -905,16 +905,10 @@ class ChartGenerator:
         mc_bc = self._carbon_mode_bc
         ma = self._carbon_mode_a
 
-        mode_c_tmy = mc_bc[
-            (mc_bc["mode"] == "mode_c") & (mc_bc["weather_code"] == weather_code)
-        ]
-        mode_b_pv_tmy = mc_bc[
-            (mc_bc["mode"] == "mode_b")
-            & (mc_bc["weather_code"] == weather_code)
-            & (mc_bc["stage"] == "pv")
-        ]
+        mode_c_tmy = mc_bc[(mc_bc["mode"] == "mode_c")]
+        mode_b_pv_tmy = mc_bc[(mc_bc["mode"] == "mode_b") & (mc_bc["stage"] == "pv")]
 
-        ma_pv_tmy = ma[(ma["stage"] == "pv") & (ma["weather_code"] == weather_code)]
+        ma_pv_tmy = ma[(ma["stage"] == "pv")]
 
         fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
@@ -933,10 +927,15 @@ class ChartGenerator:
         ax1 = axs[0]
         for building_type in BUILDING_ORDER:
             for scenario, (linestyle, _) in CAMBIUM_SCENARIOS.items():
-                sub = ma_pv_tmy[
-                    (ma_pv_tmy["building_type"] == building_type)
-                    & (ma_pv_tmy["cambium_scenario"] == scenario)
-                ].sort_values("cambium_year")
+                sub = (
+                    ma_pv_tmy[
+                        (ma_pv_tmy["building_type"] == building_type)
+                        & (ma_pv_tmy["cambium_scenario"] == scenario)
+                    ]
+                    .groupby("cambium_year", as_index=False)
+                    .agg(carbon_intensity_kgm2=("carbon_intensity_kgm2", "mean"))
+                    .sort_values("cambium_year")
+                )
                 alpha = 1 if scenario == "MidCase" else 0.5
                 ax1.plot(
                     sub["cambium_year"],
@@ -989,13 +988,15 @@ class ChartGenerator:
             ylim=(-8, 24),
             xlabel="Cambium projection year",
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title=f"Mode A: Cambium hourly - {weather_code}",
+            title="Mode A: Cambium hourly - 6-scenario mean",
         )
 
         ax2 = axs[1]
         for building_type in BUILDING_ORDER:
-            sub = mode_c_tmy[mode_c_tmy["building_type"] == building_type].sort_values(
-                "R"
+            sub = (mode_c_tmy[mode_c_tmy["building_type"] == building_type]
+                .groupby("R", as_index=False)
+                .agg(carbon_total_intensity_kgm2=("carbon_total_intensity_kgm2", "mean"))
+                .sort_values("R")
             )
             ax2.plot(
                 sub["R"],
@@ -1019,7 +1020,7 @@ class ChartGenerator:
             ylim=(-3, 54),
             xlabel="Grid decarbonization fraction R",
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title=f"Mode C: Parametric C - {weather_code}",
+            title="Mode C: Parametric C - 6-scenario mean",
         )
         ax2.annotate(
             "Gas residual",
@@ -1046,8 +1047,8 @@ class ChartGenerator:
                 & (ma_pv_tmy["cambium_year"] == 2025)
             ]
             b_row = mode_b_pv_tmy[mode_b_pv_tmy["building_type"] == building_type]
-            value_a = a_row["carbon_intensity_kgm2"].values[0]
-            value_b = b_row["carbon_intensity_kgm2"].values[0]
+            value_a = a_row["carbon_intensity_kgm2"].mean()
+            value_b = b_row["carbon_intensity_kgm2"].mean()
             ratio = value_b / value_a
 
             ax3.bar(
@@ -1101,12 +1102,12 @@ class ChartGenerator:
 
         ax3.format(
             xlim=(-0.5, len(BUILDING_ORDER) - 0.5),
-            ylim=(-14, 62),
+            ylim=(-16, 62),
             xticks=np.arange(len(BUILDING_ORDER)),
             xticklabels=list(BUILDING_NAME.values()),
             xrotation=45,
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title="eGRID vs Cambium",
+            title="eGRID vs Cambium - 2025 mean",
         )
 
         self.save(
@@ -1167,12 +1168,12 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        self.data_to_csv()
-        self.baseline_eui_heatmap()
-        self.ecm_improvement_heatmap()
-        self.optimal_improvement_violin()
-        self.storage_soc()
-        self.waterfall()
+        # self.data_to_csv()
+        # self.baseline_eui_heatmap()
+        # self.ecm_improvement_heatmap()
+        # self.optimal_improvement_violin()
+        # self.storage_soc()
+        # self.waterfall()
         self.carbon_three_plane()
-        self.typical_day_storage_soc(weather_code="TMY")
-        self.neutrality_timeline()
+        # self.typical_day_storage_soc(weather_code="TMY")
+        # self.neutrality_timeline()
