@@ -1239,7 +1239,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor=C_BG_LAND,
             edgecolor=C_STATE_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=0.3,
         )
         ax.add_geometries(
@@ -1247,7 +1247,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor=C_RFCW,
             edgecolor=C_STATE_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=0.5,
         )
         ax.add_geometries(
@@ -1255,7 +1255,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor=C_RFCW,
             edgecolor=C_STATE_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=0.3,
         )
         ax.add_geometries(
@@ -1288,7 +1288,7 @@ class ChartGenerator:
             43.4,
             "ASHRAE 5A",
             transform=ccrs.PlateCarree(),
-            fontsize=self.style.font_size_small / 2,
+            fontsize=self.style.font_size_small,
             ha="center",
             va="center",
             fontweight="bold",
@@ -1313,7 +1313,7 @@ class ChartGenerator:
             transform=ccrs.PlateCarree(),
             ha="left",
             va="center",
-            fontsize=self.style.font_size_small * 0.6,
+            fontsize=self.style.font_size_small,
             color=C_CHICAGO,
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
@@ -1340,7 +1340,7 @@ class ChartGenerator:
                 lt,
                 ab,
                 transform=ccrs.PlateCarree(),
-                fontsize=self.style.font_size_small * 0.5,
+                fontsize=self.style.font_size_small * 0.8,
                 color="#555",
                 ha="center",
                 va="center",
@@ -1357,7 +1357,7 @@ class ChartGenerator:
             transform=ccrs.PlateCarree(),
             ha="center",
             va="center",
-            fontsize=self.style.font_size_small * 0.5,
+            fontsize=self.style.font_size_small,
             fontstyle="italic",
             color=C_RFCWC_EDGE,
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
@@ -1365,7 +1365,7 @@ class ChartGenerator:
 
         ax.format(
             title="eGRID & Cambium RFCWc Region",
-            fontsize=self.style.font_size_small * 0.8,
+            fontsize=self.style.font_size_small,
         )
 
     def _illinois_map(self, ax: Any) -> None:
@@ -1415,7 +1415,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor=C_BG_LAND,
             edgecolor=C_STATE_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=0.3,
         )
         ax.add_geometries(
@@ -1423,7 +1423,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor="#e0e0e0",
             edgecolor=C_COUNTY_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=1.0,
         )
         ax.add_geometries(
@@ -1431,7 +1431,7 @@ class ChartGenerator:
             ccrs.PlateCarree(),
             facecolor=C_COMED,
             edgecolor=C_COUNTY_EDGE,
-            linewidth=self.style.line_width / 2,
+            linewidth=self.style.line_width,
             alpha=0.4,
         )
         ax.add_geometries(
@@ -1465,7 +1465,7 @@ class ChartGenerator:
             "5A ↑",
             transform=ccrs.PlateCarree(),
             color=C_ASHRAE,
-            fontsize=self.style.font_size_small * 0.5,
+            fontsize=self.style.font_size_small,
             fontweight="bold",
             ha="center",
             va="center",
@@ -1476,7 +1476,7 @@ class ChartGenerator:
             "4A ↓",
             transform=ccrs.PlateCarree(),
             color=C_ASHRAE,
-            fontsize=self.style.font_size_small * 0.5,
+            fontsize=self.style.font_size_small,
             fontweight="bold",
             ha="center",
             va="center",
@@ -1487,7 +1487,7 @@ class ChartGenerator:
             transform=ccrs.PlateCarree(),
             color=C_CHICAGO,
             marker="*",
-            ms=8,
+            ms=12,
             mec="white",
             mew=0.6,
             alpha=0.8,
@@ -1497,9 +1497,9 @@ class ChartGenerator:
             CHICAGO_LAT + 0.3,
             "Chicago",
             transform=ccrs.PlateCarree(),
-            ha="left",
+            ha="center",
             va="center",
-            fontsize=self.style.font_size_small * 0.6,
+            fontsize=self.style.font_size_small,
             color=C_CHICAGO,
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
@@ -1509,9 +1509,9 @@ class ChartGenerator:
             CHICAGO_LAT - 1.2,
             "ComEd\nService\nTerritory",
             transform=ccrs.PlateCarree(),
-            ha="right",
+            ha="center",
             va="center",
-            fontsize=self.style.font_size_small * 0.6,
+            fontsize=self.style.font_size_small,
             color=C_CHICAGO,
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
@@ -1523,14 +1523,14 @@ class ChartGenerator:
             transform=ccrs.PlateCarree(),
             ha="center",
             va="center",
-            fontsize=self.style.font_size_small * 0.5,
+            fontsize=self.style.font_size_small,
             color="#888",
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
         )
         ax.format(
             title="Illinois: ComEd Service Territory",
-            fontsize=self.style.font_size_small * 0.8,
+            fontsize=self.style.font_size_small,
         )
 
     def _chicago_map(self, ax: Any) -> None:
@@ -1540,14 +1540,12 @@ class ChartGenerator:
             category="cultural",
             name="admin_2_counties_lakes",
         )
-        view_box = box(-88.4, 41.55, -87.25, 42.2)
         county_reader = shapereader.Reader(county_path)
         nearby_counties = [
             rec.geometry
             for rec in county_reader.records()
             if rec.attributes.get("REGION") == "IL"
             and rec.attributes.get("CODE_LOCAL") not in CHI_FIPS
-            and rec.geometry.intersects(view_box)
         ]
         illinois_counties = [
             rec.geometry
@@ -1563,7 +1561,7 @@ class ChartGenerator:
             and rec.attributes.get("CODE_LOCAL") == "17031"
         ]
 
-        ax.set_extent([-88.4, -87.25, 41.55, 42.2], crs=ccrs.PlateCarree())
+        ax.set_extent([-89.15, -87.19, 41.55, 42.21], crs=ccrs.PlateCarree())
         ax.add_feature(
             lakes_50m,
             facecolor=C_LAKE,
@@ -1600,7 +1598,7 @@ class ChartGenerator:
             "DuPage": (-88.10, 41.85),
             "Lake": (-87.99, 42.18),
             "Kane": (-88.35, 41.92),
-            "McHenry": (-88.28, 42.18),
+            "McHenry": (-88.40, 42.18),
             "Will": (-88.15, 41.60),
         }.items():
             ax.text(
@@ -1610,7 +1608,7 @@ class ChartGenerator:
                 transform=ccrs.PlateCarree(),
                 ha="center",
                 va="center",
-                fontsize=self.style.font_size_small * 0.8,
+                fontsize=self.style.font_size_small,
                 color="#888",
                 fontweight="bold",
                 path_effects=[
@@ -1637,7 +1635,7 @@ class ChartGenerator:
             transform=ccrs.PlateCarree(),
             ha="left",
             va="center",
-            fontsize=self.style.font_size_small * 0.8,
+            fontsize=self.style.font_size_small,
             color=C_CHICAGO,
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
@@ -1652,14 +1650,14 @@ class ChartGenerator:
             "Utility: ComEd (Exelon)\n"
             "Grid: PJM Interconnection",
             transform=ax.transAxes,
-            fontsize=self.style.font_size_small * 0.5,
+            fontsize=self.style.font_size_small * 0.8,
             color="#888",
             fontweight="bold",
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
         )
         ax.format(
             title="Chicago Metropolitan Area",
-            fontsize=self.style.font_size_small * 0.8,
+            fontsize=self.style.font_size_small,
         )
 
     def _map_legend(self) -> list[Line2D | Patch]:
@@ -1714,14 +1712,16 @@ class ChartGenerator:
 
     def chicago_location_map(self) -> None:
         fig, axs = self.create_figure(
-            aspect_ratio=1.0,
+            aspect_ratio=0.65,
             width=FigureWidth.DOUBLE_COLUMN,
-            ncols=3,
-            nrows=1,
+            ncols=2,
+            nrows=2,
+            array=[[1, 2], [3, 3]],
             sharey=False,
             sharex=False,
-            wratios=[38, 24.5, 51],
-            wspace=0.8,
+            wratios=[38, 24.5],
+            hratios=[1.0, 0.79],
+            wspace=0.0,
             proj=["aea", "pcarree", "pcarree"],
             proj_kw={
                 1: {
@@ -1737,7 +1737,6 @@ class ChartGenerator:
         self._illinois_map(ax_b)
         self._chicago_map(ax_c)
         handles = self._map_legend()
-
         axs.format(
             abc="a",
             abcloc="ul",
@@ -1748,6 +1747,21 @@ class ChartGenerator:
             frame=False,
             fontsize=self.style.font_size_small,
         )
+
+        _orig_draw = fig.draw
+
+        def _centered_draw(renderer):
+            pos_a = ax_a.get_position()
+            pos_b = ax_b.get_position()
+            pos_c = ax_c.get_position()
+            left = pos_a.x0
+            right = pos_b.x0 + pos_b.width
+            new_x0 = left + (right - left - pos_c.width) / 2
+            ax_c.set_position([new_x0, pos_c.y0, pos_c.width, pos_c.height])
+            return _orig_draw(renderer)
+
+        fig.draw = _centered_draw  # type: ignore
+
         self.save(fig, "Fig04. Chicago Location Map", building_type=None)
 
         pass
