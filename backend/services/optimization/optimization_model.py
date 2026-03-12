@@ -99,7 +99,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return (individual,)
 
     def _get_adaptive_params(self, gen: int, max_gen: int) -> tuple[float, float]:
-        progress = gen / max_gen
+        progress = gen / max(max_gen - 1, 1)
 
         crossover_prob = (
             self._crossover_prob_start
@@ -178,12 +178,14 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
             hof.update(offspring)
             if hof:
-                worst_individuals = tools.selWorst(
-                    offspring, k=min(len(hof), len(offspring))
-                )
-                for i, worst_ind in enumerate(worst_individuals):
-                    worst_idx = offspring.index(worst_ind)
-                    offspring[worst_idx] = toolbox.clone(hof[i])  # type: ignore[attr-defined]
+                k = min(len(hof), len(offspring))
+                worst_indices = sorted(
+                    range(len(offspring)),
+                    key=lambda idx: offspring[idx].fitness.values[0],
+                    reverse=True,
+                )[:k]
+                for i, idx in enumerate(worst_indices):
+                    offspring[idx] = toolbox.clone(hof[i])  # type: ignore[attr-defined]
 
             population[:] = offspring
 

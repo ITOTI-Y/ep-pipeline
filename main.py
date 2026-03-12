@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from copy import deepcopy
 from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
@@ -127,15 +128,15 @@ def pv_services_prepare(
 ):
     baseline_dir = config.paths.baseline_dir
     for building, weather in buildings_weather_combinations:
-        idf_file_path = (
+        b = deepcopy(building)
+        b.idf_file_path = (
             config.paths.optimization_dir  # type: ignore
-            / building.name
+            / b.name
             / weather.code
             / "optimization_.idf"
         )
-        building.idf_file_path = idf_file_path
         job = SimulationJob(
-            building=building,
+            building=b,
             weather=weather,
             simulation_type=SimulationType.PV,
             output_directory=config.paths.pv_dir / building.name / weather.code,  # type: ignore

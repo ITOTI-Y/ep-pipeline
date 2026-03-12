@@ -103,6 +103,11 @@ class OptimizationService(ISimulationService):
 
         group_data = self._ecm_data.groupby("building_type")
         for building_type, data in group_data:
+            if len(data) < 2:
+                logger.warning(
+                    f"Skipping {building_type}: insufficient samples ({len(data)})"
+                )
+                continue
             surrogate_model = XGBoostSurrogateModel(config=self._config)
             categorical_features = self._one_hot_encoder.transform(
                 data["code"].values.reshape(-1, 1)

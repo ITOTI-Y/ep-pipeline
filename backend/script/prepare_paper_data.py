@@ -43,21 +43,20 @@ CAMBIUM_YEARS = [2025, 2030, 2035, 2040, 2045, 2050]
 # ── Path helpers ─────────────────────────────────────────────────────────────
 
 CONFIG = ConfigManager()
-OUTPUT_DIR = CONFIG.paths.output_dir
 DATA_DIR = CONFIG.paths.data_dir
 PAPER_DIR = CONFIG.paths.csv_dir
 
-# Stage → (subdirectory, sql filename)
-STAGE_SQL_MAP = {
-    "baseline": ("baseline", "baseline_out.sql"),
-    "ecm": ("optimization", "optimization_out.sql"),
-    "pv": ("pv", "pv_out.sql"),
+# Stage → (config path, sql filename)
+STAGE_SQL_MAP: dict[str, tuple[Path, str]] = {
+    "baseline": (CONFIG.paths.baseline_dir, "baseline_out.sql"),
+    "ecm": (CONFIG.paths.optimization_dir, "optimization_out.sql"),
+    "pv": (CONFIG.paths.pv_dir, "pv_out.sql"),
 }
 
 
 def sql_path(stage: str, building: str, weather: str) -> Path:
-    subdir, fname = STAGE_SQL_MAP[stage]
-    return OUTPUT_DIR / subdir / building / weather / fname
+    stage_dir, fname = STAGE_SQL_MAP[stage]
+    return stage_dir / building / weather / fname
 
 
 def cambium_path(scenario: str, year: int) -> Path:
@@ -217,7 +216,7 @@ def query_baseline_hourly_demand(db_path: Path) -> np.ndarray:
 def prepare_energy_summary() -> pd.DataFrame:
     """Prepare 90-row energy summary from Results_data.csv."""
     logger.info("Preparing CSV 1: Energy Summary")
-    src = OUTPUT_DIR / "visualization" / "Results_data.csv"
+    src = CONFIG.paths.visualization_dir / "Results_data.csv"
     df = pd.read_csv(src)
 
     # Map data_type to stage names
@@ -298,7 +297,7 @@ def prepare_surrogate_evaluation() -> pd.DataFrame:
     logger.info("Preparing CSV 2: Surrogate Evaluation")
     rows = []
     for bt in BUILDING_TYPES:
-        path = OUTPUT_DIR / "optimization" / bt / "evaluate.json"
+        path = CONFIG.paths.optimization_dir / bt / "evaluate.json"
         with open(path) as f:
             d = json.load(f)
         row = {

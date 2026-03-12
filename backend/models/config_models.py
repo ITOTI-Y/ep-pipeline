@@ -199,8 +199,8 @@ class StorageConfig(BaseModel):
         validate_assignment=True,
         frozen=False,
     )
-    capacity: dict = Field(default_factory={}, description="Storage capacity")
-    max_power: dict = Field(default_factory={}, description="Storage max power")
+    capacity: dict = Field(default_factory=dict, description="Storage capacity")
+    max_power: dict = Field(default_factory=dict, description="Storage max power")
 
 
 class GeneticAlgorithmConfig(BaseModel):
