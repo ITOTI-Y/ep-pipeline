@@ -9,10 +9,12 @@ from typing import Any, Literal
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.patheffects as path_effects
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import ultraplot as uplt
 from cartopy.io import shapereader
+from loguru import logger
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from shapely import union_all
@@ -258,26 +260,28 @@ class ChartGenerator:
         output_format = fmt or self.style.default_format
         path = image_dir / f"{name}.{output_format}"
         fig.save(path, dpi=image_type.value)
+        plt.close(fig)
         return path
 
     def storage_soc(self, weather_code: str = "TMY", smooth_window: int = 7) -> None:
         df = self._hourly_power
         df = df[df["weather_code"] == weather_code]
+        nrows = sum(1 for bt in BUILDING_ORDER if self.config.storage.capacity[bt] > 0)
         fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
             aspect_ratio=0.15,
             ncols=1,
-            nrows=len(BUILDING_ORDER) - 1,
+            nrows=nrows,
         )
         idx = 0
         for building_type in BUILDING_ORDER:
+            capacity = self.config.storage.capacity[building_type]
+            if capacity == 0:
+                continue
             ax = axs[idx]
             sub = df[df["building_type"] == building_type].sort_values(
                 ["month", "day", "hour"]
             )
-            capacity = self.config.storage.capacity[building_type]
-            if capacity == 0:
-                continue
 
             soc_pct = sub["storage_soc_kwh"].values / capacity * 100
 
@@ -1123,9 +1127,12 @@ class ChartGenerator:
                 & (ma_pv_tmy["cambium_year"] == 2025)
             ]
             b_row = mode_b_pv_tmy[mode_b_pv_tmy["building_type"] == building_type]
+            if a_row.empty or b_row.empty:
+                logger.warning(f"Missing data for {building_type}, skipping")
+                continue
             value_a = a_row["carbon_intensity_kgm2"].values[0]
             value_b = b_row["carbon_intensity_kgm2"].values[0]
-            ratio = value_b / value_a
+            ratio = value_b / value_a if value_a != 0 else float("inf")
 
             ax3.bar(
                 i - bar_width / 4,
@@ -1200,7 +1207,7 @@ class ChartGenerator:
 
         lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "50m")
         ocean_50m = cfeature.NaturalEarthFeature("physical", "ocean", "50m")
-        ohter_states = [
+        other_states = [
             rec.geometry
             for rec in reader.records()
             if rec.attributes.get("admin") == "United States of America"
@@ -1235,7 +1242,7 @@ class ChartGenerator:
         )
 
         ax.add_geometries(
-            ohter_states,
+            other_states,
             ccrs.PlateCarree(),
             facecolor=C_BG_LAND,
             edgecolor=C_STATE_EDGE,
@@ -1259,7 +1266,7 @@ class ChartGenerator:
             alpha=0.3,
         )
         ax.add_geometries(
-            union_all(rfcw_cores),
+            [union_all(rfcw_cores)],
             ccrs.PlateCarree(),
             facecolor="none",
             edgecolor=C_RFCWC_EDGE,
@@ -1435,7 +1442,7 @@ class ChartGenerator:
             alpha=0.4,
         )
         ax.add_geometries(
-            union_all(comed_counties),
+            [union_all(comed_counties)],
             ccrs.PlateCarree(),
             facecolor="none",
             edgecolor="#c47600",
@@ -1443,7 +1450,7 @@ class ChartGenerator:
             alpha=0.8,
         )
         ax.add_geometries(
-            union_all(comed_counties + non_comed_counties),
+            [union_all(comed_counties + non_comed_counties)],
             ccrs.PlateCarree(),
             facecolor="none",
             edgecolor="#333",
@@ -1534,36 +1541,38 @@ class ChartGenerator:
         )
 
     def _chicago_map(self, ax: Any) -> None:
-        lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "10m")
+        lakes_10m = cfeature.NaturalEarthFeature("physical", "lakes", "10m")
         county_path = shapereader.natural_earth(
             resolution="10m",
             category="cultural",
             name="admin_2_counties_lakes",
         )
         county_reader = shapereader.Reader(county_path)
-        nearby_counties = [
-            rec.geometry
+        all_il_records = [
+            rec
             for rec in county_reader.records()
             if rec.attributes.get("REGION") == "IL"
-            and rec.attributes.get("CODE_LOCAL") not in CHI_FIPS
+        ]
+        nearby_counties = [
+            rec.geometry
+            for rec in all_il_records
+            if rec.attributes.get("CODE_LOCAL") not in CHI_FIPS
         ]
         illinois_counties = [
             rec.geometry
-            for rec in county_reader.records()
-            if rec.attributes.get("REGION") == "IL"
-            and rec.attributes.get("CODE_LOCAL") in CHI_FIPS
+            for rec in all_il_records
+            if rec.attributes.get("CODE_LOCAL") in CHI_FIPS
             and rec.attributes.get("CODE_LOCAL") != "17031"
         ]
         cook_counties = [
             rec.geometry
-            for rec in county_reader.records()
-            if rec.attributes.get("REGION") == "IL"
-            and rec.attributes.get("CODE_LOCAL") == "17031"
+            for rec in all_il_records
+            if rec.attributes.get("CODE_LOCAL") == "17031"
         ]
 
         ax.set_extent([-89.15, -87.19, 41.55, 42.21], crs=ccrs.PlateCarree())
         ax.add_feature(
-            lakes_50m,
+            lakes_10m,
             facecolor=C_LAKE,
             edgecolor="#88aabb",
             linewidth=0.3,

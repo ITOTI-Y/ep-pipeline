@@ -21,7 +21,8 @@ class StorageApply(IApply):
         logger.info("Storage configuration applied successfully")
 
     def _configure_storage(self, idf: IDF) -> None:
-        self._remove_objects(idf, "ElectricLoadCenter:Storage")
+        self._remove_objects(idf, "ElectricLoadCenter:Storage:Simple")
+        self._remove_objects(idf, "ElectricLoadCenter:Storage:Battery")
 
         storage = idf.newidfobject("ElectricLoadCenter:Storage:Simple")
         storage.Name = "PV_Storage"

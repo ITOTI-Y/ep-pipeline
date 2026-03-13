@@ -8,6 +8,7 @@ from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import SimulationJob, SimulationResult
+from backend.models.config_models import ECMParametersConfig
 from backend.services.configuration import (
     ECMApply,
     OutputApply,
@@ -27,19 +28,7 @@ from backend.services.optimization.surrogate_model import (
 )
 from backend.utils.config import ConfigManager
 
-FEATURE_NAMES = [
-    "window_shgc",
-    "window_u_value",
-    "visible_transmittance",
-    "wall_insulation",
-    "infiltration_rate",
-    "natural_ventilation_area",
-    "cooling_cop",
-    "heating_cop",
-    "cooling_air_temperature",
-    "heating_air_temperature",
-    "lighting_power_reduction_level",
-]
+FEATURE_NAMES = ECMParametersConfig().keys
 
 TARGET_NAMES = [
     "net_site_eui",
@@ -84,7 +73,7 @@ class OptimizationService(ISimulationService):
     def _prepare_surrogate_models(self) -> None:
         surrogate_model_path = (
             self._config.paths.optimization_dir
-            / self._job.building.name
+            / str(self._job.building.building_type)
             / "surrogate_model.pkl"
         )
 
@@ -138,7 +127,7 @@ class OptimizationService(ISimulationService):
                 evaluate_metrics = surrogate_model.evaluate()
                 json.dump(evaluate_metrics, f, indent=4)
 
-            if str(building_type) == self._job.building.name:
+            if str(building_type) == str(self._job.building.building_type):
                 self._surrogate_model = surrogate_model
             logger.info(f"Surrogate model trained for building type {building_type}")
             self._save_surrogate_model(surrogate_model, bt_model_path)

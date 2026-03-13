@@ -206,7 +206,8 @@ def query_baseline_hourly_demand(db_path: Path) -> np.ndarray:
             """,
             conn,
         )
-    assert len(df) == 8760, f"Expected 8760 hours, got {len(df)} from {db_path}"
+    if len(df) != 8760:
+        raise ValueError(f"Expected 8760 hours, got {len(df)} from {db_path}")
     return df["demand_w"].values / 1000  # W → kW = kWh/h
 
 
@@ -446,7 +447,9 @@ def prepare_carbon_mode_bc(
         carbon_gas = gas * EF_GAS
         carbon_net = carbon_purchased - carbon_credit + carbon_gas
 
-        area = area_map[(bt, wc)]
+        area = area_map.get((bt, wc))
+        if area is None or area == 0:
+            raise ValueError(f"Missing or zero baseline area for {bt}/{wc}")
 
         mode_b_rows.append(
             {
@@ -474,7 +477,9 @@ def prepare_carbon_mode_bc(
         net_elec = r["net_electricity_from_utility_kwh"]
         gas = r["total_natural_gas_kwh"]
 
-        area = area_map.get((bt, wc), 1.0)
+        area = area_map.get((bt, wc))
+        if area is None or area == 0:
+            raise ValueError(f"Missing or zero baseline area for {bt}/{wc}")
 
         for r_val in R_VALUES:
             elec_intensity = max(0, net_elec) * EF_ELEC_AVG * (1 - r_val) / area
@@ -555,7 +560,9 @@ def prepare_carbon_mode_a(
     rows = []
     for bt in BUILDING_TYPES:
         for wc in WEATHER_CODES:
-            area = area_map.get((bt, wc), 1.0)
+            area = area_map.get((bt, wc))
+            if area is None or area == 0:
+                raise ValueError(f"Missing or zero baseline area for {bt}/{wc}")
 
             # --- Baseline stage: query SQL directly ---
             bl_db = sql_path("baseline", bt, wc)
@@ -606,9 +613,10 @@ def prepare_carbon_mode_a(
                 logger.warning(f"  No hourly data for {bt}/{wc}")
                 continue
 
-            assert len(hourly) == 8760, (
-                f"Expected 8760 hours, got {len(hourly)} for {bt}/{wc}"
-            )
+            if len(hourly) != 8760:
+                raise ValueError(
+                    f"Expected 8760 hours, got {len(hourly)} for {bt}/{wc}"
+                )
 
             purchased_kwh = hourly["purchased_kw"].values
             exported_kwh = hourly["exported_kw"].values
@@ -742,19 +750,19 @@ def prepare_bcrc_summary(
             ].sort_values("R")
             r_neutrality = np.nan
             if not mc.empty:
-                for j in range(len(mc) - 1):
-                    c0 = mc.iloc[j]["carbon_total_intensity_kgm2"]
-                    c1 = mc.iloc[j + 1]["carbon_total_intensity_kgm2"]
-                    r0 = mc.iloc[j]["R"]
-                    r1 = mc.iloc[j + 1]["R"]
-                    if c0 >= 0 and c1 <= 0 and c1 != c0:
-                        r_neutrality = r0 + (0 - c0) * (r1 - r0) / (c1 - c0)
-                        break
+                if mc.iloc[0]["carbon_total_intensity_kgm2"] <= 0:
+                    r_neutrality = 0.0
                 else:
-                    if mc.iloc[-1]["carbon_total_intensity_kgm2"] > 0:
-                        r_neutrality = np.inf
+                    for j in range(len(mc) - 1):
+                        c0 = mc.iloc[j]["carbon_total_intensity_kgm2"]
+                        c1 = mc.iloc[j + 1]["carbon_total_intensity_kgm2"]
+                        r0 = mc.iloc[j]["R"]
+                        r1 = mc.iloc[j + 1]["R"]
+                        if c0 >= 0 and c1 <= 0 and c1 != c0:
+                            r_neutrality = r0 + (0 - c0) * (r1 - r0) / (c1 - c0)
+                            break
                     else:
-                        r_neutrality = mc.iloc[0]["R"]
+                        r_neutrality = np.inf
 
             rows.append(
                 {

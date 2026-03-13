@@ -116,8 +116,10 @@ class GeneticAlgorithmModel(IOptimizationModel):
     def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
         self._building_type = building_type
 
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMin)  # type: ignore[attr-defined]
+        if not hasattr(creator, "FitnessMin"):
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+        if not hasattr(creator, "Individual"):
+            creator.create("Individual", list, fitness=creator.FitnessMin)  # type: ignore[attr-defined]
 
         toolbox = base.Toolbox()
         toolbox.register("attr_int", np.random.randint, 0, 1)
