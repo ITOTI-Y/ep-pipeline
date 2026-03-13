@@ -446,7 +446,7 @@ def prepare_carbon_mode_bc(
         carbon_gas = gas * EF_GAS
         carbon_net = carbon_purchased - carbon_credit + carbon_gas
 
-        area = area_map.get((bt, wc), 1.0)
+        area = area_map[(bt, wc)]
 
         mode_b_rows.append(
             {
