@@ -299,6 +299,9 @@ def prepare_surrogate_evaluation() -> pd.DataFrame:
     rows = []
     for bt in BUILDING_TYPES:
         path = CONFIG.paths.optimization_dir / bt / "evaluate.json"
+        if not path.exists():
+            logger.warning(f"  Missing evaluate.json for {bt}, skipping")
+            continue
         with open(path) as f:
             d = json.load(f)
         row = {
@@ -378,11 +381,9 @@ def prepare_electricity_balance() -> pd.DataFrame:
                         "stage": stage,
                         "total_electricity_kwh": total_elec,
                         "total_natural_gas_kwh": total_gas,
-                        "pv_generation_kwh": pv_gen if stage == "pv" else np.nan,
+                        "pv_generation_kwh": pv_gen if stage == "pv" else 0.0,
                         "purchased_electricity_kwh": purchased,
-                        "exported_electricity_kwh": exported
-                        if stage == "pv"
-                        else np.nan,
+                        "exported_electricity_kwh": exported if stage == "pv" else 0.0,
                         "net_electricity_from_utility_kwh": net_from_utility,
                         "scr": scr,
                         "ssr": ssr,
@@ -414,6 +415,10 @@ def prepare_hourly_power() -> pd.DataFrame:
             frames.append(df)
             logger.info(f"  {bt}/{wc}: {len(df)} hours")
 
+    if not frames:
+        raise ValueError(
+            "No hourly power data found for any building/weather combination"
+        )
     result = pd.concat(frames, ignore_index=True)
     logger.info(f"  → {len(result)} total rows")
     return result
@@ -435,11 +440,7 @@ def prepare_carbon_mode_bc(
     for _, r in df_elec.iterrows():
         bt, wc, stage = r["building_type"], r["weather_code"], r["stage"]
         purchased = r["purchased_electricity_kwh"]
-        exported = (
-            r["exported_electricity_kwh"]
-            if not np.isnan(r.get("exported_electricity_kwh", np.nan))
-            else 0.0
-        )
+        exported = r["exported_electricity_kwh"]
         gas = r["total_natural_gas_kwh"]
 
         carbon_purchased = purchased * EF_ELEC_AVG
@@ -803,8 +804,12 @@ def validate(
     ok = True
 
     # 1. Row counts
-    assert len(df_energy) == 90, f"CSV 1 should have 90 rows, got {len(df_energy)}"
-    assert len(df_elec) == 90, f"CSV 3 should have 90 rows, got {len(df_elec)}"
+    if len(df_energy) != 90:
+        logger.error(f"CSV 1 should have 90 rows, got {len(df_energy)}")
+        ok = False
+    if len(df_elec) != 90:
+        logger.error(f"CSV 3 should have 90 rows, got {len(df_elec)}")
+        ok = False
 
     # 2. Hourly sum vs annual for all buildings
     for bt in BUILDING_TYPES:
@@ -834,7 +839,7 @@ def validate(
 
             hourly_exported = h["exported_kw"].sum()
             annual_exported = a.iloc[0]["exported_electricity_kwh"]
-            if not np.isnan(annual_exported) and annual_exported > 100:
+            if annual_exported > 100:
                 rel_err_exp = (
                     abs(hourly_exported - annual_exported) / annual_exported * 100
                 )
