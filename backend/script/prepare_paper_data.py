@@ -848,7 +848,7 @@ def validate(
     logger.info("  ✓ Hourly/annual consistency check complete")
 
     # 3. Mode B manual check (OfficeMedium TMY baseline)
-    #    purchased=327614.476, exported=221.389, gas=112636.63
+    #    purchased=327614.476, gas=112636.63 (exported set to 0 for non-pv stages)
     mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
     mb_row = mode_b[
         (mode_b["building_type"] == "OfficeMedium")
@@ -859,9 +859,7 @@ def validate(
         expected_elec_carbon = 327614.476 * EF_ELEC_AVG
         expected_gas_carbon = 112636.63 * EF_GAS
         actual_net = mb_row.iloc[0]["carbon_net_kg"]
-        expected_net = (
-            expected_elec_carbon - 221.389 * EF_ELEC_MARGINAL + expected_gas_carbon
-        )
+        expected_net = expected_elec_carbon + expected_gas_carbon
         rel = abs(actual_net - expected_net) / expected_net * 100
         logger.info(f"  Mode B check OfficeMedium/TMY/baseline: {rel:.3f}% diff")
 
@@ -918,7 +916,9 @@ def main() -> None:
     df_bcrc.to_csv(PAPER_DIR / "07_bcrc_summary.csv", index=False)
 
     # Validate
-    validate(df_energy, df_elec, df_hourly, df_carbon_bc, df_bcrc)
+    if not validate(df_energy, df_elec, df_hourly, df_carbon_bc, df_bcrc):
+        logger.error("Validation failed! Check warnings above.")
+        raise SystemExit(1)
 
     logger.info(f"Done! All CSV files saved to {PAPER_DIR}")
 
