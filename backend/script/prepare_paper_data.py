@@ -606,13 +606,12 @@ def prepare_carbon_mode_a(
                             }
                         )
             else:
-                logger.warning(f"  Missing baseline SQL: {bl_db}")
+                raise FileNotFoundError(f"Missing baseline SQL for {bt}/{wc}: {bl_db}")
 
             # --- PV stage: use hourly power data ---
             hourly = hourly_groups.get((bt, wc))
             if hourly is None or hourly.empty:
-                logger.warning(f"  No hourly data for {bt}/{wc}")
-                continue
+                raise ValueError(f"No PV hourly data for {bt}/{wc}")
 
             if len(hourly) != 8760:
                 raise ValueError(
@@ -796,12 +795,21 @@ def validate(
     df_energy: pd.DataFrame,
     df_elec: pd.DataFrame,
     df_hourly: pd.DataFrame,
+    df_carbon_a: pd.DataFrame,
     df_carbon_bc: pd.DataFrame,
     df_bcrc: pd.DataFrame,
 ) -> bool:
     """Run validation checks and report results."""
     logger.info("Running validation checks...")
     ok = True
+    expected_building_weather_rows = len(BUILDING_TYPES) * len(WEATHER_CODES)
+    expected_hourly_rows = expected_building_weather_rows * 8760
+    expected_mode_a_combo_rows = len(CAMBIUM_SCENARIOS) * len(CAMBIUM_YEARS)
+    expected_mode_a_stage_rows = (
+        expected_building_weather_rows * expected_mode_a_combo_rows
+    )
+    expected_mode_b_rows = expected_building_weather_rows * len(STAGES)
+    expected_mode_c_rows = expected_building_weather_rows * len(R_VALUES)
 
     # 1. Row counts
     if len(df_energy) != 90:
@@ -810,8 +818,170 @@ def validate(
     if len(df_elec) != 90:
         logger.error(f"CSV 3 should have 90 rows, got {len(df_elec)}")
         ok = False
+    if len(df_hourly) != expected_hourly_rows:
+        logger.error(
+            f"CSV 4 should have {expected_hourly_rows} rows, got {len(df_hourly)}"
+        )
+        ok = False
+    if len(df_carbon_a) != expected_mode_a_stage_rows * 2:
+        logger.error(
+            f"CSV 6 should have {expected_mode_a_stage_rows * 2} rows, "
+            f"got {len(df_carbon_a)}"
+        )
+        ok = False
+    if len(df_carbon_bc) != expected_mode_b_rows + expected_mode_c_rows:
+        logger.error(
+            f"CSV 5 should have {expected_mode_b_rows + expected_mode_c_rows} rows, "
+            f"got {len(df_carbon_bc)}"
+        )
+        ok = False
+    if len(df_bcrc) != expected_building_weather_rows:
+        logger.error(
+            f"CSV 7 should have {expected_building_weather_rows} rows, "
+            f"got {len(df_bcrc)}"
+        )
+        ok = False
 
-    # 2. Hourly sum vs annual for all buildings
+    n_carbon_a_bl = len(df_carbon_a[df_carbon_a["stage"] == "baseline"])
+    n_carbon_a_pv = len(df_carbon_a[df_carbon_a["stage"] == "pv"])
+    if n_carbon_a_bl != expected_mode_a_stage_rows:
+        logger.error(
+            f"CSV 6 baseline stage should have {expected_mode_a_stage_rows} rows, "
+            f"got {n_carbon_a_bl}"
+        )
+        ok = False
+    if n_carbon_a_pv != expected_mode_a_stage_rows:
+        logger.error(
+            f"CSV 6 pv stage should have {expected_mode_a_stage_rows} rows, "
+            f"got {n_carbon_a_pv}"
+        )
+        ok = False
+
+    mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
+    mode_c = df_carbon_bc[df_carbon_bc["mode"] == "mode_c"]
+    if len(mode_b) != expected_mode_b_rows:
+        logger.error(f"CSV 5 mode_b should have {expected_mode_b_rows} rows, got {len(mode_b)}")
+        ok = False
+    if len(mode_c) != expected_mode_c_rows:
+        logger.error(f"CSV 5 mode_c should have {expected_mode_c_rows} rows, got {len(mode_c)}")
+        ok = False
+
+    # 2. Presence / per-scenario consistency checks
+    for bt in BUILDING_TYPES:
+        for wc in WEATHER_CODES:
+            scenario = f"{bt}/{wc}"
+            h = df_hourly[
+                (df_hourly["building_type"] == bt) & (df_hourly["weather_code"] == wc)
+            ]
+            if h.empty:
+                logger.error(f"CSV 4 missing hourly rows for {scenario}")
+                ok = False
+            elif len(h) != 8760:
+                logger.error(
+                    f"CSV 4 should have 8760 rows for {scenario}, got {len(h)}"
+                )
+                ok = False
+
+            for stage in ("baseline", "pv"):
+                rows_a = df_carbon_a[
+                    (df_carbon_a["building_type"] == bt)
+                    & (df_carbon_a["weather_code"] == wc)
+                    & (df_carbon_a["stage"] == stage)
+                ]
+                if rows_a.empty:
+                    logger.error(f"CSV 6 missing Mode A rows for {scenario}/{stage}")
+                    ok = False
+                else:
+                    if len(rows_a) != expected_mode_a_combo_rows:
+                        logger.error(
+                            f"CSV 6 should have {expected_mode_a_combo_rows} rows "
+                            f"for {scenario}/{stage}, got {len(rows_a)}"
+                        )
+                        ok = False
+
+                    unique_mode_a_pairs = len(
+                        rows_a[["cambium_scenario", "cambium_year"]].drop_duplicates()
+                    )
+                    if unique_mode_a_pairs != expected_mode_a_combo_rows:
+                        logger.error(
+                            f"CSV 6 should have {expected_mode_a_combo_rows} unique "
+                            f"Cambium scenario/year pairs for {scenario}/{stage}, "
+                            f"got {unique_mode_a_pairs}"
+                        )
+                        ok = False
+
+            rows_b = mode_b[
+                (mode_b["building_type"] == bt) & (mode_b["weather_code"] == wc)
+            ]
+            if rows_b.empty:
+                logger.error(f"CSV 5 missing mode_b rows for {scenario}")
+                ok = False
+            else:
+                if len(rows_b) != len(STAGES):
+                    logger.error(
+                        f"CSV 5 mode_b should have {len(STAGES)} rows for {scenario}, "
+                        f"got {len(rows_b)}"
+                    )
+                    ok = False
+
+                stages_present = sorted(rows_b["stage"].dropna().unique().tolist())
+                if stages_present != STAGES:
+                    logger.error(
+                        f"CSV 5 mode_b should contain stages {STAGES} for {scenario}, "
+                        f"got {stages_present}"
+                    )
+                    ok = False
+
+            rows_c = mode_c[
+                (mode_c["building_type"] == bt) & (mode_c["weather_code"] == wc)
+            ]
+            if rows_c.empty:
+                logger.error(f"CSV 5 missing mode_c rows for {scenario}")
+                ok = False
+            else:
+                if len(rows_c) != len(R_VALUES):
+                    logger.error(
+                        f"CSV 5 mode_c should have {len(R_VALUES)} rows for {scenario}, "
+                        f"got {len(rows_c)}"
+                    )
+                    ok = False
+
+                r_values_present = sorted(float(r) for r in rows_c["R"].dropna().unique())
+                if r_values_present != R_VALUES:
+                    logger.error(
+                        f"CSV 5 mode_c should contain R values {R_VALUES} for {scenario}, "
+                        f"got {r_values_present}"
+                    )
+                    ok = False
+
+            rows_bcrc = df_bcrc[
+                (df_bcrc["building_type"] == bt) & (df_bcrc["weather_code"] == wc)
+            ]
+            if rows_bcrc.empty:
+                logger.error(f"CSV 7 missing BCRC row for {scenario}")
+                ok = False
+            elif len(rows_bcrc) != 1:
+                logger.error(
+                    f"CSV 7 should have 1 row for {scenario}, got {len(rows_bcrc)}"
+                )
+                ok = False
+            else:
+                row_bcrc = rows_bcrc.iloc[0]
+                for col in (
+                    "baseline_site_eui",
+                    "ecm_site_eui",
+                    "pv_net_site_eui",
+                    "baseline_carbon_mode_b",
+                    "ecm_carbon_mode_b",
+                    "pv_carbon_mode_b",
+                    "baseline_carbon_mode_a_mid2025",
+                    "pv_carbon_mode_a_mid2025",
+                ):
+                    if pd.isna(row_bcrc[col]):
+                        logger.error(f"CSV 7 column {col} is missing for {scenario}")
+                        ok = False
+
+    # 3. Hourly sum vs annual for all buildings
     for bt in BUILDING_TYPES:
         for wc in WEATHER_CODES:
             h = df_hourly[
@@ -831,7 +1001,7 @@ def validate(
                     abs(hourly_purchased - annual_purchased) / annual_purchased * 100
                 )
                 if rel_err > 1.0:
-                    logger.warning(
+                    logger.error(
                         f"  {bt}/{wc}: hourly purchased ({hourly_purchased:.0f}) vs "
                         f"annual ({annual_purchased:.0f}): {rel_err:.2f}% error"
                     )
@@ -844,7 +1014,7 @@ def validate(
                     abs(hourly_exported - annual_exported) / annual_exported * 100
                 )
                 if rel_err_exp > 1.0:
-                    logger.warning(
+                    logger.error(
                         f"  {bt}/{wc}: hourly exported ({hourly_exported:.0f}) vs "
                         f"annual ({annual_exported:.0f}): {rel_err_exp:.2f}% error"
                     )
@@ -852,9 +1022,8 @@ def validate(
 
     logger.info("  ✓ Hourly/annual consistency check complete")
 
-    # 3. Mode B manual check (OfficeMedium TMY baseline)
+    # 4. Mode B manual check (OfficeMedium TMY baseline)
     #    purchased=327614.476, gas=112636.63 (exported set to 0 for non-pv stages)
-    mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
     mb_row = mode_b[
         (mode_b["building_type"] == "OfficeMedium")
         & (mode_b["weather_code"] == "TMY")
@@ -868,7 +1037,7 @@ def validate(
         rel = abs(actual_net - expected_net) / expected_net * 100
         logger.info(f"  Mode B check OfficeMedium/TMY/baseline: {rel:.3f}% diff")
 
-    # 4. BCRC energy check (OfficeMedium TMY)
+    # 5. BCRC energy check (OfficeMedium TMY)
     bcrc_row = df_bcrc[
         (df_bcrc["building_type"] == "OfficeMedium")
         & (df_bcrc["weather_code"] == "TMY")
@@ -921,8 +1090,10 @@ def main() -> None:
     df_bcrc.to_csv(PAPER_DIR / "07_bcrc_summary.csv", index=False)
 
     # Validate
-    if not validate(df_energy, df_elec, df_hourly, df_carbon_bc, df_bcrc):
-        logger.error("Validation failed! Check warnings above.")
+    if not validate(
+        df_energy, df_elec, df_hourly, df_carbon_a, df_carbon_bc, df_bcrc
+    ):
+        logger.error("Validation failed! Check errors above.")
         raise SystemExit(1)
 
     logger.info(f"Done! All CSV files saved to {PAPER_DIR}")

@@ -1784,9 +1784,26 @@ class ChartGenerator:
                     weather_code
                 ]
                 pv_result = self.pv_results[building_type][weather_code]
-                assert baseline_result.total_source_eui is not None
-                assert optimization_result.total_source_eui is not None
-                assert pv_result.total_source_eui is not None
+                try:
+                    self._require_total_source_eui(
+                        baseline_result, "baseline_result", building_type, weather_code
+                    )
+                    self._require_total_source_eui(
+                        optimization_result,
+                        "optimization_result",
+                        building_type,
+                        weather_code,
+                    )
+                    self._require_total_source_eui(
+                        pv_result, "pv_result", building_type, weather_code
+                    )
+                except ValueError as exc:
+                    raise ValueError(
+                        "Failed to export Results_data.csv because "
+                        "baseline_result, optimization_result, or pv_result is "
+                        f"missing total_source_eui for building_type={building_type}, "
+                        f"weather_code={weather_code}."
+                    ) from exc
                 data.append(
                     self._extract_data(
                         building_type, weather_code, "baseline", baseline_result
@@ -1802,6 +1819,25 @@ class ChartGenerator:
                 )
         df = pd.DataFrame(data)
         df.to_csv(self.paths.visualization_dir / "Results_data.csv", index=False)
+
+    def _require_total_source_eui(
+        self,
+        result: SimulationResult,
+        result_label: str,
+        building_type: str,
+        weather_code: str,
+    ) -> None:
+        if result.total_source_eui is not None:
+            return
+
+        raise ValueError(
+            f"{result_label}.total_source_eui is None while exporting "
+            "Results_data.csv for "
+            f"building_type={building_type}, weather_code={weather_code}, "
+            f"result_id={result.id}, job_id={result.job_id}, "
+            f"result_building_type={result.building_type}, "
+            f"result_weather_code={result.weather_code}."
+        )
 
     def _extract_data(
         self,
