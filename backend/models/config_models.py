@@ -21,6 +21,9 @@ class PathsConfig(BaseModel):
     optimization_dir: Path = Field(
         ..., description="Optimization result output directory"
     )
+    visualization_dir: Path = Field(..., description="Visualization output directory")
+    csv_dir: Path = Field(..., description="CSV output directory")
+    data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
     eplus_executable: Path = Field(..., description="EnergyPlus executable path")
     idd_file: Path = Field(..., description="IDD file path")
@@ -51,6 +54,7 @@ class PathsConfig(BaseModel):
         "optimization_dir",
         "temp_dir",
         "log_dir",
+        "visualization_dir",
     )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""
@@ -189,12 +193,14 @@ class PVConfig(BaseModel):
     radiation_threshold: float = Field(default=800.0, description="Radiation threshold")
     coverage: dict = Field(default_factory=dict, description="Coverage")
 
+
 class StorageConfig(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
     )
-    capacity: dict = Field(default_factory=lambda: {}, description="Storage capacity")
+    capacity: dict = Field(default_factory=dict, description="Storage capacity")
+    max_power: dict = Field(default_factory=dict, description="Storage max power")
 
 
 class GeneticAlgorithmConfig(BaseModel):

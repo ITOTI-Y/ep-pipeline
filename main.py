@@ -1,11 +1,13 @@
 from collections.abc import Generator
-from itertools import chain, product
+from copy import deepcopy
+from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
 
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
+from typer import Typer
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
@@ -31,6 +33,8 @@ from backend.services.simulation import (
     ResultParser,
 )
 from backend.utils.config import ConfigManager, set_logger
+
+app = Typer()
 
 
 def base_services_prepare(
@@ -124,15 +128,15 @@ def pv_services_prepare(
 ):
     baseline_dir = config.paths.baseline_dir
     for building, weather in buildings_weather_combinations:
-        idf_file_path = (
+        b = deepcopy(building)
+        b.idf_file_path = (
             config.paths.optimization_dir  # type: ignore
-            / building.name
+            / b.name
             / weather.code
             / "optimization_.idf"
         )
-        building.idf_file_path = idf_file_path
         job = SimulationJob(
-            building=building,
+            building=b,
             weather=weather,
             simulation_type=SimulationType.PV,
             output_directory=config.paths.pv_dir / building.name / weather.code,  # type: ignore
@@ -158,7 +162,22 @@ def pv_services_prepare(
         yield job, pv_service
 
 
-def main():
+@app.command()
+def simulation_all():
+    def _single_run(
+        job: SimulationJob, service: ISimulationService, config: ConfigManager
+    ):
+        set_logger(config.paths.log_dir)
+        IDF.setiddname(str(config.paths.idd_file))
+        job.idf = IDF(str(job.building.idf_file_path))
+
+        result = service.run()
+
+        with open(job.output_directory / "result.pkl", "wb") as f:
+            dump(result, f)
+
+        return result
+
     config = ConfigManager(Path("backend/configs"))
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
@@ -211,19 +230,18 @@ def main():
     # parse_optimal_data(config)
 
 
-def _single_run(job: SimulationJob, service: ISimulationService, config: ConfigManager):
-    set_logger(config.paths.log_dir)
-    IDF.setiddname(str(config.paths.idd_file))
-    job.idf = IDF(str(job.building.idf_file_path))
+@app.command()
+def visualization():
+    from backend.visualization.charts import ChartGenerator
 
-    result = service.run()
+    chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
+    chart_generator.generate_all()
 
-    with open(job.output_directory / "result.pkl", "wb") as f:
-        dump(result, f)
 
-    return result
+@app.command()
+def parse_result():
+    parse_result_parameters(ConfigManager(Path("backend/configs")))
 
 
 if __name__ == "__main__":
-    main()
-    # parse_result_parameters(ConfigManager(Path("backend/configs")))
+    app()

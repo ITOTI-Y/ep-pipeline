@@ -28,8 +28,7 @@ class SimulationJob(BaseModel):
         ..., description="The building object associated with the simulation job."
     )
     weather: Weather = Field(
-        ...,
-        description="The weather file object associated with the simulation job."
+        ..., description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
         ..., description="The type of simulation to be performed."

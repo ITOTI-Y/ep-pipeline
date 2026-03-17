@@ -20,3 +20,5 @@ data/*
 !data/ftmys
 !data/tmys
 !data/prototypes
+.claude/
+docs/_dev/

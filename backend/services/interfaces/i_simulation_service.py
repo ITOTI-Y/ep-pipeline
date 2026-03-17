@@ -7,7 +7,6 @@ from backend.models import SimulationResult
 
 
 class ISimulationService(ABC):
-
     @abstractmethod
     def prepare(self) -> None:
         """

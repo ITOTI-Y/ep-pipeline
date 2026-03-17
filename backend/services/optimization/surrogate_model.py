@@ -4,7 +4,7 @@ import numpy as np
 from loguru import logger
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
-from xgboost import XGBRegressor  # type: ignore[possibly-missing-import]
+from xgboost import XGBRegressor
 
 from backend.utils.config import ConfigManager
 
@@ -55,8 +55,8 @@ class XGBoostSurrogateModel(ISurrogateModel):
             eval_set=[(x_test, y_test)],
             verbose=False,
         )
-        self._x_test = x_test  # type: ignore[assignment]
-        self._y_test = y_test  # type: ignore[assignment]
+        self._x_test = x_test
+        self._y_test = y_test
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self._model.predict(x)
@@ -83,8 +83,8 @@ class XGBoostSurrogateModel(ISurrogateModel):
                 rmse_i = np.sqrt(mean_squared_error(self._y_test[:, i], y_pred[:, i]))
                 mae_i = mean_absolute_error(self._y_test[:, i], y_pred[:, i])
 
-                metrics[f"output_{i+1}_r2_score"] = float(r2_i)
-                metrics[f"output_{i+1}_rmse"] = float(rmse_i)
-                metrics[f"output_{i+1}_mae"] = float(mae_i)
+                metrics[f"output_{i + 1}_r2_score"] = float(r2_i)
+                metrics[f"output_{i + 1}_rmse"] = float(rmse_i)
+                metrics[f"output_{i + 1}_mae"] = float(mae_i)
 
         return metrics

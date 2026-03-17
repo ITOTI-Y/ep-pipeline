@@ -125,11 +125,12 @@ class ECMApply(IApply):
         )
 
         schedule_name = "WallInsulationSchedule_AlwaysOn"
-        idf.newidfobject(
-            "Schedule:Constant",
-            Name=schedule_name,
-            Hourly_Value=1.0,
-        )
+        if idf.getobject("SCHEDULE:CONSTANT", schedule_name) is None:
+            idf.newidfobject(
+                "Schedule:Constant",
+                Name=schedule_name,
+                Hourly_Value=1.0,
+            )
 
         self._remove_objects(idf, "SurfaceControl:MovableInsulation")
         surfaces = idf.idfobjects.get("BUILDINGSURFACE:DETAILED", [])
@@ -208,7 +209,9 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        zone_ventilations = idf.idfobjects.get("ZONEVENTILATION:WindandStackOpenArea", [])
+        zone_ventilations = idf.idfobjects.get(
+            "ZONEVENTILATION:WindandStackOpenArea", []
+        )
         modified_count = 0
 
         for zone_ventilation in zone_ventilations:
@@ -432,15 +435,17 @@ class ECMApply(IApply):
 
             if calc_method == "LightingLevel":
                 original_level = light.Lighting_Level
-                light.Lighting_Level = original_level * lighting_power_reduction
+                light.Lighting_Level = original_level * (1 - lighting_power_reduction)
                 modified_count += 1
             elif calc_method == "Watts/Area":
                 original_power = light.Watts_per_Floor_Area
-                light.Watts_per_Floor_Area = original_power * lighting_power_reduction
+                light.Watts_per_Floor_Area = original_power * (
+                    1 - lighting_power_reduction
+                )
                 modified_count += 1
             elif calc_method == "Watts/Person":
                 original_power = light.Watts_per_Person
-                light.Watts_per_Person = original_power * lighting_power_reduction
+                light.Watts_per_Person = original_power * (1 - lighting_power_reduction)
                 modified_count += 1
             else:
                 logger.warning(

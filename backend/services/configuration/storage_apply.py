@@ -21,7 +21,8 @@ class StorageApply(IApply):
         logger.info("Storage configuration applied successfully")
 
     def _configure_storage(self, idf: IDF) -> None:
-        self._remove_objects(idf, "ElectricLoadCenter:Storage")
+        self._remove_objects(idf, "ElectricLoadCenter:Storage:Simple")
+        self._remove_objects(idf, "ElectricLoadCenter:Storage:Battery")
 
         storage = idf.newidfobject("ElectricLoadCenter:Storage:Simple")
         storage.Name = "PV_Storage"
@@ -36,8 +37,14 @@ class StorageApply(IApply):
         storage.Maximum_Storage_Capacity = (
             self._config.storage.capacity[self._building_type.value] * 3600000
         )  # Convert kWh to J
-        storage.Maximum_Power_for_Discharging = 10000
-        storage.Maximum_Power_for_Charging = 10000
-        storage.Initial_State_of_Charge = self._config.storage.capacity[self._building_type.value] * 3600000 * 0.5
+        storage.Maximum_Power_for_Discharging = (
+            self._config.storage.max_power[self._building_type.value] * 1000
+        )
+        storage.Maximum_Power_for_Charging = (
+            self._config.storage.max_power[self._building_type.value] * 1000
+        )
+        storage.Initial_State_of_Charge = (
+            self._config.storage.capacity[self._building_type.value] * 3600000 * 0.5
+        )
 
         logger.success("Storage configured successfully")

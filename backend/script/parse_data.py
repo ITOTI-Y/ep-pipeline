@@ -1,6 +1,7 @@
 from pickle import load
 
 import pandas as pd
+from loguru import logger
 
 from backend.utils.config import ConfigManager
 
@@ -37,8 +38,8 @@ def parse_optimal_data(config: ConfigManager):
             optimization_result = load(f)
         with open(baseline_file, "rb") as f:
             baseline_result = load(f)
-        print(optimization_result)
-        print(baseline_result)
+        logger.info(f"Optimization result: {optimization_result}")
+        logger.info(f"Baseline result: {baseline_result}")
 
 
 def parse_result_parameters(config: ConfigManager):
@@ -51,4 +52,7 @@ def parse_result_parameters(config: ConfigManager):
         with open(optimization_file, "rb") as f:
             optimization_result = load(f)
         with open(optimization_file.with_suffix(".json"), "w") as f:
+            logger.info(
+                f"Writing optimization result to JSON file: {optimization_file.with_suffix('.json')}"
+            )
             json.dump(optimization_result.ecm_parameters.to_dict(), f, indent=4)
