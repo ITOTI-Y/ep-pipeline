@@ -38,22 +38,53 @@ class OutputApply(IApply):
     def _configure_output_meter(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUT:METER")
 
-        idf.newidfobject(
-            "OUTPUT:METER",
-            Key_Name="Electricity:Facility",
-            Reporting_Frequency="Hourly",
-        )
+        meters = [
+            "Electricity:Facility",
+            "ElectricityNet:Facility",
+            "Heating:EnergyTransfer",
+            "Cooling:EnergyTransfer",
+            "Fans:Electricity",
+            "InteriorLights:Electricity",
+            "InteriorEquipment:Electricity",
+        ]
 
-        logger.success("Output meter configured successfully")
+        for meter in meters:
+            idf.newidfobject(
+                "OUTPUT:METER",
+                Key_Name=meter,
+                Reporting_Frequency="Hourly",
+            )
+
+        logger.success(f"Added {len(meters)} output meters to IDF")
 
     def _configure_output_variables(self, idf: IDF) -> None:
         self._remove_objects(idf, "OUTPUT:VARIABLE")
 
         required_variables = [
             ("Site Outdoor Air Drybulb Temperature", "Hourly"),
+            ("Site Outdoor Air Wetbulb Temperature", "Hourly"),
+            ("Site Outdoor Air Relative Humidity", "Hourly"),
+            ("Site Wind Speed", "Hourly"),
+            ("Site Wind Direction", "Hourly"),
+            ("Site Direct Solar Radiation Rate per Area", "Hourly"),
+            ("Site Diffuse Solar Radiation Rate per Area", "Hourly"),
             ("Zone Mean Air Temperature", "Hourly"),
-            ("Facility Total Electricity Demand Rate", "Hourly"),
+            ("Zone Mean Air Humidity Ratio", "Hourly"),
+            ("Zone Mean Radiant Temperature", "Hourly"),
+            ("Zone People Occupant Count", "Hourly"),
+            ("Zone Lights Electricity Rate", "Hourly"),
+            ("Zone Electric Equipment Electricity Rate", "Hourly"),
+            ("Zone Infiltration Mass Flow Rate", "Hourly"),
+            ("Surface Inside Face Temperature", "Hourly"),
+            ("Surface Outside Face Temperature", "Hourly"),
+            ("Surface Inside Face Conduction Heat Transfer Rate per Area", "Hourly"),
             ("Surface Outside Face Incident Solar Radiation Rate per Area", "Hourly"),
+            ("Zone Air System Sensible Heating Rate", "Hourly"),
+            ("Zone Air System Sensible Cooling Rate", "Hourly"),
+            ("Zone Mechanical Ventilation Mass Flow Rate", "Hourly"),
+            ("Zone Thermostat Heating Setpoint Temperature", "Hourly"),
+            ("Zone Thermostat Cooling Setpoint Temperature", "Hourly"),
+            ("Facility Total Electricity Demand Rate", "Hourly"),
             ("Facility Total Purchased Electricity Rate", "Monthly"),
             ("Generator Produced DC Electricity Rate", "Hourly"),
             ("Electric Storage Simple Charge State", "Hourly"),

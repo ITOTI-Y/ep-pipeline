@@ -72,9 +72,9 @@ class PathsConfig(BaseModel):
                 self, "idf_files", list(self.prototype_dir.glob("*.idf"))
             )
         if not self.tmy_files:
-            object.__setattr__(self, "tmy_files", list(self.tmy_dir.glob("*.epw")))
+            object.__setattr__(self, "tmy_files", list(self.tmy_dir.glob("*/*.epw")))
         if not self.ftmy_files:
-            object.__setattr__(self, "ftmy_files", list(self.ftmy_dir.glob("*.epw")))
+            object.__setattr__(self, "ftmy_files", list(self.ftmy_dir.glob("*/*.epw")))
         return self
 
 

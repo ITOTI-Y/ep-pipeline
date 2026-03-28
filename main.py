@@ -3,11 +3,12 @@ from copy import deepcopy
 from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
+from typing import Annotated
 
+import typer
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
-from typer import Typer
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
@@ -34,7 +35,7 @@ from backend.services.simulation import (
 )
 from backend.utils.config import ConfigManager, set_logger
 
-app = Typer()
+app = typer.Typer()
 
 
 def base_services_prepare(
@@ -163,7 +164,9 @@ def pv_services_prepare(
 
 
 @app.command()
-def simulation_all():
+def simulation_all(
+    city: Annotated[str, typer.Option(help="The city to run the simulation for")],
+):
     def _single_run(
         job: SimulationJob, service: ISimulationService, config: ConfigManager
     ):
@@ -183,13 +186,18 @@ def simulation_all():
     logger.info("Starting simulation")
     idf_files = config.paths.idf_files
     weather_files = config.paths.ftmy_files + config.paths.tmy_files
+    weather_files = [
+        weather_file
+        for weather_file in weather_files
+        if weather_file.parent.name == city
+    ]
 
     buildings = []
     for idf_file in idf_files:
         building = Building(
             name=idf_file.stem,
             building_type=BuildingType.from_str(idf_file.stem),
-            location="Chicago",
+            location=city,
             idf_file_path=idf_file,
         )
         buildings.append(building)
@@ -198,7 +206,7 @@ def simulation_all():
     for weather_file in weather_files:
         weather = Weather(
             file_path=weather_file,
-            location="Chicago",
+            location=city,
         )
         weathers.append(weather)
 
@@ -206,7 +214,10 @@ def simulation_all():
 
     n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
 
-    # base_services = base_services_prepare(config, buildings_weather_combinations)
+    base_services = base_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config) for job, service in base_services
+    )
     # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config)
@@ -222,10 +233,10 @@ def simulation_all():
     #     for job, service in optimization_services
     # )
 
-    pv_services = pv_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in pv_services
-    )
+    # pv_services = pv_services_prepare(config, buildings_weather_combinations)
+    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+    #     delayed(_single_run)(job, service, config) for job, service in pv_services
+    # )
 
     # parse_optimal_data(config)
 

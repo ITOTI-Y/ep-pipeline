@@ -157,7 +157,7 @@ class OptimizationService(ISimulationService):
             config=self._config,
             surrogate_model=surrogate_model,
             encode_model=self._one_hot_encoder,
-            code=self._job.weather.code, # type: ignore
+            code=self._job.weather.code,  # type: ignore
         )
         best_ecm, predicted_eui = optimization_model.optimize(
             building_type=building_type
