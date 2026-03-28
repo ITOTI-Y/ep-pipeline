@@ -56,7 +56,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
             idx = individual[i]
             value = self._ecm_parameters[name][idx]
             params[name] = value
-        return ECMParameters(**params)  # type: ignore[arg-type]
+        return ECMParameters(**params) # type: ignore
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
         code_encoded = self._encode_model.transform([[self._code]])
@@ -119,19 +119,19 @@ class GeneticAlgorithmModel(IOptimizationModel):
         if not hasattr(creator, "FitnessMin"):
             creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
         if not hasattr(creator, "Individual"):
-            creator.create("Individual", list, fitness=creator.FitnessMin)  # type: ignore[attr-defined]
+            creator.create("Individual", list, fitness=creator.FitnessMin) # type: ignore
 
         toolbox = base.Toolbox()
         toolbox.register("attr_int", np.random.randint, 0, 1)
-        toolbox.register("individual", self._create_individual, creator.Individual)  # type: ignore[attr-defined]
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)  # type: ignore[attr-defined]
+        toolbox.register("individual", self._create_individual, creator.Individual) # type: ignore
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual) # type: ignore
 
         toolbox.register("evaluate", self._evaluate_fitness)
         toolbox.register("mate", tools.cxUniform, indpb=self._gene_crossover_prob)
         toolbox.register("mutate", self._discrete_mutation)
         toolbox.register("select", tools.selTournament, tournsize=3)
 
-        population = toolbox.population(n=self._population_size)  # type: ignore[attr-defined]
+        population = toolbox.population(n=self._population_size) # type: ignore
 
         hof = tools.HallOfFame(
             int(self._population_size * self._hall_of_fame_percentage)
@@ -148,7 +148,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         logger.info(f"Starting genetic algorithm optimization for {building_type}")
 
-        fitness = list(map(toolbox.evaluate, population))  # type: ignore[attr-defined]
+        fitness = list(map(toolbox.evaluate, population)) # type: ignore
         for ind, fit in zip(population, fitness, strict=False):
             ind.fitness.values = fit
 
@@ -159,22 +159,22 @@ class GeneticAlgorithmModel(IOptimizationModel):
                 gen, self._generations
             )
 
-            offspring = toolbox.select(population, len(population))  # type: ignore[attr-defined]
-            offspring = list(map(toolbox.clone, offspring))  # type: ignore[attr-defined]
+            offspring = toolbox.select(population, len(population)) # type: ignore
+            offspring = list(map(toolbox.clone, offspring)) # type: ignore
 
             for child1, child2 in zip(offspring[::2], offspring[1::2], strict=False):
                 if np.random.random() < adaptive_cx_prob:
-                    toolbox.mate(child1, child2)  # type: ignore[attr-defined]
+                    toolbox.mate(child1, child2) # type: ignore
                     del child1.fitness.values
                     del child2.fitness.values
 
             for mutant in offspring:
                 if np.random.random() < adaptive_mut_prob:
-                    toolbox.mutate(mutant, indpb=self._gene_mutation_prob)  # type: ignore[attr-defined]
+                    toolbox.mutate(mutant, indpb=self._gene_mutation_prob) # type: ignore
                     del mutant.fitness.values
 
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-            fitnesses = map(toolbox.evaluate, invalid_ind)  # type: ignore[attr-defined]
+            fitnesses = map(toolbox.evaluate, invalid_ind) # type: ignore
             for ind, fit in zip(invalid_ind, fitnesses, strict=False):
                 ind.fitness.values = fit
 
@@ -187,7 +187,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
                     reverse=True,
                 )[:k]
                 for i, idx in enumerate(worst_indices):
-                    offspring[idx] = toolbox.clone(hof[i])  # type: ignore[attr-defined]
+                    offspring[idx] = toolbox.clone(hof[i]) # type: ignore
 
             population[:] = offspring
 
