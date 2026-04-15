@@ -510,24 +510,29 @@ def prepare_carbon_mode_bc(
 
 @dataclass
 class CambiumFactors:
-    """Pre-computed Cambium emission factors adjusted for distribution loss (kg/kWh)."""
+    """End-use Cambium emission factors (kg/kWh)."""
 
-    aer: np.ndarray  # 8760 hourly average emission rate
-    lrmer: np.ndarray  # 8760 hourly long-run marginal emission rate
+    aer: np.ndarray  # 8760 hourly average emission rate, end-use
+    lrmer: np.ndarray  # 8760 hourly long-run marginal emission rate, end-use
     aer_raw_mean: float  # raw aer_load_co2e annual mean (kg/MWh)
     lrmer_raw_mean: float  # raw lrmer_co2e annual mean (kg/MWh)
 
 
 def load_cambium(scenario: str, year: int) -> CambiumFactors:
-    """Load Cambium CSV and pre-compute distloss-adjusted emission factors."""
+    """Load Cambium CSV emission factors (already end-use, just kg/MWh → kg/kWh).
+
+    Per Cambium 2024 documentation §5.4, ``aer_load_co2e`` and ``lrmer_co2e``
+    are reported at end-use delivery with distribution losses already applied
+    (Distribution Loss Metric: average). No further ``/ (1 - distloss)``
+    adjustment is needed — doing so would double-count T&D losses (~+3.7-3.9%).
+    """
     path = cambium_path(scenario, year)
     df = pd.read_csv(  # ty: ignore[no-matching-overload]
         path,
         skiprows=5,
-        usecols=["aer_load_co2e", "lrmer_co2e", "distloss_rate_avg"],
+        usecols=["aer_load_co2e", "lrmer_co2e"],
     )
-    distloss = df["distloss_rate_avg"].values
-    factor = 1 / (1 - distloss) / 1000  # kg/MWh → kg/kWh with distloss adj
+    factor = 1 / 1000  # kg/MWh_end-use → kg/kWh_end-use
     return CambiumFactors(
         aer=df["aer_load_co2e"].values * factor,
         lrmer=df["lrmer_co2e"].values * factor,
@@ -547,7 +552,7 @@ def prepare_carbon_mode_a(
     """
     logger.info("Preparing CSV 6: Carbon Mode A (Cambium)")
 
-    # Pre-load all Cambium data (emission factors pre-adjusted for distloss)
+    # Pre-load all Cambium data (end-use emission factors, kg/kWh)
     cambium_cache: dict[tuple[str, int], CambiumFactors] = {}
     for scen in CAMBIUM_SCENARIOS:
         for yr in CAMBIUM_YEARS:
