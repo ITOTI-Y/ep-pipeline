@@ -22,6 +22,17 @@ from shapely.geometry import box
 
 from backend.models import SimulationResult
 from backend.utils.config import ConfigManager
+from backend.visualization._share import (
+    C_ASHRAE,
+    C_COMED,
+    C_ILLINOIS,
+    C_PJMWEST_EDGE,
+    C_RFCW,
+    COMED_COUNTY_FIPS,
+    PJM_WEST_COUNTY_FIPS,
+    RFCW_PARTIAL,
+    RFCW_STATES,
+)
 from backend.visualization.journal_style import (
     BUILDING_AND_ENVIRONMENT_STYLE,
     FigureWidth,
@@ -94,67 +105,8 @@ STAGE_CFG = {
     "pv": "net_site_eui",
 }
 
-RFCW_STATES = ["Illinois", "Indiana", "Ohio", "West Virginia", "Pennsylvania"]
-RFCW_PARTIAL = ["Maryland", "Virginia", "Kentucky", "Michigan"]
-C_RFCW, C_RFCWC_EDGE = "#56B4E9", "#009E73"
-C_COMED, C_ASHRAE = "#E69F00", "#CC79A7"
 C_CHICAGO, C_LAKE = "#D55E00", "#c5dff0"
 C_BG_LAND, C_STATE_EDGE, C_COUNTY_EDGE = "#f5f5f0", "#888888", "#bbbbbb"
-COMED_COUNTY_FIPS = [
-    "17031",
-    "17043",
-    "17089",
-    "17097",
-    "17111",
-    "17197",
-    "17037",
-    "17063",
-    "17093",
-    "17007",
-    "17201",
-    "17177",
-    "17141",
-    "17103",
-    "17099",
-    "17105",
-    "17091",
-    "17075",
-    "17085",
-    "17015",
-    "17195",
-    "17161",
-    "17073",
-    "17011",
-    "17155",
-    "17123",
-    "17175",
-    "17095",
-    "17187",
-    "17071",
-    "17131",
-    "17143",
-    "17179",
-    "17203",
-    "17113",
-    "17039",
-    "17107",
-    "17115",
-    "17053",
-    "17019",
-    "17183",
-    "17147",
-    "17041",
-    "17029",
-    "17045",
-    "17035",
-    "17023",
-    "17139",
-    "17173",
-    "17021",
-    "17167",
-    "17125",
-    "17135",
-]
 CHI_FIPS = ["17031", "17043", "17089", "17097", "17111", "17197"]
 ASHRAE_5A_LT = 39.5
 CHICAGO_LON, CHICAGO_LAT = -87.6298, 41.8781
@@ -1205,6 +1157,18 @@ class ChartGenerator:
         )
         reader = shapereader.Reader(path)
 
+        county_path = shapereader.natural_earth(
+            resolution="10m",
+            category="cultural",
+            name="admin_2_counties_lakes",
+        )
+        county_reader = shapereader.Reader(county_path)
+        pjm_west_counties = [
+            rec.geometry
+            for rec in county_reader.records()
+            if rec.attributes.get("CODE_LOCAL") in PJM_WEST_COUNTY_FIPS
+        ]
+
         lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "50m")
         ocean_50m = cfeature.NaturalEarthFeature("physical", "ocean", "50m")
         other_states = [
@@ -1255,7 +1219,7 @@ class ChartGenerator:
             facecolor=C_RFCW,
             edgecolor=C_STATE_EDGE,
             linewidth=self.style.line_width,
-            alpha=0.5,
+            alpha=0.8,
         )
         ax.add_geometries(
             rfcw_partial,
@@ -1266,19 +1230,19 @@ class ChartGenerator:
             alpha=0.3,
         )
         ax.add_geometries(
-            [union_all(rfcw_cores)],
+            [union_all(pjm_west_counties)],
             ccrs.PlateCarree(),
-            facecolor="none",
-            edgecolor=C_RFCWC_EDGE,
+            facecolor=C_PJMWEST_EDGE,
+            edgecolor=C_PJMWEST_EDGE,
             linewidth=self.style.line_width,
-            linestyle="--",
-            alpha=0.9,
+            linestyle="-",
+            alpha=0.35,
         )
         ax.add_geometries(
             il_state,
             ccrs.PlateCarree(),
-            facecolor=C_COMED,
-            alpha=0.4,
+            facecolor=C_ILLINOIS,
+            alpha=0.0,
         )
         ax.add_geometries(
             ashrae_box,
@@ -1358,20 +1322,20 @@ class ChartGenerator:
             )
 
         ax.text(
-            -84,
+            -88,
             41,
-            "Cambium GEA: RFCWc",
+            "Cambium GEA:\nPJM_West",
             transform=ccrs.PlateCarree(),
             ha="center",
             va="center",
             fontsize=self.style.font_size_small,
             fontstyle="italic",
-            color=C_RFCWC_EDGE,
+            color=C_PJMWEST_EDGE,
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
         )
 
         ax.format(
-            title="eGRID & Cambium RFCWc Region",
+            title="eGRID RFCW & Cambium PJM_West",
             fontsize=self.style.font_size_small,
         )
 
@@ -1655,7 +1619,7 @@ class ChartGenerator:
             "Location: 41.88°N, 87.63°W\n"
             "ASHRAE Zone: 5A (Cool-Humid)\n"
             "eGRID Subregion: RFCW\n"
-            "Cambium GEA: RFCWc\n"
+            "Cambium GEA: PJM_West\n"
             "Utility: ComEd (Exelon)\n"
             "Grid: PJM Interconnection",
             transform=ax.transAxes,
@@ -1674,7 +1638,7 @@ class ChartGenerator:
             Patch(
                 facecolor=C_RFCW,
                 edgecolor=C_STATE_EDGE,
-                alpha=0.5,
+                alpha=0.8,
                 label="eGRID RFCW subregion (core)",
             ),
             Patch(
@@ -1683,13 +1647,11 @@ class ChartGenerator:
                 alpha=0.3,
                 label="eGRID RFCW (partial coverage)",
             ),
-            Line2D(
-                [0],
-                [0],
-                color=C_RFCWC_EDGE,
-                linestyle="--",
-                linewidth=self.style.line_width,
-                label="Cambium GEA RFCWc boundary",
+            Patch(
+                facecolor=C_PJMWEST_EDGE,
+                edgecolor=C_PJMWEST_EDGE,
+                alpha=0.35,
+                label="Cambium GEA PJM_West",
             ),
             Patch(
                 facecolor=C_COMED,

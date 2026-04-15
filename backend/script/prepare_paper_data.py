@@ -860,10 +860,14 @@ def validate(
     mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
     mode_c = df_carbon_bc[df_carbon_bc["mode"] == "mode_c"]
     if len(mode_b) != expected_mode_b_rows:
-        logger.error(f"CSV 5 mode_b should have {expected_mode_b_rows} rows, got {len(mode_b)}")
+        logger.error(
+            f"CSV 5 mode_b should have {expected_mode_b_rows} rows, got {len(mode_b)}"
+        )
         ok = False
     if len(mode_c) != expected_mode_c_rows:
-        logger.error(f"CSV 5 mode_c should have {expected_mode_c_rows} rows, got {len(mode_c)}")
+        logger.error(
+            f"CSV 5 mode_c should have {expected_mode_c_rows} rows, got {len(mode_c)}"
+        )
         ok = False
 
     # 2. Presence / per-scenario consistency checks
@@ -946,7 +950,9 @@ def validate(
                     )
                     ok = False
 
-                r_values_present = sorted(float(r) for r in rows_c["R"].dropna().unique())
+                r_values_present = sorted(
+                    float(r) for r in rows_c["R"].dropna().unique()
+                )
                 if r_values_present != R_VALUES:
                     logger.error(
                         f"CSV 5 mode_c should contain R values {R_VALUES} for {scenario}, "
@@ -1090,9 +1096,7 @@ def main() -> None:
     df_bcrc.to_csv(PAPER_DIR / "07_bcrc_summary.csv", index=False)
 
     # Validate
-    if not validate(
-        df_energy, df_elec, df_hourly, df_carbon_a, df_carbon_bc, df_bcrc
-    ):
+    if not validate(df_energy, df_elec, df_hourly, df_carbon_a, df_carbon_bc, df_bcrc):
         logger.error("Validation failed! Check errors above.")
         raise SystemExit(1)
 
