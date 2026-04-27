@@ -77,7 +77,6 @@ def cluster() -> None:
         df,
         meta_df,
         forced_cities,
-        cfg.citys.qc,
     )
 
     rep_rows = []

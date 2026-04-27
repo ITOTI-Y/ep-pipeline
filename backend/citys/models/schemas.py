@@ -26,12 +26,6 @@ class ClusterConfigSchema(BaseCitySchema):
     n_gap_refs: int = Field(20, ge=5, description="The number of gap references")
 
 
-class QCConfigSchema(BaseCitySchema):
-    geo_dedup_threshold_km: float = Field(
-        100, ge=0.0, description="The threshold for geographic deduplication in km"
-    )
-
-
 class DownloadConfigSchema(BaseCitySchema):
     request_interval: float = Field(1.5, ge=0.0)
     max_retries: int = Field(10, ge=1)
@@ -46,5 +40,4 @@ class CitySelectionConfigSchema(BaseCitySchema):
     )
     preprocess: PreprocessConfigSchema = PreprocessConfigSchema()
     cluster: ClusterConfigSchema = ClusterConfigSchema()
-    qc: QCConfigSchema = QCConfigSchema()
     download: DownloadConfigSchema = DownloadConfigSchema()

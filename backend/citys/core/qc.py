@@ -6,7 +6,6 @@ from loguru import logger
 from numpy.typing import NDArray
 
 from backend.citys.core._share import EARTH_RADIUS_KM
-from backend.citys.models.schemas import QCConfigSchema
 
 
 class QCResult(NamedTuple):
@@ -37,62 +36,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return EARTH_RADIUS_KM * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
 
 
-def _geographic_dedup(
-    indices: list[int],
-    labels: NDArray,
-    x: NDArray,
-    meta_df: pd.DataFrame,
-    threshold_km: float,
-) -> list[int]:
-    current = list(indices)
-    changed = True
-    while changed:
-        changed = False
-        to_remove = set()
-        for i, idx_a in enumerate(current):
-            for idx_b in current[i + 1 :]:
-                if idx_a in to_remove or idx_b in to_remove:
-                    continue
-                d = haversine_km(
-                    meta_df.loc[idx_a, "latitude"],
-                    meta_df.loc[idx_a, "longitude"],
-                    meta_df.loc[idx_b, "latitude"],
-                    meta_df.loc[idx_b, "longitude"],
-                )
-                if d < threshold_km:
-                    centroid_a = x[labels == labels[idx_a]].mean(axis=0)
-                    centroid_b = x[labels == labels[idx_b]].mean(axis=0)
-                    da = np.linalg.norm(x[idx_a] - centroid_a)
-                    db = np.linalg.norm(x[idx_b] - centroid_b)
-                    remove = idx_b if da <= db else idx_a
-                    to_remove.add(remove)
-                    changed = True
-        current = [i for i in current if i not in to_remove]
-
-        represented_clusters = {labels[i] for i in current}
-        for _ in range(len(to_remove)):
-            unrepresented = [
-                c for c in np.unique(labels) if c not in represented_clusters
-            ]
-            if not unrepresented:
-                break
-            variances = {
-                c: float(np.var(x[labels == c], axis=0).sum()) for c in unrepresented
-            }
-            best_cluster = max(variances, key=variances.__getitem__)
-            cluster_members = np.where(labels == best_cluster)[0]
-            centroid = x[cluster_members].mean(axis=0)
-            dists = np.linalg.norm(x[cluster_members] - centroid, axis=1)
-            new_medoid = int(cluster_members[np.argmin(dists)])
-            current.append(new_medoid)
-            represented_clusters.add(best_cluster)
-
-    return current
-
-
-def _check_extreme(
-    indices: list[int], df: pd.DataFrame, meta_df: pd.DataFrame
-) -> list[int]:
+def _check_extreme(indices: list[int], df: pd.DataFrame) -> list[int]:
     current = list(indices)
     checks = [
         ("coldest", "hdd18", True),
@@ -165,16 +109,14 @@ def run_qc(
     df: pd.DataFrame,
     meta_df: pd.DataFrame,
     forced_cities: list[str],
-    cfg: QCConfigSchema,
 ) -> QCResult:
     selection_types: dict[int, str] = {}
 
     current = list(medoid_indices)
-    merged = _geographic_dedup(current, labels, x, meta_df, cfg.geo_dedup_threshold_km)
-    for idx in merged:
+    for idx in current:
         selection_types[idx] = "medoid"
 
-    extremes = _check_extreme(merged, df, meta_df)
+    extremes = _check_extreme(current, df)
     for idx in extremes:
         if idx not in selection_types:
             selection_types[idx] = "extreme_supplement"
