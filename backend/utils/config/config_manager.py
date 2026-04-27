@@ -3,6 +3,7 @@ from pathlib import Path
 from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
+from backend.citys.models.schemas import CitySelectionConfigSchema
 from backend.models.config_models import (
     ECMParametersConfig,
     OptimizationConfig,
@@ -24,6 +25,7 @@ class ConfigManager:
         self.ecm_parameters = self._parse_ecm_parameters_config()
         self.pv = self._parse_pv_config()
         self.storage = self._parse_storage_config()
+        self.citys = self._parse_citys_config()
 
     def _load_config(self) -> ListConfig | DictConfig:
         if not self._config_dir.exists():
@@ -132,6 +134,17 @@ class ConfigManager:
         )
 
         return StorageConfig(**storage_dict)  # type: ignore
+
+    def _parse_citys_config(self) -> CitySelectionConfigSchema:
+        citys_config = OmegaConf.select(self._raw_config, "citys")
+        if citys_config is None:
+            logger.warning("Citys config not found; using defaults")
+            return CitySelectionConfigSchema()
+
+        citys_dict = OmegaConf.to_container(
+            citys_config, resolve=True, throw_on_missing=False
+        )
+        return CitySelectionConfigSchema.model_validate(citys_dict)
 
     @property
     def value(self):

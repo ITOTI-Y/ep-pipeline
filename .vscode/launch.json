@@ -26,6 +26,15 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["visualization"]
+        },
+        {
+            "name": "City Selection",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["city", "run-all"]
         }
     ]
 }

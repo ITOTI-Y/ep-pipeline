@@ -1,0 +1,11 @@
+citys:
+  preprocess:
+    geo_weight: 0.3
+    pca_variance: 0.95
+
+  forced_cities:
+    - Beijing
+    - Shanghai
+    - Guangzhou
+    - Shenzhen
+    - Taipei

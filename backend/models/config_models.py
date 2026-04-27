@@ -33,6 +33,9 @@ class PathsConfig(BaseModel):
     ftmy_files: list[Path] = Field(
         default_factory=list, description="Future TMY weather files"
     )
+    epw_dir: Path = Field(..., description="EPW weather file directory")
+    dest_dir: Path = Field(..., description="DEST data directory")
+    citys_dir: Path = Field(..., description="Citys output data directory")
 
     @field_validator("eplus_executable", "idd_file")
     def validate_file_exists(cls, v: Path) -> Path:

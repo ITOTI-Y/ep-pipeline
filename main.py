@@ -11,6 +11,7 @@ from joblib import Parallel, cpu_count, delayed
 from loguru import logger
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
+from backend.citys.cli import app as citys_app
 from backend.models import (
     Building,
     BuildingType,
@@ -36,6 +37,7 @@ from backend.services.simulation import (
 from backend.utils.config import ConfigManager, set_logger
 
 app = typer.Typer()
+app.add_typer(citys_app, name="city", help="City selection pipeline")
 
 
 def base_services_prepare(
@@ -243,7 +245,7 @@ def simulation_all(
 
 @app.command()
 def visualization():
-    from backend.visualization.charts import ChartGenerator
+    from backend.viz.charts import ChartGenerator
 
     chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
     chart_generator.generate_all()

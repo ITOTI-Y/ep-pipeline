@@ -15,7 +15,7 @@ wheels/
 
 # Output files
 output/
-data/*
+data/
 
 !data/ftmys
 !data/tmys

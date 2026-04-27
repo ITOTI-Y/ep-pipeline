@@ -22,7 +22,7 @@ from shapely.geometry import box
 
 from backend.models import SimulationResult
 from backend.utils.config import ConfigManager
-from backend.visualization.journal_style import (
+from backend.viz.journal_style import (
     BUILDING_AND_ENVIRONMENT_STYLE,
     FigureWidth,
     ImageType,
