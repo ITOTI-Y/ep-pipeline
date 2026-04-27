@@ -60,10 +60,10 @@ def _geographic_dedup(
                     meta_df.loc[idx_b, "longitude"],
                 )
                 if d < threshold_km:
-                    mask = np.isin(labels, [labels[idx_a], labels[idx_b]])
-                    centroid = x[mask].mean(axis=0)
-                    da = np.linalg.norm(x[idx_a] - centroid)
-                    db = np.linalg.norm(x[idx_b] - centroid)
+                    centroid_a = x[labels == labels[idx_a]].mean(axis=0)
+                    centroid_b = x[labels == labels[idx_b]].mean(axis=0)
+                    da = np.linalg.norm(x[idx_a] - centroid_a)
+                    db = np.linalg.norm(x[idx_b] - centroid_b)
                     remove = idx_b if da <= db else idx_a
                     to_remove.add(remove)
                     changed = True

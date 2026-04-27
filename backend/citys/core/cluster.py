@@ -33,13 +33,13 @@ def evaluate_k_range(x: NDArray, z: NDArray, cfg: ClusterConfigSchema) -> pd.Dat
         sil = silhouette_score(x, labels)
         ch = calinski_harabasz_score(x, labels)
 
-        wk = _compute_wk(x, labels)
+        wk = max(_compute_wk(x, labels), 1e-300)
         log_wk_refs = []
         for _ in range(cfg.n_gap_refs):
             x_ref = rng.uniform(x_min, x_max, size=x.shape)
             z_ref = linkage(x_ref, method="ward")
             labels_ref = fcluster(z_ref, t=k, criterion="maxclust")
-            log_wk_refs.append(np.log(_compute_wk(x_ref, labels_ref)))
+            log_wk_refs.append(np.log(max(_compute_wk(x_ref, labels_ref), 1e-300)))
         log_wk_refs_arr = np.array(log_wk_refs)
         gap = float(np.mean(log_wk_refs_arr) - np.log(wk))
         gap_sk = float(np.std(log_wk_refs_arr) * np.sqrt(1 + 1 / cfg.n_gap_refs))

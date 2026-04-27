@@ -2,7 +2,6 @@ from typing import NamedTuple, TypedDict
 
 import numpy as np
 import pandas as pd
-from citys.models.schemas import PreprocessConfigSchema
 from numpy.typing import NDArray
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -13,9 +12,10 @@ from backend.citys.core._share import (
     GROUP_C_COLS,
     META_COLS,
 )
+from backend.citys.models.schemas import PreprocessConfigSchema
 
 
-class Info(TypedDict):
+class PreprocessInfo(TypedDict):
     n_pca_components: int
     pca_explained_variance_ratio: list[float]
     pca_cumulative_variance: float
@@ -28,7 +28,7 @@ class PreprocessResult(NamedTuple):
     x: NDArray[np.float64]
     feature_names: list[str]
     meta_df: pd.DataFrame
-    info: Info
+    info: PreprocessInfo
 
 
 def preprocess(df: pd.DataFrame, cfg: PreprocessConfigSchema) -> PreprocessResult:
@@ -56,7 +56,7 @@ def preprocess(df: pd.DataFrame, cfg: PreprocessConfigSchema) -> PreprocessResul
         + [f"{c}_w" for c in GROUP_C_COLS]
     )
 
-    info: Info = Info(
+    info: PreprocessInfo = PreprocessInfo(
         n_pca_components=int(x_b_pca.shape[1]),
         pca_explained_variance_ratio=pca.explained_variance_ratio_.tolist(),
         pca_cumulative_variance=float(pca.explained_variance_ratio_.sum()),

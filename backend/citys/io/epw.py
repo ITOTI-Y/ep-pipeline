@@ -3,22 +3,21 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Final, NamedTuple
 
 import httpx
 from loguru import logger
-from pydantic.dataclasses import dataclass
 from tqdm.asyncio import tqdm as tqdm_async
 
 from backend.citys.io._share import TMYX_BASE_URL
 from backend.citys.models.schemas import DownloadConfigSchema
 
-YEARS = "2011-2025"
-ZIP_PATTERN = f'href="(\\S+\\.{YEARS}\\.zip)"'
-PARSE_PATTERN = r"(\S+)/(\S+)\.(\d+)_TMYx\.(\d{4}-\d{4})\.zip"
+YEARS: Final = "2011-2025"
+ZIP_PATTERN: Final = f'href="(\\S+\\.{YEARS}\\.zip)"'
+PARSE_PATTERN: Final = r"(\S+)/(\S+)\.(\d+)_TMYx\.(\d{4}-\d{4})\.zip"
 
 
-@dataclass
-class ZipLink:
+class ZipLink(NamedTuple):
     link: str
     city: str
     province: str
@@ -26,18 +25,15 @@ class ZipLink:
     years: tuple[int, int]
 
 
-async def _parse_city_name(city_match: str) -> str:
-    process1 = city_match.split("_")[-1]
-    process2 = process1.split(".")[0]
-    city_name = process2.split("-")[-1]
-    return city_name
+def _parse_city_name(city_match: str) -> str:
+    return city_match.split("_")[-1].split(".")[0].split("-")[-1]
 
 
-async def _parse_zip_links(link: str) -> ZipLink | None:
+def _parse_zip_links(link: str) -> ZipLink | None:
     match = re.match(PARSE_PATTERN, link)
     if match:
         province = match.group(1).split("_")[-1]
-        city = await _parse_city_name(match.group(2))
+        city = _parse_city_name(match.group(2))
         wmo_id = match.group(3)
         years = match.group(4).split("-")
         return ZipLink(
@@ -57,7 +53,7 @@ async def _download_one(
     semaphore: asyncio.Semaphore,
     cfg: DownloadConfigSchema,
 ) -> Path | None:
-    zip_link = await _parse_zip_links(url)
+    zip_link = _parse_zip_links(url)
     if zip_link is None:
         logger.warning(f"Failed to parse zip link: {url}")
         return None
@@ -81,7 +77,10 @@ async def _download_one(
                     temp_path.write_bytes(resp.content)
                     with zipfile.ZipFile(temp_path, "r") as zip_ref:
                         zip_ref.extractall(temp_dir)
-                        epw_file = next(Path(temp_dir).glob("*.epw"))
+                        epw_file = next(Path(temp_dir).glob("*.epw"), None)
+                        if epw_file is None:
+                            logger.warning(f"No .epw file in ZIP for {new_name}")
+                            return None
                         epw_file.rename(dest)
                 return dest
             except Exception as e:

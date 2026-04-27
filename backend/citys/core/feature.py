@@ -1,20 +1,16 @@
 from pathlib import Path
-from typing import TypedDict
+from typing import Final, TypedDict
 
 import numpy as np
 import pandas as pd
 from loguru import logger
-from pydantic.dataclasses import dataclass
 
-
-@dataclass
-class EPWFile:
-    dry_bulb_temperature: int = 6
-    dew_point_temperature: int = 7
-    global_horizontal_radiation: int = 13  # Wh/m²
-    direct_normal_radiation: int = 15  # Wh/m²
-    wind_speed: int = 21  # m/s
-    month: int = 1
+EPW_COL_DRY_BULB_TEMPERATURE: Final = 6
+EPW_COL_DEW_POINT_TEMPERATURE: Final = 7
+EPW_COL_GLOBAL_HORIZONTAL_RADIATION: Final = 13  # Wh/m²
+EPW_COL_DIFFUSE_HORIZONTAL_RADIATION: Final = 15  # Wh/m²
+EPW_COL_WIND_SPEED: Final = 21  # m/s
+EPW_COL_MONTH: Final = 1
 
 
 class EPWHeader(TypedDict):
@@ -46,12 +42,12 @@ def _parse_epw_data(path: Path) -> pd.DataFrame:
 def _extract_one(path: Path) -> dict:
     header = _parse_epw_header(path)
     df = _parse_epw_data(path)
-    temp = df[EPWFile.dry_bulb_temperature].values
-    dew = df[EPWFile.dew_point_temperature].values
-    ghi = df[EPWFile.global_horizontal_radiation].values
-    dhi = df[EPWFile.direct_normal_radiation].values
-    wind = df[EPWFile.wind_speed].values
-    month = df[EPWFile.month].values
+    temp = df[EPW_COL_DRY_BULB_TEMPERATURE].values
+    dew = df[EPW_COL_DEW_POINT_TEMPERATURE].values
+    ghi = df[EPW_COL_GLOBAL_HORIZONTAL_RADIATION].values
+    dhi = df[EPW_COL_DIFFUSE_HORIZONTAL_RADIATION].values
+    wind = df[EPW_COL_WIND_SPEED].values
+    month = df[EPW_COL_MONTH].values
 
     row = {}
     row.update(header)
@@ -81,7 +77,7 @@ def extract_all(epw_dir: Path, output_path: Path) -> pd.DataFrame:
         try:
             rows.append(_extract_one(f))
         except Exception:
-            logger.warning(f"Failed to extract features from {f}")
+            logger.opt(exception=True).warning(f"Failed to extract features from {f}")
     logger.info(f"Extracted features from {len(rows)}/{len(epw_files)} EPW files")
     df = pd.DataFrame(rows)
     output_path.parent.mkdir(parents=True, exist_ok=True)

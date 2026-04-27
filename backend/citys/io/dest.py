@@ -55,7 +55,7 @@ async def _download_with_fallback(
                 return key, "ok"
             except httpx.ConnectError:
                 await asyncio.sleep(cfg.backoff_wait)
-            except Exception as e:
+            except (httpx.HTTPStatusError, KeyError, ValueError) as e:
                 logger.debug(f"DeST download failed {key}: {e}")
 
     return f"{short}_{city}_none", "fail"
@@ -66,7 +66,7 @@ async def fetch_catalog(cfg: DownloadConfigSchema) -> dict[tuple[str, int, str],
     async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
         for attempt in range(cfg.max_retries):
             try:
-                resp = await client.get(f"{DEST_API_URL}")
+                resp = await client.get(DEST_API_URL)
                 resp.raise_for_status()
                 data = resp.json()
                 for entry in data.get("models", data if isinstance(data, list) else []):
@@ -79,6 +79,10 @@ async def fetch_catalog(cfg: DownloadConfigSchema) -> dict[tuple[str, int, str],
                 return catalog
             except Exception as e:
                 logger.warning(f"Catalog fetch attempt {attempt + 1} failed: {e}")
+                if attempt == cfg.max_retries - 1:
+                    raise RuntimeError(
+                        f"Failed to fetch catalog after {cfg.max_retries} attempts"
+                    ) from e
                 await asyncio.sleep(cfg.retry_wait)
     return catalog
 
@@ -106,6 +110,8 @@ async def download_dest_models(
         for r in results:
             if isinstance(r, tuple):
                 report[r[0]] = r[1]
+            elif isinstance(r, BaseException):
+                logger.warning(f"DeST download task failed: {r}")
 
     ok = sum(1 for v in report.values() if v == "ok")
     logger.info(f"DeST download: {ok}/{len(report)} ok")
