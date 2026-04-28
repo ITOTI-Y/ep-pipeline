@@ -35,6 +35,15 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "run-all"]
+        },
+        {
+            "name": "City Dest",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["city", "download-dest"]
         }
     ]
 }

@@ -28,7 +28,7 @@ class ClusterConfigSchema(BaseCitySchema):
 
 class DownloadConfigSchema(BaseCitySchema):
     request_interval: float = Field(1.5, ge=0.0)
-    max_retries: int = Field(10, ge=1)
+    max_retries: int = Field(3, ge=1)
     retry_wait: float = Field(60.0, ge=1.0)
     backoff_wait: float = Field(30.0, ge=1.0)
     concurrency: int = Field(5, ge=1)

@@ -92,7 +92,7 @@ def _check_forced(
         matched = [
             i
             for i in meta_df.index
-            if meta_df.loc[i, "city_name"].lower().startswith(name_lower)
+            if meta_df.loc[i, "city"].lower().startswith(name_lower)
         ]
         if not matched:
             continue

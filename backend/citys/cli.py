@@ -46,18 +46,18 @@ def cluster() -> None:
     from backend.citys.core.qc import run_qc
 
     cfg = config
-    out = Path(cfg.paths.citys_dir)
-    out.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(cfg.paths.citys_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(out / "processed_features.csv")
+    df = pd.read_csv(output_dir / "processed_features.csv")
     _corr, x, _feature_names, meta_df, prep_info = preprocess(df, cfg.citys.preprocess)
 
-    with open(out / "output_preprocessing_info.json", "w") as f:
+    with open(output_dir / "output_preprocessing_info.json", "w") as f:
         json.dump(prep_info, f, indent=2)
 
     z = compute_ward_linkage(x)
     metrics_df = evaluate_k_range(x, z, cfg.citys.cluster)
-    metrics_df.to_csv(out / "output_k_metrics.csv", index=False)
+    metrics_df.to_csv(output_dir / "output_k_metrics.csv", index=False)
 
     if cfg.citys.cluster.override_k is not None:
         optimal_k = cfg.citys.cluster.override_k
@@ -87,7 +87,9 @@ def cluster() -> None:
         rep_rows.append(row)
     rep_df = pd.DataFrame(rep_rows)
     rep_df.to_csv(
-        out / "output_representative_cities.csv", index=False, encoding="utf-8-sig"
+        output_dir / "output_representative_cities.csv",
+        index=False,
+        encoding="utf-8-sig",
     )
 
     all_assign = meta_df.copy()
@@ -97,33 +99,33 @@ def cluster() -> None:
         i in qc_result.final_indices for i in range(len(df))
     ]
     all_assign.to_csv(
-        out / "output_cluster_assignments.csv", index=False, encoding="utf-8-sig"
+        output_dir / "output_cluster_assignments.csv", index=False, encoding="utf-8-sig"
     )
 
-    np.save(out / "cache_ward_linkage.npy", z)
+    np.save(output_dir / "cache_ward_linkage.npy", z)
 
     logger.info(f"Clustering complete: {len(qc_result.final_indices)} cities selected")
 
 
 @app.command()
 def download_dest() -> None:
+    import json
+
     import pandas as pd
 
     from backend.citys.io.dest import download_dest_models, fetch_catalog
 
     cfg = config
     out = Path(cfg.paths.citys_dir)
-    mapping_path = out / "output_dest_mapping.csv"
-    if not mapping_path.exists():
-        logger.error(f"{mapping_path} not found. Run 'city cluster' first.")
-        raise typer.Exit(1)
-    mapping = pd.read_csv(mapping_path)
-    cities = mapping["dest_city"].unique().tolist()
+    rep_df = pd.read_csv(out / "output_representative_cities.csv")
+    _cities = rep_df["city"].unique().tolist()
 
     async def _run():
-        catalog = await fetch_catalog(cfg.citys.download)
+        catalog = await fetch_catalog()
+        with open(out / "catalog.json", "w") as f:
+            json.dump([r.model_dump() for r in catalog], f, indent=4)
         return await download_dest_models(
-            cities, catalog, cfg.citys.download, Path(cfg.paths.dest_dir)
+            catalog, cfg.citys.download, Path(cfg.paths.dest_dir)
         )
 
     asyncio.run(_run())

@@ -2,6 +2,7 @@ from typing import Final
 
 TMYX_BASE_URL: Final = "https://climate.onebuilding.org/WMO_Region_2_Asia/CHN_China"
 DEST_API_URL: Final = "https://svr.dest.net.cn/api/v1"
+DEST_CATALOG_URL: Final = f"{DEST_API_URL}/all_model_names"
 DEST_LOAD_URL: Final = f"{DEST_API_URL}/load_model_file"
 
 BUILDING_TYPES: Final = [
@@ -27,8 +28,8 @@ BTYPE_SHORT: Final = {
     "Commercial office B": "CoB",
     "Government office A": "GoA",
     "Government office B": "GoB",
-    "High-rise apartment (slab type)": "HighS",
-    "High-rise apartment (tower type)": "HighT",
+    "High-rise apartment(slab type)": "HighS",
+    "High-rise apartment(tower type)": "HighT",
     "Low-rise apartment": "Low",
     "Terraced house": "Th",
     "Large hotel": "LH",

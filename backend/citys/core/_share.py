@@ -15,7 +15,7 @@ GROUP_B_COLS: Final = [f"temp_m{i:02d}" for i in range(1, 13)] + [
 
 GROUP_C_COLS: Final = ["latitude", "longitude", "elevation"]
 META_COLS: Final = [
-    "city_name",
+    "city",
     "province",
     "wmo_id",
     "latitude",

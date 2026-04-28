@@ -26,7 +26,7 @@ class ZipLink(NamedTuple):
 
 
 def _parse_city_name(city_match: str) -> str:
-    return city_match.split("_")[-1].split(".")[0].split("-")[-1]
+    return city_match.split("_")[-1].split(".")[0].split("-")[0]
 
 
 def _parse_zip_links(link: str) -> ZipLink | None:
@@ -59,7 +59,7 @@ async def _download_one(
         return None
 
     link = zip_link.link
-    new_name = f"{zip_link.city}_{zip_link.wmo_id}.epw"
+    new_name = f"{zip_link.province}_{zip_link.city}_{zip_link.wmo_id}.epw"
     dest = output_dir / new_name
     if dest.exists():
         return dest

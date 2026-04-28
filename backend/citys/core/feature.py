@@ -12,9 +12,11 @@ EPW_COL_DIFFUSE_HORIZONTAL_RADIATION: Final = 15  # Wh/m²
 EPW_COL_WIND_SPEED: Final = 21  # m/s
 EPW_COL_MONTH: Final = 1
 
+REMOVE_LIST: Final = [".AP", ".Intl"]
+
 
 class EPWHeader(TypedDict):
-    city_name: str
+    city: str
     province: str
     wmo_id: str
     latitude: float
@@ -25,9 +27,11 @@ class EPWHeader(TypedDict):
 def _parse_epw_header(path: Path) -> EPWHeader:
     with open(path, encoding="utf-8", errors="replace") as f:
         line1 = f.readline().strip().split(",")
+        for remove in REMOVE_LIST:
+            line1[1] = line1[1].removesuffix(remove)
     return EPWHeader(
-        city_name=line1[1],
-        province=line1[3],
+        city=line1[1].split("-")[0],
+        province=line1[2],
         wmo_id=line1[5],
         latitude=float(line1[6]),
         longitude=float(line1[7]),
