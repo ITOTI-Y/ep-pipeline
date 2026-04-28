@@ -17,7 +17,7 @@ from backend.citys.io._share import (
 from backend.citys.models.schemas import DownloadConfigSchema
 
 
-class DestCatalogEntry(BaseModel):
+class DestCatalogEntrySchema(BaseModel):
     city: str
     year: int
     btype: str
@@ -25,7 +25,7 @@ class DestCatalogEntry(BaseModel):
 
 async def _download_dest_one(
     client: httpx.AsyncClient,
-    entry: DestCatalogEntry,
+    entry: DestCatalogEntrySchema,
     cfg: DownloadConfigSchema,
     output_dir: Path,
     semaphore: asyncio.Semaphore,
@@ -73,10 +73,9 @@ async def _download_dest_one(
                     await asyncio.sleep(wait)
                 else:
                     raise
-    return dest
 
 
-async def fetch_catalog() -> list[DestCatalogEntry]:
+async def fetch_catalog() -> list[DestCatalogEntrySchema]:
     entries = []
     async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
         resp = await client.get(DEST_CATALOG_URL)
@@ -84,14 +83,14 @@ async def fetch_catalog() -> list[DestCatalogEntry]:
         data = resp.json()
         for key in data.get("names_mapping", {}):
             btype, city, year = key.split("_")
-            entries.append(DestCatalogEntry(btype=btype, city=city, year=int(year)))
+            entries.append(DestCatalogEntrySchema(btype=btype, city=city, year=int(year)))
     entries.sort(key=lambda e: (e.btype, e.city, -e.year))
     deduped = [next(g) for _, g in groupby(entries, key=lambda e: (e.btype, e.city))]
     return deduped
 
 
 async def download_dest_models(
-    catalog: list[DestCatalogEntry],
+    catalog: list[DestCatalogEntrySchema],
     cfg: DownloadConfigSchema,
     output_dir: Path,
 ) -> list[Path]:
