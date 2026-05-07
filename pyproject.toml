@@ -58,4 +58,6 @@ indent-style = "space"
 docstring-code-format = true
 
 [dependency-groups]
-dev = []
+dev = [
+    "idfpy==25.1.*",
+]

@@ -463,6 +463,11 @@ dependencies = [
     { name = "xgboost" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "idfpy" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "cartopy", specifier = ">=0.25.0" },
@@ -489,7 +494,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [{ name = "idfpy", specifier = "==25.1.*" }]
 
 [[package]]
 name = "eppy"
@@ -666,6 +671,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+]
+
+[[package]]
+name = "idfpy"
+version = "25.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "loguru" },
+    { name = "pydantic" },
+    { name = "typer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/6b/dc4695cce8f3ae80bb6a311db8f84b63f70342500ecf2fd5697685022fdf/idfpy-25.1.0.tar.gz", hash = "sha256:ecb7ed17398becc8a5c55de6fa5a9c2cd4160d56c865361f4576e32364c607a4", size = 600410, upload-time = "2026-05-07T13:51:03.368Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/65/8065a3f583cac6c2a0cea2844998523d22a9fbb364850a332a401a52be70/idfpy-25.1.0-py3-none-any.whl", hash = "sha256:5bced4152a9ced549ec9e7828202be8f7a1c70110f1576417193a4bde860ba83", size = 613150, upload-time = "2026-05-07T13:51:01.448Z" },
 ]
 
 [[package]]
