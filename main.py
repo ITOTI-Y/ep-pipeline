@@ -19,6 +19,9 @@ from backend.models import (
     SimulationType,
     Weather,
 )
+from backend.script.gen_manifest import check as manifest_check
+from backend.script.gen_manifest import generate as manifest_generate
+from backend.script.gen_manifest import save as manifest_save
 from backend.script.parse_data import (  # noqa: F401
     parse_optimal_data,
     parse_result_parameters,
@@ -254,6 +257,22 @@ def visualization():
 @app.command()
 def parse_result():
     parse_result_parameters(ConfigManager(Path("backend/configs")))
+
+
+@app.command()
+def manifest(
+    check: Annotated[
+        bool,
+        typer.Option("--check", help="Check data/output against existing manifest"),
+    ] = False,
+):
+    """Generate or verify data/output manifest."""
+    if check:
+        ok = manifest_check()
+        raise typer.Exit(code=0 if ok else 1)
+    data = manifest_generate()
+    manifest_save(data)
+    print(f"Manifest saved: {len(data)} files recorded.")
 
 
 if __name__ == "__main__":
