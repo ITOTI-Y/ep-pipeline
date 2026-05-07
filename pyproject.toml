@@ -48,7 +48,8 @@ select = [
 
 ignore = [
     "E501", # Line too long
-    "N805"
+    "N805",
+    "N806",
 ]
 
 [tool.ruff.format]
