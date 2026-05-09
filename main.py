@@ -6,7 +6,7 @@ from pickle import dump, load
 from typing import Annotated
 
 import typer
-from eppy.modeleditor import IDF
+from idfpy import IDF
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
 
@@ -169,15 +169,18 @@ def pv_services_prepare(
 
 
 @app.command()
-def simulation_all(
+def simulate(
     city: Annotated[str, typer.Option(help="The city to run the simulation for")],
+    n_jobs: Annotated[
+        int,
+        typer.Option("--n-jobs", "-n", help="The number of jobs to run in parallel"),
+    ] = cpu_count() - 2 if cpu_count() > 2 else 1,
 ):
     def _single_run(
         job: SimulationJob, service: ISimulationService, config: ConfigManager
     ):
         set_logger(config.paths.log_dir)
-        IDF.setiddname(str(config.paths.idd_file))
-        job.idf = IDF(str(job.building.idf_file_path))
+        job.idf = IDF.load(job.building.idf_file_path)
 
         result = service.run()
 
@@ -216,8 +219,6 @@ def simulation_all(
         weathers.append(weather)
 
     buildings_weather_combinations = list(product(buildings, weathers))
-
-    n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
 
     base_services = base_services_prepare(config, buildings_weather_combinations)
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(

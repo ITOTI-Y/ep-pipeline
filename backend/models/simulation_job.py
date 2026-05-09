@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from eppy.modeleditor import IDF
+from idfpy import IDF
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import SimulationStatus, SimulationType

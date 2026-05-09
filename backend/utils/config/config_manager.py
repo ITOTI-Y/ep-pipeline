@@ -63,7 +63,7 @@ class ConfigManager:
             throw_on_missing=True,
         )
 
-        return PathsConfig(**paths_dict)  # type: ignore
+        return PathsConfig.model_validate(paths_dict)
 
     def _parse_simulation_config(self) -> SimulationConfig:
         simulation_config = OmegaConf.select(self._raw_config, "simulation")
@@ -77,7 +77,7 @@ class ConfigManager:
             throw_on_missing=True,
         )
 
-        return SimulationConfig(**sim_dict)  # type: ignore
+        return SimulationConfig.model_validate(sim_dict)
 
     def _parse_optimization_config(self) -> OptimizationConfig:
         optimization_config = OmegaConf.select(self._raw_config, "optimization")
@@ -91,7 +91,7 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return OptimizationConfig(**optimization_dict)  # type: ignore
+        return OptimizationConfig.model_validate(optimization_dict)
 
     def _parse_ecm_parameters_config(self) -> ECMParametersConfig:
         ecm_parameters_config = OmegaConf.select(self._raw_config, "ecm_parameters")
@@ -105,7 +105,7 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return ECMParametersConfig(**ecm_parameters_dict)  # type: ignore
+        return ECMParametersConfig.model_validate(ecm_parameters_dict)
 
     def _parse_pv_config(self) -> PVConfig:
         pv_config = OmegaConf.select(self._raw_config, "pv")
@@ -119,7 +119,7 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return PVConfig(**pv_dict)  # type: ignore
+        return PVConfig.model_validate(pv_dict)
 
     def _parse_storage_config(self) -> StorageConfig:
         storage_config = OmegaConf.select(self._raw_config, "storage")
@@ -133,7 +133,7 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return StorageConfig(**storage_dict)  # type: ignore
+        return StorageConfig.model_validate(storage_dict)
 
     def _parse_citys_config(self) -> CitySelectionConfigSchema:
         citys_config = OmegaConf.select(self._raw_config, "citys")

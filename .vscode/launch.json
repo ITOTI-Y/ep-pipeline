@@ -1,13 +1,13 @@
 {
     "configurations": [
                 {
-            "name": "Simulation",
+            "name": "Simulate City",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulation-all", "--city", "Chicago"]
+            "args": ["simulate", "--city", "Chicago", "--n-jobs", "1"]
         },
         {
             "name": "Parse Result",

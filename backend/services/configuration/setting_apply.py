@@ -1,4 +1,5 @@
-from eppy.modeleditor import IDF
+from idfpy import IDF
+from idfpy.models.simulation import SimulationControl
 from loguru import logger
 
 from backend.models import SimulationJob
@@ -19,15 +20,15 @@ class SettingApply(IApply):
         logger.info("Setting configuration applied successfully")
 
     def _configure_setting(self, idf: IDF) -> None:
-        sim_control_list = idf.idfobjects.get("SIMULATIONCONTROL", [])
+        sim_control_list = idf.all_of_type(SimulationControl)
 
-        for sim_control in sim_control_list:
-            sim_control.Do_Zone_Sizing_Calculation = "Yes"
-            sim_control.Do_System_Sizing_Calculation = "Yes"
-            sim_control.Do_Plant_Sizing_Calculation = "Yes"
-            sim_control.Run_Simulation_for_Sizing_Periods = "No"
-            sim_control.Run_Simulation_for_Weather_File_Run_Periods = "Yes"
-            sim_control.Do_HVAC_Sizing_Simulation_for_Sizing_Periods = "Yes"
-            sim_control.Maximum_Number_of_HVAC_Sizing_Simulation_Passes = 2
+        for _, sim_control in sim_control_list:
+            sim_control.do_zone_sizing_calculation = "Yes"
+            sim_control.do_system_sizing_calculation = "Yes"
+            sim_control.do_plant_sizing_calculation = "Yes"
+            sim_control.run_simulation_for_sizing_periods = "No"
+            sim_control.run_simulation_for_weather_file_run_periods = "Yes"
+            sim_control.do_hvac_sizing_simulation_for_sizing_periods = "Yes"
+            sim_control.maximum_number_of_hvac_sizing_simulation_passes = 2
 
         logger.success("Setting configuration applied successfully")

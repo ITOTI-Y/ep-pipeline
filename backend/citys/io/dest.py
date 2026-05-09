@@ -83,7 +83,9 @@ async def fetch_catalog() -> list[DestCatalogEntrySchema]:
         data = resp.json()
         for key in data.get("names_mapping", {}):
             btype, city, year = key.split("_")
-            entries.append(DestCatalogEntrySchema(btype=btype, city=city, year=int(year)))
+            entries.append(
+                DestCatalogEntrySchema(btype=btype, city=city, year=int(year))
+            )
     entries.sort(key=lambda e: (e.btype, e.city, -e.year))
     deduped = [next(g) for _, g in groupby(entries, key=lambda e: (e.btype, e.city))]
     return deduped
