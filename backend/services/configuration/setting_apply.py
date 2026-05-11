@@ -1,5 +1,5 @@
 from idfpy import IDF
-from idfpy.models.simulation import SimulationControl
+from idfpy.models import SimulationControl
 from loguru import logger
 
 from backend.models import SimulationJob
@@ -22,7 +22,7 @@ class SettingApply(IApply):
     def _configure_setting(self, idf: IDF) -> None:
         sim_control_list = idf.all_of_type(SimulationControl)
 
-        for _, sim_control in sim_control_list:
+        for sim_control in sim_control_list.values():
             sim_control.do_zone_sizing_calculation = "Yes"
             sim_control.do_system_sizing_calculation = "Yes"
             sim_control.do_plant_sizing_calculation = "Yes"

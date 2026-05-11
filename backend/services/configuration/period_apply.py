@@ -1,5 +1,5 @@
 from idfpy import IDF
-from idfpy.models.location import RunPeriod
+from idfpy.models import RunPeriod
 from loguru import logger
 
 from backend.models import SimulationJob

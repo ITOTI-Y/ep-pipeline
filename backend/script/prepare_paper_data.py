@@ -521,7 +521,7 @@ class CambiumFactors:
 def load_cambium(scenario: str, year: int) -> CambiumFactors:
     """Load Cambium CSV and pre-compute distloss-adjusted emission factors."""
     path = cambium_path(scenario, year)
-    df = pd.read_csv(  # ty: ignore[no-matching-overload]
+    df = pd.read_csv(
         path,
         skiprows=5,
         usecols=["aer_load_co2e", "lrmer_co2e", "distloss_rate_avg"],

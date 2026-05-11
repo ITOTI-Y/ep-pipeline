@@ -1,4 +1,8 @@
-from eppy.modeleditor import IDF
+from idfpy import IDF
+from idfpy.models import (
+    ElectricLoadCenterStorageBattery,
+    ElectricLoadCenterStorageSimple,
+)
 from loguru import logger
 
 from backend.models import BuildingType, SimulationJob
@@ -21,30 +25,36 @@ class StorageApply(IApply):
         logger.info("Storage configuration applied successfully")
 
     def _configure_storage(self, idf: IDF) -> None:
-        self._remove_objects(idf, "ElectricLoadCenter:Storage:Simple")
-        self._remove_objects(idf, "ElectricLoadCenter:Storage:Battery")
+        self._remove_objects(idf, ElectricLoadCenterStorageSimple)
+        self._remove_objects(idf, ElectricLoadCenterStorageBattery)
 
-        storage = idf.newidfobject("ElectricLoadCenter:Storage:Simple")
-        storage.Name = "PV_Storage"
-        storage.Availability_Schedule_Name = (
-            "Always_on"
-            if self._config.storage.capacity[self._building_type.value] > 0
-            else "Always_off"
-        )
-        storage.Radiative_Fraction_for_Zone_Heat_Gains = 0.0
-        storage.Nominal_Energetic_Efficiency_for_Charging = 0.95
-        storage.Nominal_Discharging_Energetic_Efficiency = 0.95
-        storage.Maximum_Storage_Capacity = (
-            self._config.storage.capacity[self._building_type.value] * 3600000
-        )  # Convert kWh to J
-        storage.Maximum_Power_for_Discharging = (
-            self._config.storage.max_power[self._building_type.value] * 1000
-        )
-        storage.Maximum_Power_for_Charging = (
-            self._config.storage.max_power[self._building_type.value] * 1000
-        )
-        storage.Initial_State_of_Charge = (
-            self._config.storage.capacity[self._building_type.value] * 3600000 * 0.5
+        idf.add(
+            ElectricLoadCenterStorageSimple(
+                name="PV_Storage",
+                availability_schedule_name="Always_on"
+                if self._config.storage.capacity[self._building_type.value] > 0
+                else "Always_off",
+                radiative_fraction_for_zone_heat_gains=0.0,
+                nominal_energetic_efficiency_for_charging=0.95,
+                nominal_discharging_energetic_efficiency=0.95,
+                maximum_storage_capacity=self._config.storage.capacity[
+                    self._building_type.value
+                ]
+                * 3600000,
+                maximum_power_for_discharging=self._config.storage.max_power[
+                    self._building_type.value
+                ]
+                * 1000,
+                maximum_power_for_charging=self._config.storage.max_power[
+                    self._building_type.value
+                ]
+                * 1000,
+                initial_state_of_charge=self._config.storage.capacity[
+                    self._building_type.value
+                ]
+                * 3600000
+                * 0.5,
+            )
         )
 
         logger.success("Storage configured successfully")

@@ -1,23 +1,19 @@
-from idfpy.models.advanced_construction import SurfaceControlMovableInsulation
-from idfpy.models.condensers import CoolingTowerVariableSpeed
-from idfpy.models.constructions import (
-    Construction,
-    MaterialNoMass,
-    WindowMaterialSimpleGlazingSystem,
-)
-from idfpy.models.hvac_design import SizingZone
-from idfpy.models.internal_gains import Lights
-from idfpy.models.plant_equipment import ChillerElectricReformulatedEIR
-from idfpy.models.schedules import ScheduleConstant
-from idfpy.models.thermal_zones import (
+from idfpy.models import (
+    AirTerminalSingleDuctVAVReheat,
     BuildingSurfaceDetailed,
+    ChillerElectricReformulatedEIR,
+    Construction,
+    CoolingTowerVariableSpeed,
     FenestrationSurfaceDetailed,
-)
-from idfpy.models.zone_airflow import (
+    Lights,
+    MaterialNoMass,
+    ScheduleConstant,
+    SizingZone,
+    SurfaceControlMovableInsulation,
+    WindowMaterialSimpleGlazingSystem,
     ZoneInfiltrationDesignFlowRate,
     ZoneVentilationWindandStackOpenArea,
 )
-from idfpy.models.zone_terminals import AirTerminalSingleDuctVAVReheat
 from loguru import logger
 
 from backend.models import ECMParameters, SimulationJob
@@ -203,7 +199,7 @@ class ECMApply(IApply):
         modified_count = 0
 
         if not infiltration_objects:
-            logger.warning("No ZONEINFILTRATION:DESIGNFLOWRATE objects found in IDF")
+            logger.warning("No ZoneInfiltrationDesignFlowRate objects found in IDF")
             return
 
         for infiltration in infiltration_objects.values():

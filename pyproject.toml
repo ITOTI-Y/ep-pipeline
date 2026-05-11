@@ -9,6 +9,7 @@ dependencies = [
     "deap>=1.4.3",
     "eppy>=0.5.63",
     "httpx>=0.28.1",
+    "idfpy>=26.1.0.post5",
     "joblib>=1.5.2",
     "kmedoids>=0.5.4",
     "loguru>=0.7.3",

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from idfpy import IDF
-from idfpy.models.outputs import (
+from idfpy.models import (
     OutputControlFiles,
     OutputControlTableStyle,
     OutputMeter,

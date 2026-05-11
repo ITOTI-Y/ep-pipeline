@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from copy import deepcopy
-from itertools import chain, product
+from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
 from typing import Annotated
@@ -230,20 +230,20 @@ def simulate(
     #     delayed(_single_run)(job, service, config) for job, service in _base_services
     # )
 
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in chain(_ecm_services)
-    )
+    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+    #     delayed(_single_run)(job, service, config)
+    #     for job, service in chain(_ecm_services)
+    # )
     # parse_results_to_csv(config)
 
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config)
-    #     for job, service in optimization_services
+    #     for job, service in _optimization_services
     # )
 
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config) for job, service in pv_services
-    # )
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config) for job, service in _pv_services
+    )
 
     # parse_optimal_data(config)
 

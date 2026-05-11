@@ -473,6 +473,7 @@ dependencies = [
     { name = "deap" },
     { name = "eppy" },
     { name = "httpx" },
+    { name = "idfpy" },
     { name = "joblib" },
     { name = "kmedoids" },
     { name = "loguru" },
@@ -503,6 +504,7 @@ requires-dist = [
     { name = "deap", specifier = ">=1.4.3" },
     { name = "eppy", specifier = ">=0.5.63" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "idfpy", specifier = ">=26.1.0.post5" },
     { name = "joblib", specifier = ">=1.5.2" },
     { name = "kmedoids", specifier = ">=0.5.4" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -704,7 +706,7 @@ wheels = [
 
 [[package]]
 name = "idfpy"
-version = "26.1.0.post4"
+version = "26.1.0.post5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -712,18 +714,18 @@ dependencies = [
     { name = "pydantic" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/76/1d/3ab35555d9aea7a22c53933b79c86b5c05c5c49a936fba6b18304b778b7b/idfpy-26.1.0.post4.tar.gz", hash = "sha256:33960aecbd838f684b6954394e6f845ca67da245064fa01f507bae81b53c463e", size = 606251, upload-time = "2026-05-09T04:29:45.977Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/30/73aaa7a521e41f5cbfda1cbee719da8347c5fd797a0d4cd001883befe176/idfpy-26.1.0.post5.tar.gz", hash = "sha256:e6c57d6f2dc7a52a0a6824c600f954e959f8067cbe5f990e8b33d1ee9e59311c", size = 619909, upload-time = "2026-05-11T10:05:11.341Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/60/bcd12ad9c7b7af9688e6caa1f1fc64064df32a595b0c5a48e161d3e187bd/idfpy-26.1.0.post4-py3-none-any.whl", hash = "sha256:ada31924fc8ddc72dffa015d90f9eb394c02193bcfc783c8fcbdba3d138bbb95", size = 619354, upload-time = "2026-05-09T04:29:44.126Z" },
+    { url = "https://files.pythonhosted.org/packages/72/7f/927805118070eb05a5250cdd84ca6810c068aa6d2e694828610aed66ac42/idfpy-26.1.0.post5-py3-none-any.whl", hash = "sha256:d658c87f0567b75523e17c176760f6e321f7a75adafb747392140974866d2f47", size = 633881, upload-time = "2026-05-11T10:05:09.332Z" },
 ]
 
 [[package]]
 name = "idna"
-version = "3.13"
+version = "3.14"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ce/cc/762dfb036166873f0059f3b7de4565e1b5bc3d6f28a414c13da27e442f99/idna-3.13.tar.gz", hash = "sha256:585ea8fe5d69b9181ec1afba340451fba6ba764af97026f92a91d4eef164a242", size = 194210, upload-time = "2026-04-22T16:42:42.314Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/b1/efac073e0c297ecf2fb33c346989a529d4e19164f1759102dee5953ee17e/idna-3.14.tar.gz", hash = "sha256:466d810d7a2cc1022bea9b037c39728d51ae7dad40d480fc9b7d7ecf98ba8ee3", size = 198272, upload-time = "2026-05-10T20:32:15.935Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/13/ad7d7ca3808a898b4612b6fe93cde56b53f3034dcde235acb1f0e1df24c6/idna-3.13-py3-none-any.whl", hash = "sha256:892ea0cde124a99ce773decba204c5552b69c3c67ffd5f232eb7696135bc8bb3", size = 68629, upload-time = "2026-04-22T16:42:40.909Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/3c/3f62dee257eb3d6b2c1ef2a09d36d9793c7111156a73b5654d2c2305e5ce/idna-3.14-py3-none-any.whl", hash = "sha256:e677eaf072e290f7b725f9acf0b3a2bd55f9fd6f7c70abe5f0e34823d0accf69", size = 72184, upload-time = "2026-05-10T20:32:14.295Z" },
 ]
 
 [[package]]
