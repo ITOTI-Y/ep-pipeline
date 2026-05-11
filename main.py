@@ -220,26 +220,27 @@ def simulate(
 
     buildings_weather_combinations = list(product(buildings, weathers))
 
-    base_services = base_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in base_services
+    _base_services = base_services_prepare(config, buildings_weather_combinations)
+    _ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+    _optimization_services = optimization_services_prepare(
+        config, buildings_weather_combinations
     )
-    # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+    _pv_services = pv_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in chain(base_services, ecm_services)
+    #     delayed(_single_run)(job, service, config) for job, service in _base_services
     # )
+
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in chain(_ecm_services)
+    )
     # parse_results_to_csv(config)
 
-    # optimization_services = optimization_services_prepare(
-    #     config, buildings_weather_combinations
-    # )
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config)
     #     for job, service in optimization_services
     # )
 
-    # pv_services = pv_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config) for job, service in pv_services
     # )

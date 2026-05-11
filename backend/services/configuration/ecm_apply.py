@@ -1,3 +1,5 @@
+from idfpy.models.constructions import WindowMaterialSimpleGlazingSystem, Construction
+from idfpy.models.thermal_zones import FenestrationSurfaceDetailed
 from loguru import logger
 
 from backend.models import ECMParameters, SimulationJob
@@ -58,34 +60,36 @@ class ECMApply(IApply):
         )
 
         if (
-            idf.getobject("WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM", window_material_name)
+            idf.all_of_type(WindowMaterialSimpleGlazingSystem).get(window_material_name)
             is not None
         ):
             return
 
-        idf.newidfobject(
-            "WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM",
-            Name=window_material_name,
-            UFactor=parameters.window_u_value,
-            Solar_Heat_Gain_Coefficient=parameters.window_shgc,
-            Visible_Transmittance=parameters.visible_transmittance,
+        idf.add(
+            WindowMaterialSimpleGlazingSystem(
+                name=window_material_name,
+                u_factor=parameters.window_u_value,
+                solar_heat_gain_coefficient=parameters.window_shgc,
+                visible_transmittance=parameters.visible_transmittance,
+            )
         )
 
         constructions_name = f"Construction_window_{window_material_name}"
 
-        idf.newidfobject(
-            "CONSTRUCTION",
-            Name=constructions_name,
-            Outside_Layer=window_material_name,
+        idf.add(
+            Construction(
+                name=constructions_name,
+                outside_layer=window_material_name,
+            )
         )
 
-        fenestration_surfaces = idf.idfobjects.get("FENESTRATIONSURFACE:DETAILED", [])
+        fenestration_surfaces = idf.all_of_type(FenestrationSurfaceDetailed)
         modified_count = 0
-        for surface in fenestration_surfaces:
-            if surface.Surface_Type.upper() == "WINDOW":
+        for surface_name, surface in fenestration_surfaces.items():
+            if surface.surface_type.upper() == "WINDOW":
                 surface.Construction_Name = constructions_name
                 logger.debug(
-                    f"Set construction name to {constructions_name} for {surface.Name}"
+                    f"Set construction name to {constructions_name} for {surface_name}"
                 )
                 modified_count += 1
 
