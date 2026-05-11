@@ -1,5 +1,23 @@
-from idfpy.models.constructions import WindowMaterialSimpleGlazingSystem, Construction
-from idfpy.models.thermal_zones import FenestrationSurfaceDetailed
+from idfpy.models.advanced_construction import SurfaceControlMovableInsulation
+from idfpy.models.condensers import CoolingTowerVariableSpeed
+from idfpy.models.constructions import (
+    Construction,
+    MaterialNoMass,
+    WindowMaterialSimpleGlazingSystem,
+)
+from idfpy.models.hvac_design import SizingZone
+from idfpy.models.internal_gains import Lights
+from idfpy.models.plant_equipment import ChillerElectricReformulatedEIR
+from idfpy.models.schedules import ScheduleConstant
+from idfpy.models.thermal_zones import (
+    BuildingSurfaceDetailed,
+    FenestrationSurfaceDetailed,
+)
+from idfpy.models.zone_airflow import (
+    ZoneInfiltrationDesignFlowRate,
+    ZoneVentilationWindandStackOpenArea,
+)
+from idfpy.models.zone_terminals import AirTerminalSingleDuctVAVReheat
 from loguru import logger
 
 from backend.models import ECMParameters, SimulationJob
@@ -118,41 +136,45 @@ class ECMApply(IApply):
             "UserDefined Insulation Material" + f"_{parameters.wall_insulation:.2f}"
         )
 
-        idf.newidfobject(
-            "Material:NoMass",
-            Name=insulation_materials_name,
-            Roughness="Rough",
-            Thermal_Resistance=parameters.wall_insulation,
-            Thermal_Absorptance=0.9,
-            Solar_Absorptance=0.7,
-            Visible_Absorptance=0.7,
+        idf.add(
+            MaterialNoMass(
+                name=insulation_materials_name,
+                roughness="Rough",
+                thermal_resistance=parameters.wall_insulation,
+                thermal_absorptance=0.9,
+                solar_absorptance=0.7,
+                visible_absorptance=0.7,
+            )
         )
 
         schedule_name = "WallInsulationSchedule_AlwaysOn"
-        if idf.getobject("SCHEDULE:CONSTANT", schedule_name) is None:
-            idf.newidfobject(
-                "Schedule:Constant",
-                Name=schedule_name,
-                Hourly_Value=1.0,
+        if idf.all_of_type(ScheduleConstant).get(schedule_name) is None:
+            idf.add(
+                ScheduleConstant(
+                    name=schedule_name,
+                    hourly_value=1.0,
+                )
             )
 
-        self._remove_objects(idf, "SurfaceControl:MovableInsulation")
-        surfaces = idf.idfobjects.get("BUILDINGSURFACE:DETAILED", [])
+        self._remove_objects(idf, SurfaceControlMovableInsulation)
+
+        surfaces = idf.all_of_type(BuildingSurfaceDetailed)
         modified_count = 0
-        for surface in surfaces:
+        for surface in surfaces.values():
             if (
-                surface.Outside_Boundary_Condition == "Outdoors"
-                and surface.Surface_Type.upper() in ["WALL", "ROOF"]
+                surface.outside_boundary_condition == "Outdoors"
+                and surface.surface_type.upper() in ["WALL", "ROOF"]
             ):
-                idf.newidfobject(
-                    "SurfaceControl:MovableInsulation",
-                    Insulation_Type="Outside",
-                    Surface_Name=surface.Name,
-                    Material_Name=insulation_materials_name,
-                    Schedule_Name=schedule_name,
+                idf.add(
+                    SurfaceControlMovableInsulation(
+                        insulation_type="Outside",
+                        surface_name=surface.name,
+                        material_name=insulation_materials_name,
+                        schedule_name=schedule_name,
+                    )
                 )
                 logger.debug(
-                    f"Set insulation material to {insulation_materials_name} for {surface.Name}"
+                    f"Set insulation material to {insulation_materials_name} for {surface.name}"
                 )
                 modified_count += 1
 
@@ -177,18 +199,18 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        infiltration_objects = idf.idfobjects.get("ZONEINFILTRATION:DESIGNFLOWRATE", [])
+        infiltration_objects = idf.all_of_type(ZoneInfiltrationDesignFlowRate)
         modified_count = 0
 
         if not infiltration_objects:
             logger.warning("No ZONEINFILTRATION:DESIGNFLOWRATE objects found in IDF")
             return
 
-        for infiltration in infiltration_objects:
-            infiltration.Design_Flow_Rate_Calculation_Method = "AirChanges/Hour"
-            infiltration.Air_Changes_per_Hour = parameters.infiltration_rate
+        for infiltration in infiltration_objects.values():
+            infiltration.design_flow_rate_calculation_method = "AirChanges/Hour"
+            infiltration.air_changes_per_hour = parameters.infiltration_rate
             logger.debug(
-                f"Set infiltration rate to {parameters.infiltration_rate} ACH for {infiltration.Name}"
+                f"Set infiltration rate to {parameters.infiltration_rate} ACH for {infiltration.name}"
             )
             modified_count += 1
 
@@ -213,15 +235,13 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        zone_ventilations = idf.idfobjects.get(
-            "ZONEVENTILATION:WindandStackOpenArea", []
-        )
+        zone_ventilations = idf.all_of_type(ZoneVentilationWindandStackOpenArea)
         modified_count = 0
 
-        for zone_ventilation in zone_ventilations:
-            zone_ventilation.Opening_Area = parameters.natural_ventilation_area
+        for zone_ventilation in zone_ventilations.values():
+            zone_ventilation.opening_area = parameters.natural_ventilation_area
             logger.debug(
-                f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone_ventilation.Name}"
+                f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone_ventilation.name}"
             )
             modified_count += 1
 
@@ -258,24 +278,25 @@ class ECMApply(IApply):
             "Rated_COP_at_Speed_2",
         ]
 
-        all_object_types = idf.idfobjects.keys()
+        all_object_types = idf.types()
 
         cooling_equipment_types = [
             obj_type
             for obj_type in all_object_types
-            if obj_type.startswith("COIL:COOLING") or obj_type.startswith("CHILLER:")
+            if obj_type.upper().startswith("COIL:COOLING")
+            or obj_type.upper().startswith("CHILLER:")
         ]
 
         for equipment_type in cooling_equipment_types:
             try:
-                equipment_list = idf.idfobjects.get(equipment_type, [])
+                equipment_list = idf.all_of_type(equipment_type)
 
-                for equipment in equipment_list:
+                for equipment in equipment_list.values():
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
                             setattr(equipment, cop_field_name, parameters.cooling_cop)
                             logger.debug(
-                                f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.Name}"
+                                f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.name}"  # type: ignore
                             )
                             modified_count += 1
             except Exception:
@@ -315,24 +336,24 @@ class ECMApply(IApply):
             "Rated_COP_at_Speed_2",
         ]
 
-        all_object_types = idf.idfobjects.keys()
+        all_object_types = idf.types()
 
         heating_equipment_types = [
             obj_type
             for obj_type in all_object_types
-            if obj_type.startswith("COIL:HEATING")
+            if obj_type.upper().startswith("COIL:HEATING")
         ]
 
         for equipment_type in heating_equipment_types:
             try:
-                equipment_list = idf.idfobjects.get(equipment_type, [])
+                equipment_list = idf.all_of_type(equipment_type)
 
-                for equipment in equipment_list:
+                for equipment in equipment_list.values():
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
                             setattr(equipment, cop_field_name, parameters.heating_cop)
                             logger.debug(
-                                f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.Name}"
+                                f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.name}"  # type: ignore
                             )
                             modified_count += 1
             except Exception:
@@ -360,15 +381,15 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
+        sizing_zone_objects = idf.all_of_type(SizingZone)
         modified_count = 0
 
-        for sizing_zone in sizing_zone_objects:
-            sizing_zone.Zone_Cooling_Design_Supply_Air_Temperature = (
+        for sizing_zone in sizing_zone_objects.values():
+            sizing_zone.zone_cooling_design_supply_air_temperature = (
                 parameters.cooling_air_temperature
             )
             logger.debug(
-                f"Set cooling air temperature to {parameters.cooling_air_temperature}°C for {sizing_zone.Zone_or_ZoneList_Name}"
+                f"Set cooling air temperature to {parameters.cooling_air_temperature}°C for {sizing_zone.zone_or_zonelist_name}"
             )
             modified_count += 1
 
@@ -393,15 +414,15 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        sizing_zone_objects = idf.idfobjects.get("SIZING:ZONE", [])
+        sizing_zone_objects = idf.all_of_type(SizingZone)
         modified_count = 0
 
-        for sizing_zone in sizing_zone_objects:
-            sizing_zone.Zone_Heating_Design_Supply_Air_Temperature = (
+        for sizing_zone in sizing_zone_objects.values():
+            sizing_zone.zone_heating_design_supply_air_temperature = (
                 parameters.heating_air_temperature
             )
             logger.debug(
-                f"Set heating air temperature to {parameters.heating_air_temperature}°C for {sizing_zone.Zone_or_ZoneList_Name}"
+                f"Set heating air temperature to {parameters.heating_air_temperature}°C for {sizing_zone.zone_or_zonelist_name}"
             )
             modified_count += 1
 
@@ -422,7 +443,7 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        lights = idf.idfobjects.get("LIGHTS", [])
+        lights = idf.all_of_type(Lights)
         lighting_power_reduction = parameters.lighting_power_reduction
         modified_count = 0
 
@@ -434,22 +455,37 @@ class ECMApply(IApply):
             logger.warning("Lighting power reduction is not set")
             return
 
-        for light in lights:
-            calc_method = light.Design_Level_Calculation_Method
+        for light in lights.values():
+            calc_method = light.design_level_calculation_method
 
             if calc_method == "LightingLevel":
-                original_level = light.Lighting_Level
-                light.Lighting_Level = original_level * (1 - lighting_power_reduction)
+                original_level = light.lighting_level
+                if original_level is None:
+                    logger.warning(
+                        f"Lighting level is not set for {light.name}, because the design level calculation method is not set"
+                    )
+                    continue
+                light.lighting_level = original_level * (1 - lighting_power_reduction)
                 modified_count += 1
             elif calc_method == "Watts/Area":
-                original_power = light.Watts_per_Floor_Area
-                light.Watts_per_Floor_Area = original_power * (
+                original_power = light.watts_per_floor_area
+                if original_power is None:
+                    logger.warning(
+                        f"Watts per floor area is not set for {light.name}, because the design level calculation method is not set"
+                    )
+                    continue
+                light.watts_per_floor_area = original_power * (
                     1 - lighting_power_reduction
                 )
                 modified_count += 1
             elif calc_method == "Watts/Person":
-                original_power = light.Watts_per_Person
-                light.Watts_per_Person = original_power * (1 - lighting_power_reduction)
+                original_power = light.watts_per_person
+                if original_power is None:
+                    logger.warning(
+                        f"Watts per person is not set for {light.name}, because the design level calculation method is not set"
+                    )
+                    continue
+                light.watts_per_person = original_power * (1 - lighting_power_reduction)
                 modified_count += 1
             else:
                 logger.warning(
@@ -474,39 +510,37 @@ class ECMApply(IApply):
 
         modified_count = 0
 
-        vav_reheat_terminals = idf.idfobjects.get(
-            "AIRTERMINAL:SINGLEDUCT:VAV:REHEAT", []
-        )
+        vav_reheat_terminals = idf.all_of_type(AirTerminalSingleDuctVAVReheat)
 
-        for terminal in vav_reheat_terminals:
-            terminal.Maximum_Air_Flow_Rate = "AUTOSIZE"
-            terminal.Maximum_Hot_Water_or_Steam_Flow_Rate = "AUTOSIZE"
-            terminal.Maximum_Flow_Fraction_During_Reheat = "AUTOSIZE"
-            terminal.Constant_Minimum_Air_Flow_Fraction = "AUTOSIZE"
-            terminal.Fixed_Minimum_Air_Flow_Rate = "AUTOSIZE"
+        for terminal in vav_reheat_terminals.values():
+            terminal.maximum_air_flow_rate = "Autosize"
+            terminal.maximum_hot_water_or_steam_flow_rate = "Autosize"
+            terminal.maximum_flow_fraction_during_reheat = "Autosize"
+            terminal.constant_minimum_air_flow_fraction = "Autosize"
+            terminal.fixed_minimum_air_flow_rate = "Autosize"
             modified_count += 1
 
         logger.info(f"Modified {modified_count} VAV reheat terminals")
 
         modified_count = 0
 
-        chillers = idf.idfobjects.get("CHILLER:ELECTRIC:REFORMULATEDEIR", [])
+        chillers = idf.all_of_type(ChillerElectricReformulatedEIR)
 
-        for chiller in chillers:
-            chiller.Reference_Capacity = "AUTOSIZE"
-            chiller.Reference_Chilled_Water_Flow_Rate = "AUTOSIZE"
-            chiller.Reference_Condenser_Water_Flow_Rate = "AUTOSIZE"
+        for chiller in chillers.values():
+            chiller.reference_capacity = "Autosize"
+            chiller.reference_chilled_water_flow_rate = "Autosize"
+            chiller.reference_condenser_water_flow_rate = "Autosize"
             modified_count += 1
 
         logger.info(f"Modified {modified_count} chillers")
 
         modified_count = 0
 
-        cooling_towers = idf.idfobjects.get("COOLINGTOWER:VARIABLESPEED", [])
-        for tower in cooling_towers:
-            tower.Design_Water_Flow_Rate = "AUTOSIZE"
-            tower.Design_Air_Flow_Rate = "AUTOSIZE"
-            tower.Design_Fan_Power = "AUTOSIZE"
+        cooling_towers = idf.all_of_type(CoolingTowerVariableSpeed)
+        for tower in cooling_towers.values():
+            tower.design_water_flow_rate = "Autosize"
+            tower.design_air_flow_rate = "Autosize"
+            tower.design_fan_power = "Autosize"
             modified_count += 1
 
         logger.info(f"Modified {modified_count} CoolingTowers")

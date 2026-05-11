@@ -181,7 +181,7 @@
 ! specify overhang_pf for 1891 codes
 !    perimeter_mid_zn_2_mdp =     0.091;
 
-  Version,25.1;
+  Version,26.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: BUILDING ===========
 
@@ -16070,6 +16070,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter Basement Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter Basement CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter Basement CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter Basement Supply Fan Outlet,  !- Air Inlet Node Name
@@ -16104,6 +16105,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter Basement Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter Basement HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter Basement HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter Basement Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -16493,6 +16495,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter bot Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter bot CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter bot CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter bot Supply Fan Outlet,  !- Air Inlet Node Name
@@ -16527,6 +16530,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter bot Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter bot HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter bot HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter bot Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -16897,6 +16901,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter mid Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter mid CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter mid CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter mid Supply Fan Outlet,  !- Air Inlet Node Name
@@ -16931,6 +16936,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter mid Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter mid HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter mid HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter mid Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -17301,6 +17307,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter top Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter top CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter top CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter top Supply Fan Outlet,  !- Air Inlet Node Name
@@ -17335,6 +17342,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop DataCenter top Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop DataCenter top HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop DataCenter top HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop DataCenter top Cooling Coil Outlet,  !- Air Inlet Node Name

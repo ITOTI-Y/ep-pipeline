@@ -159,7 +159,7 @@
 ! specify overhang_pf for 1891 codes
 !-   ===========  ALL OBJECTS IN CLASS: VERSION ===========
 
-  Version,25.1;
+  Version,26.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -8369,6 +8369,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G SW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G SW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G SW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G SW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -8403,6 +8404,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G SW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G SW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G SW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G SW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -8898,6 +8900,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G NW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G NW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G NW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G NW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -8932,6 +8935,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G NW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G NW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G NW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G NW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -9394,6 +9398,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop Office Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop Office CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop Office CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop Office Supply Fan Outlet,  !- Air Inlet Node Name
@@ -9428,6 +9433,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop Office Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop Office HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop Office HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop Office Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -9793,6 +9799,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G NE Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G NE CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G NE CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G NE Supply Fan Outlet,  !- Air Inlet Node Name
@@ -9827,6 +9834,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G NE Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G NE HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G NE HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G NE Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -10304,6 +10312,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G N1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G N1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G N1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G N1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -10338,6 +10347,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G N1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G N1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G N1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G N1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -10815,6 +10825,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G N2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G N2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G N2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G N2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -10849,6 +10860,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G N2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G N2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G N2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G N2 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -11326,6 +11338,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G S1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G S1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G S1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G S1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -11360,6 +11373,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G S1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G S1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G S1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G S1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -11837,6 +11851,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop G S2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G S2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G S2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G S2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -11871,6 +11886,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop G S2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop G S2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop G S2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop G S2 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -12348,6 +12364,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M SW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M SW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M SW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M SW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -12382,6 +12399,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M SW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M SW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M SW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M SW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -12859,6 +12877,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M NW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M NW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M NW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M NW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -12893,6 +12912,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M NW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M NW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M NW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M NW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -13370,6 +13390,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M SE Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M SE CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M SE CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M SE Supply Fan Outlet,  !- Air Inlet Node Name
@@ -13404,6 +13425,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M SE Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M SE HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M SE HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M SE Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -13881,6 +13903,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M NE Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M NE CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M NE CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M NE Supply Fan Outlet,  !- Air Inlet Node Name
@@ -13915,6 +13938,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M NE Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M NE HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M NE HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M NE Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -14392,6 +14416,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M N1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M N1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M N1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M N1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -14426,6 +14451,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M N1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M N1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M N1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M N1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -14903,6 +14929,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M N2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M N2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M N2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M N2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -14937,6 +14964,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M N2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M N2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M N2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M N2 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -15414,6 +15442,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M S1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M S1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M S1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M S1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -15448,6 +15477,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M S1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M S1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M S1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M S1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -15925,6 +15955,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop M S2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M S2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M S2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M S2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -15959,6 +15990,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop M S2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop M S2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop M S2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop M S2 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -16436,6 +16468,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T SW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T SW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T SW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T SW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -16470,6 +16503,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T SW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T SW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T SW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T SW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -16947,6 +16981,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T NW Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T NW CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T NW CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T NW Supply Fan Outlet,  !- Air Inlet Node Name
@@ -16981,6 +17016,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T NW Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T NW HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T NW HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T NW Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -17458,6 +17494,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T SE Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T SE CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T SE CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T SE Supply Fan Outlet,  !- Air Inlet Node Name
@@ -17492,6 +17529,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T SE Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T SE HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T SE HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T SE Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -17969,6 +18007,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T NE Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T NE CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T NE CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T NE Supply Fan Outlet,  !- Air Inlet Node Name
@@ -18003,6 +18042,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T NE Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T NE HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T NE HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T NE Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -18480,6 +18520,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T N1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T N1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T N1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T N1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -18514,6 +18555,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T N1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T N1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T N1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T N1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -18991,6 +19033,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T N2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T N2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T N2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T N2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -19025,6 +19068,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T N2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T N2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T N2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T N2 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -19502,6 +19546,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T S1 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T S1 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T S1 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T S1 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -19536,6 +19581,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T S1 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T S1 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T S1 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T S1 Cooling Coil Outlet,  !- Air Inlet Node Name
@@ -20013,6 +20059,7 @@
 
   Coil:Cooling:WaterToAirHeatPump:EquationFit,
     AirLoop T S2 Cooling Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T S2 CCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T S2 CCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T S2 Supply Fan Outlet,  !- Air Inlet Node Name
@@ -20047,6 +20094,7 @@
 
   Coil:Heating:WaterToAirHeatPump:EquationFit,
     AirLoop T S2 Heating Coil,  !- Name
+    ,                        !- Availability Schedule Name
     AirLoop T S2 HCoil Water Inlet,  !- Water Inlet Node Name
     AirLoop T S2 HCoil Water Outlet,  !- Water Outlet Node Name
     AirLoop T S2 Cooling Coil Outlet,  !- Air Inlet Node Name

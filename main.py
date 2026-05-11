@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from copy import deepcopy
-from itertools import chain, product  # noqa: F401
+from itertools import chain, product
 from pathlib import Path
 from pickle import dump, load
 from typing import Annotated
