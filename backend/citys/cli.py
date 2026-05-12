@@ -5,32 +5,15 @@ from typing import Annotated
 import numpy as np
 import typer
 from loguru import logger
-from pydantic import BaseModel, ConfigDict
 
+from backend.citys._share import CitysFileName
 from backend.utils.config import ConfigManager
 
 app = typer.Typer()
 
 config = ConfigManager()
 
-
-class FileName(BaseModel):
-    model_config = ConfigDict(
-        frozen=True,
-    )
-    epw_features: str = "01_epw_features.csv"
-    epw_features_process_info: str = "02_epw_features_process_info.json"
-    epw_meta_data: str = "03_epw_meta_data.csv"
-    epw_k_metrics: str = "04_epw_k_metrics.csv"
-    epw_representative_cities: str = "05_epw_representative_cities.csv"
-    epw_cluster_assignments: str = "06_epw_cluster_assignments.csv"
-    epw_ward_linkage: str = "07_epw_ward_linkage.npy"
-    dest_catalog: str = "08_dest_catalog.json"
-    dest_coords: str = "09_dest_coords.csv"
-    dest_mapped_results: str = "10_dest_mapped_results.csv"
-
-
-FILE_NAME = FileName()
+CITYS_FILE_NAME = CitysFileName()
 
 
 @app.command()
@@ -47,7 +30,7 @@ def extract_epw() -> None:
     from backend.citys.core.feature import extract_all
 
     cfg = config
-    output = Path(cfg.paths.citys_dir) / FILE_NAME.epw_features
+    output = Path(cfg.paths.citys_dir) / CITYS_FILE_NAME.epw_features
     extract_all(Path(cfg.paths.epw_dir), output)
 
 
@@ -70,19 +53,19 @@ def cluster_epw() -> None:
     output_dir = Path(cfg.paths.citys_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(output_dir / FILE_NAME.epw_features)
+    df = pd.read_csv(output_dir / CITYS_FILE_NAME.epw_features)
     _corr, x, _feature_names, meta_df, prep_info = preprocess(df, cfg.citys.preprocess)
 
-    with open(output_dir / FILE_NAME.epw_features_process_info, "w") as f:
+    with open(output_dir / CITYS_FILE_NAME.epw_features_process_info, "w") as f:
         json.dump(prep_info, f, indent=2)
 
     meta_df.to_csv(
-        output_dir / FILE_NAME.epw_meta_data, index=False, encoding="utf-8-sig"
+        output_dir / CITYS_FILE_NAME.epw_meta_data, index=False, encoding="utf-8-sig"
     )
 
     z = compute_ward_linkage(x)
     metrics_df = evaluate_k_range(x, z, cfg.citys.cluster)
-    metrics_df.to_csv(output_dir / FILE_NAME.epw_k_metrics, index=False)
+    metrics_df.to_csv(output_dir / CITYS_FILE_NAME.epw_k_metrics, index=False)
 
     if cfg.citys.cluster.override_k is not None:
         optimal_k = cfg.citys.cluster.override_k
@@ -112,7 +95,7 @@ def cluster_epw() -> None:
         rep_rows.append(row)
     rep_df = pd.DataFrame(rep_rows)
     rep_df.to_csv(
-        output_dir / FILE_NAME.epw_representative_cities,
+        output_dir / CITYS_FILE_NAME.epw_representative_cities,
         index=False,
         encoding="utf-8-sig",
     )
@@ -124,12 +107,12 @@ def cluster_epw() -> None:
         i in qc_result.final_indices for i in range(len(df))
     ]
     all_assign.to_csv(
-        output_dir / FILE_NAME.epw_cluster_assignments,
+        output_dir / CITYS_FILE_NAME.epw_cluster_assignments,
         index=False,
         encoding="utf-8-sig",
     )
 
-    np.save(output_dir / FILE_NAME.epw_ward_linkage, z)
+    np.save(output_dir / CITYS_FILE_NAME.epw_ward_linkage, z)
 
     logger.info(f"Clustering complete: {len(qc_result.final_indices)} cities selected")
 
@@ -145,12 +128,12 @@ def download_dest() -> None:
     cfg = config
     out = Path(cfg.paths.citys_dir)
     dest_dir = Path(cfg.paths.dest_dir)
-    rep_df = pd.read_csv(out / FILE_NAME.epw_representative_cities)
+    rep_df = pd.read_csv(out / CITYS_FILE_NAME.epw_representative_cities)
     _cities = rep_df["city"].unique().tolist()
 
     async def _run():
         original_catalog = await fetch_catalog()
-        with open(out / FILE_NAME.dest_catalog, "w") as f:
+        with open(out / CITYS_FILE_NAME.dest_catalog, "w") as f:
             json.dump([r.model_dump() for r in original_catalog], f, indent=4)
         downloaded_city = [c.name.split("_")[0] for c in dest_dir.glob(r"*.sqlite")] + [
             c.name.split("_")[0] for c in dest_dir.glob(r"*.accdb")
@@ -170,9 +153,9 @@ def mapping_dest_to_tmyx() -> None:
     cfg = config
     out = Path(cfg.paths.citys_dir)
     dest_dir = Path(cfg.paths.dest_dir)
-    rep_df = pd.read_csv(out / FILE_NAME.epw_representative_cities)
-    meta_df = pd.read_csv(out / FILE_NAME.epw_meta_data)
-    labels = pd.read_csv(out / FILE_NAME.epw_cluster_assignments)[
+    rep_df = pd.read_csv(out / CITYS_FILE_NAME.epw_representative_cities)
+    meta_df = pd.read_csv(out / CITYS_FILE_NAME.epw_meta_data)
+    labels = pd.read_csv(out / CITYS_FILE_NAME.epw_cluster_assignments)[
         "cluster_label"
     ].to_numpy()
     map_tmyx_to_dest(
@@ -180,14 +163,15 @@ def mapping_dest_to_tmyx() -> None:
         labels,
         meta_df,
         dest_dir,
-        out / FILE_NAME.dest_coords,
-        out / FILE_NAME.dest_mapped_results,
+        out / CITYS_FILE_NAME.dest_coords,
+        out / CITYS_FILE_NAME.dest_mapped_results,
     )
 
 
 @app.command()
 def plot() -> None:
-    pass
+    from backend.citys.viz.results import station_distribution
+    station_distribution()
 
 
 @app.command()

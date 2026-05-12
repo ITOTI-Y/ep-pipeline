@@ -250,9 +250,9 @@ def simulate(
 
 @app.command()
 def visualization():
-    from backend.viz.charts import ChartGenerator
+    from backend.viz.generator import ChartGenerator
 
-    chart_generator = ChartGenerator(ConfigManager(Path("backend/configs")))
+    chart_generator = ChartGenerator()
     chart_generator.generate_all()
 
 
