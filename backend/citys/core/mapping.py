@@ -1,18 +1,44 @@
+import asyncio
+import sqlite3
+from pathlib import Path
+from typing import Literal, TypedDict
+
 import numpy as np
 import pandas as pd
 from loguru import logger
 from numpy.typing import NDArray
+from tqdm import tqdm
+from tqdm.asyncio import tqdm as tqdm_async
 
 from backend.citys.core.qc import haversine_km
 
+_DISTANCE_THRESHOLD = 50
+
+
+class MatchResult(TypedDict):
+    tmyx_city: str
+    tmyx_province: str
+    dest_city: str
+    dest_province: str
+    match_type: Literal["exact", "nearest_same_cluster", "nearest_cross_cluster"]
+    distance_km: float
+    cluster: int
+
 
 def map_tmyx_to_dest(
-    representative_indices: list[int],
+    representative_indices: pd.DataFrame,
     labels: NDArray[np.intp],
     meta_df: pd.DataFrame,
-    dest_coords_df: pd.DataFrame,
-) -> pd.DataFrame:
+    dest_dir: Path,
+    dest_coords_file: Path,
+    out_file: Path,
+) -> None:
 
+    if dest_coords_file.exists():
+        dest_coords_df = pd.read_csv(dest_coords_file)
+    else:
+        dest_coords_df = asyncio.run(_get_dest_coords(dest_dir))
+        dest_coords_df.to_csv(dest_coords_file, index=False)
     dest_lat_arr = dest_coords_df["latitude"].to_numpy()
     dest_lon_arr = dest_coords_df["longitude"].to_numpy()
     tmyx_lat_arr = meta_df["latitude"].to_numpy()
@@ -29,29 +55,50 @@ def map_tmyx_to_dest(
     dest_coords_df = dest_coords_df.copy()
     dest_coords_df["cluster"] = labels[nearest_tmyx]
 
-    rows = []
-    for idx in representative_indices:
-        tmyx_name = meta_df.loc[idx, "city_name"]
-        tmyx_lat = meta_df.loc[idx, "latitude"]
-        tmyx_lon = meta_df.loc[idx, "longitude"]
-        cluster = labels[idx]
+    results = []
+    for _, row in tqdm(
+        representative_indices.iterrows(),
+        total=len(representative_indices),
+        desc="Mapping TMYX to DeST",
+    ):
+        tmyx_name = row["city"]
+        tmyx_lat = row["latitude"]
+        tmyx_lon = row["longitude"]
+        tmyx_province = row["province"]
+        cluster = row["cluster_label"]
 
         exact = dest_coords_df[
             dest_coords_df["city_name"].str.lower()
             == tmyx_name.lower().split("-")[0].split(".")[0]
         ]
         if not exact.empty:
-            dest_name = exact.iloc[0]["city_name"]
-            rows.append(
-                {
-                    "tmyx_city": tmyx_name,
-                    "dest_city": dest_name,
-                    "match_type": "exact",
-                    "distance_km": 0.0,
-                    "cluster": int(cluster),
-                }
+            exact_dists = haversine_km(
+                tmyx_lat,
+                tmyx_lon,
+                exact["latitude"].to_numpy(),
+                exact["longitude"].to_numpy(),
             )
-            continue
+            best_i = int(np.argmin(exact_dists))
+            distance = float(exact_dists[best_i])
+            dest = exact.iloc[best_i]
+            if distance < _DISTANCE_THRESHOLD:
+                results.append(
+                    MatchResult(
+                        tmyx_city=tmyx_name,
+                        tmyx_province=tmyx_province,
+                        dest_city=dest["city_name"],
+                        dest_province=dest["province"],
+                        match_type="exact",
+                        distance_km=distance,
+                        cluster=int(cluster),
+                    )
+                )
+                continue
+            else:
+                logger.warning(
+                    f"Exact match found but distance too far: {tmyx_name} -> "
+                    f"{dest['city_name']}, distance={distance:.2f} km; falling back to nearest"
+                )
 
         same_cluster = dest_coords_df[dest_coords_df["cluster"] == cluster]
         if same_cluster.empty:
@@ -71,19 +118,58 @@ def map_tmyx_to_dest(
             else "nearest_cross_cluster"
         )
 
-        rows.append(
-            {
-                "tmyx_city": tmyx_name,
-                "dest_city": dest_row["city_name"],
-                "match_type": match_type,
-                "distance_km": float(dists[best_i]),
-                "cluster": int(cluster),
-            }
+        results.append(
+            MatchResult(
+                tmyx_city=tmyx_name,
+                tmyx_province=tmyx_province,
+                dest_city=dest_row["city_name"],
+                dest_province=dest_row["province"],
+                match_type=match_type,
+                distance_km=float(dists[best_i]),
+                cluster=int(cluster),
+            )
         )
 
-    result = pd.DataFrame(rows)
+    df = pd.DataFrame(results)
+    df.to_csv(out_file, index=False)
     logger.info(
-        f"Mapping: {len(result)} pairs -> {result['dest_city'].nunique()} unique DeST cities, "
-        f"same-cluster rate={(result['match_type'] != 'nearest_cross_cluster').mean():.1%}"
+        f"Mapping: {len(df)} pairs -> {df['dest_city'].nunique()} unique DeST cities, "
+        f"same-cluster rate={(df['match_type'] != 'nearest_cross_cluster').mean():.1%}"
     )
-    return result
+
+
+async def _get_dest_coords(dir_path: Path) -> pd.DataFrame:
+    result = []
+    files = dir_path.glob("*.sqlite")
+
+    tasks = [asyncio.to_thread(_parse_one_dest, file_path) for file_path in files]
+
+    pbar = tqdm_async(total=len(tasks), desc="Parsing DeST files", unit="file")
+    for task in asyncio.as_completed(tasks):
+        try:
+            data = await task
+            result.append(data)
+        except Exception:
+            logger.exception("Failed to parse DeST file:")
+        finally:
+            pbar.update(1)
+    pbar.close()
+    return pd.DataFrame(result)
+
+
+def _parse_one_dest(file_path: Path) -> dict:
+    building_type = file_path.stem.split("_")[1]
+    with sqlite3.connect(str(file_path)) as conn:
+        city_name = conn.execute("SELECT city_name FROM environment").fetchone()[0]
+        province = conn.execute("SELECT province FROM environment").fetchone()[0]
+        latitude = conn.execute("SELECT latitude FROM environment").fetchone()[0]
+        longitude = conn.execute("SELECT longitude FROM environment").fetchone()[0]
+        elevation = conn.execute("SELECT elevation FROM environment").fetchone()[0]
+        return {
+            "city_name": city_name,
+            "province": province,
+            "building_type": building_type,
+            "latitude": latitude,
+            "longitude": longitude,
+            "elevation": elevation,
+        }

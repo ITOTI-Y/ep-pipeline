@@ -1,15 +1,36 @@
 import asyncio
 from pathlib import Path
+from typing import Annotated
 
 import numpy as np
 import typer
 from loguru import logger
+from pydantic import BaseModel, ConfigDict
 
 from backend.utils.config import ConfigManager
 
 app = typer.Typer()
 
 config = ConfigManager()
+
+
+class FileName(BaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+    )
+    epw_features: str = "01_epw_features.csv"
+    epw_features_process_info: str = "02_epw_features_process_info.json"
+    epw_meta_data: str = "03_epw_meta_data.csv"
+    epw_k_metrics: str = "04_epw_k_metrics.csv"
+    epw_representative_cities: str = "05_epw_representative_cities.csv"
+    epw_cluster_assignments: str = "06_epw_cluster_assignments.csv"
+    epw_ward_linkage: str = "07_epw_ward_linkage.npy"
+    dest_catalog: str = "08_dest_catalog.json"
+    dest_coords: str = "09_dest_coords.csv"
+    dest_mapped_results: str = "10_dest_mapped_results.csv"
+
+
+FILE_NAME = FileName()
 
 
 @app.command()
@@ -21,17 +42,17 @@ def download_epw() -> None:
 
 
 @app.command()
-def extract() -> None:
+def extract_epw() -> None:
     """Extract climate features from EPW files."""
     from backend.citys.core.feature import extract_all
 
     cfg = config
-    output = Path(cfg.paths.citys_dir) / "processed_features.csv"
+    output = Path(cfg.paths.citys_dir) / FILE_NAME.epw_features
     extract_all(Path(cfg.paths.epw_dir), output)
 
 
 @app.command()
-def cluster() -> None:
+def cluster_epw() -> None:
     import json
 
     import pandas as pd
@@ -49,15 +70,19 @@ def cluster() -> None:
     output_dir = Path(cfg.paths.citys_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(output_dir / "processed_features.csv")
+    df = pd.read_csv(output_dir / FILE_NAME.epw_features)
     _corr, x, _feature_names, meta_df, prep_info = preprocess(df, cfg.citys.preprocess)
 
-    with open(output_dir / "output_preprocessing_info.json", "w") as f:
+    with open(output_dir / FILE_NAME.epw_features_process_info, "w") as f:
         json.dump(prep_info, f, indent=2)
+
+    meta_df.to_csv(
+        output_dir / FILE_NAME.epw_meta_data, index=False, encoding="utf-8-sig"
+    )
 
     z = compute_ward_linkage(x)
     metrics_df = evaluate_k_range(x, z, cfg.citys.cluster)
-    metrics_df.to_csv(output_dir / "output_k_metrics.csv", index=False)
+    metrics_df.to_csv(output_dir / FILE_NAME.epw_k_metrics, index=False)
 
     if cfg.citys.cluster.override_k is not None:
         optimal_k = cfg.citys.cluster.override_k
@@ -87,7 +112,7 @@ def cluster() -> None:
         rep_rows.append(row)
     rep_df = pd.DataFrame(rep_rows)
     rep_df.to_csv(
-        output_dir / "output_representative_cities.csv",
+        output_dir / FILE_NAME.epw_representative_cities,
         index=False,
         encoding="utf-8-sig",
     )
@@ -99,10 +124,12 @@ def cluster() -> None:
         i in qc_result.final_indices for i in range(len(df))
     ]
     all_assign.to_csv(
-        output_dir / "output_cluster_assignments.csv", index=False, encoding="utf-8-sig"
+        output_dir / FILE_NAME.epw_cluster_assignments,
+        index=False,
+        encoding="utf-8-sig",
     )
 
-    np.save(output_dir / "cache_ward_linkage.npy", z)
+    np.save(output_dir / FILE_NAME.epw_ward_linkage, z)
 
     logger.info(f"Clustering complete: {len(qc_result.final_indices)} cities selected")
 
@@ -117,18 +144,45 @@ def download_dest() -> None:
 
     cfg = config
     out = Path(cfg.paths.citys_dir)
-    rep_df = pd.read_csv(out / "output_representative_cities.csv")
+    dest_dir = Path(cfg.paths.dest_dir)
+    rep_df = pd.read_csv(out / FILE_NAME.epw_representative_cities)
     _cities = rep_df["city"].unique().tolist()
 
     async def _run():
-        catalog = await fetch_catalog()
-        with open(out / "catalog.json", "w") as f:
-            json.dump([r.model_dump() for r in catalog], f, indent=4)
-        return await download_dest_models(
-            catalog, cfg.citys.download, Path(cfg.paths.dest_dir)
-        )
+        original_catalog = await fetch_catalog()
+        with open(out / FILE_NAME.dest_catalog, "w") as f:
+            json.dump([r.model_dump() for r in original_catalog], f, indent=4)
+        downloaded_city = [c.name.split("_")[0] for c in dest_dir.glob(r"*.sqlite")] + [
+            c.name.split("_")[0] for c in dest_dir.glob(r"*.accdb")
+        ]
+        catalog = [c for c in original_catalog if c.city not in downloaded_city]
+        return await download_dest_models(catalog, cfg.citys.download, dest_dir)
 
     asyncio.run(_run())
+
+
+@app.command()
+def mapping_dest_to_tmyx() -> None:
+    import pandas as pd
+
+    from backend.citys.core.mapping import map_tmyx_to_dest
+
+    cfg = config
+    out = Path(cfg.paths.citys_dir)
+    dest_dir = Path(cfg.paths.dest_dir)
+    rep_df = pd.read_csv(out / FILE_NAME.epw_representative_cities)
+    meta_df = pd.read_csv(out / FILE_NAME.epw_meta_data)
+    labels = pd.read_csv(out / FILE_NAME.epw_cluster_assignments)[
+        "cluster_label"
+    ].to_numpy()
+    map_tmyx_to_dest(
+        rep_df,
+        labels,
+        meta_df,
+        dest_dir,
+        out / FILE_NAME.dest_coords,
+        out / FILE_NAME.dest_mapped_results,
+    )
 
 
 @app.command()
@@ -137,11 +191,38 @@ def plot() -> None:
 
 
 @app.command()
-def run_all() -> None:
+def run(
+    epw: Annotated[bool, "--epw", typer.Option(help="Download EPW files")] = False,
+    extract: Annotated[
+        bool, "--extract", typer.Option(help="Extract EPW features")
+    ] = False,
+    cluster: Annotated[
+        bool, "--cluster", typer.Option(help="Cluster EPW files")
+    ] = False,
+    dest: Annotated[bool, "--dest", typer.Option(help="Download DeST models")] = False,
+    mapping: Annotated[
+        bool, "--mapping", typer.Option(help="Mapping DeST to TMYX")
+    ] = False,
+    plt: Annotated[bool, "--plt", "-p", typer.Option(help="Plot results")] = False,
+    all: Annotated[bool, "--all", typer.Option(help="Run all steps")] = False,
+) -> None:
     """Run complete pipeline: download -> extract -> cluster -> plot."""
-    download_epw()
-    extract()
-    cluster()
-    download_dest()
-    plot()
+    if all:
+        epw = True
+        extract = True
+        cluster = True
+        dest = True
+        mapping = True
+    if epw:
+        download_epw()
+    if extract:
+        extract_epw()
+    if cluster:
+        cluster_epw()
+    if dest:
+        download_dest()
+    if mapping:
+        mapping_dest_to_tmyx()
+    if plt:
+        plot()
     logger.info("City selection pipeline complete")
