@@ -171,6 +171,7 @@ def mapping_dest_to_tmyx() -> None:
 @app.command()
 def plot() -> None:
     from backend.citys.viz.results import station_distribution
+
     station_distribution()
 
 

@@ -11,3 +11,4 @@ def station_distribution() -> None:
     fig, ax = _chart_generator.create_figure(
         width=FigureWidth.DOUBLE_COLUMN,
     )
+    pass

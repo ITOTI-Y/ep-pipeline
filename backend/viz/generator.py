@@ -13,7 +13,7 @@ from backend.viz.style import (
 
 
 class ChartGenerator:
-    """Chart generator for PV simulation results visualization."""
+    """Chart generator results visualization."""
 
     def __init__(
         self,

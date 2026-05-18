@@ -61,7 +61,10 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["city", "plot"]
-        }
+            "args": ["city", "plot"],
+            "env": {
+                "PYDEVD_USE_SYS_MONITORING": "False"
+            }
+        },
     ]
 }

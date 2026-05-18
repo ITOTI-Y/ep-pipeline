@@ -250,10 +250,9 @@ def simulate(
 
 @app.command()
 def visualization():
-    from backend.viz.generator import ChartGenerator
+    from backend.citys.viz.results import station_distribution
 
-    chart_generator = ChartGenerator()
-    chart_generator.generate_all()
+    station_distribution()
 
 
 @app.command()

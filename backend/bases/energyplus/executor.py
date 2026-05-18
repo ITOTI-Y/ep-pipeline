@@ -1,5 +1,3 @@
-import re
-
 from idfpy.sim import simulate as sim
 from loguru import logger
 
@@ -8,10 +6,6 @@ from backend.services.interfaces import IEnergyPlusExecutor
 
 
 class EnergyPlusExecutor(IEnergyPlusExecutor):
-    _SEVERE_PATTERN = re.compile(r"\*\*\s+Severe\s+\*\*.*", re.IGNORECASE)
-    _FATAL_PATTERN = re.compile(r"\*\*\s+Fatal\s+\*\*.*", re.IGNORECASE)
-    _WARNING_PATTERN = re.compile(r"\*\*\s+Warning\s+\*\*.*", re.IGNORECASE)
-
     def run(
         self,
         job: SimulationJob,
@@ -63,8 +57,6 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
 
         except Exception as e:
             logger.exception("Failed to run EnergyPlus: ")
-
-            result.success = False
             result.add_error(f"Failed to run EnergyPlus: {e}")
 
         return result
