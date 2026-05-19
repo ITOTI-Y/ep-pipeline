@@ -170,17 +170,8 @@ def mapping_dest_to_tmyx() -> None:
 
 @app.command()
 def plot() -> None:
-    import pandas as pd
-
-    from backend.citys.viz.results import station_distribution
-
-    tmy_df = pd.read_csv(
-        Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_cluster_assignments
-    )
-    dest_df = pd.read_csv(
-        Path(config.paths.citys_dir) / CITYS_FILE_NAME.dest_coords
-    )
-    station_distribution(config.paths.geo_dir, tmy_df, dest_df)
+    from backend.citys.viz.results import generation_all
+    generation_all(config)
 
 
 @app.command()

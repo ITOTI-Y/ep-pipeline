@@ -26,3 +26,4 @@ class VizFileName(BaseModel):
         frozen=True,
     )
     station_distribution: str = "01_station_distribution.png"
+    correlation_heatmap: str = "02_correlation_heatmap.png"

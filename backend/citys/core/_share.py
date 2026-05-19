@@ -25,3 +25,15 @@ META_COLS: Final = [
 FEATURE_COLS: Final = GROUP_A_COLS + GROUP_B_COLS + GROUP_C_COLS
 
 EARTH_RADIUS_KM: Final = 6371.0
+
+COL_DISPLAY: Final = {
+    "hdd18": r"$\mathrm{HDD}_{18}$",
+    "cdd18": r"$\mathrm{CDD}_{18}$",
+    "annual_mean_dew_point": "Dew point",
+    "annual_ghi": "GHI",
+    "annual_dhi": "DHI",
+    "annual_mean_wind_speed": "Wind speed",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "elevation": "Elevation",
+}
