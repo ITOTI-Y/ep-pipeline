@@ -170,43 +170,41 @@ def mapping_dest_to_tmyx() -> None:
 
 @app.command()
 def plot() -> None:
+    import pandas as pd
+
     from backend.citys.viz.results import station_distribution
 
-    station_distribution()
+    tmy_df = pd.read_csv(
+        Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_cluster_assignments
+    )
+    dest_df = pd.read_csv(
+        Path(config.paths.citys_dir) / CITYS_FILE_NAME.dest_coords
+    )
+    station_distribution(config.paths.geo_dir, tmy_df, dest_df)
 
 
 @app.command()
 def run(
     epw: Annotated[bool, "--epw", typer.Option(help="Download EPW files")] = False,
-    extract: Annotated[
-        bool, "--extract", typer.Option(help="Extract EPW features")
-    ] = False,
-    cluster: Annotated[
-        bool, "--cluster", typer.Option(help="Cluster EPW files")
-    ] = False,
     dest: Annotated[bool, "--dest", typer.Option(help="Download DeST models")] = False,
-    mapping: Annotated[
-        bool, "--mapping", typer.Option(help="Mapping DeST to TMYX")
-    ] = False,
     plt: Annotated[bool, "--plt", "-p", typer.Option(help="Plot results")] = False,
+    download: Annotated[
+        bool, "--download", typer.Option(help="Download EPW and DeST files")
+    ] = False,
     all: Annotated[bool, "--all", typer.Option(help="Run all steps")] = False,
 ) -> None:
     """Run complete pipeline: download -> extract -> cluster -> plot."""
     if all:
         epw = True
-        extract = True
-        cluster = True
         dest = True
-        mapping = True
-    if epw:
+        plt = True
+    if download:
         download_epw()
-    if extract:
+        download_dest()
+    if epw:
         extract_epw()
-    if cluster:
         cluster_epw()
     if dest:
-        download_dest()
-    if mapping:
         mapping_dest_to_tmyx()
     if plt:
         plot()

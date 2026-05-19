@@ -57,13 +57,11 @@ class ChartGenerator:
         name: str,
         building_type: str | None = None,
         image_type: ImageType = ImageType.LINE_ART,
-        fmt: str | None = None,
     ) -> Path:
         """Save figure with journal-compliant format and DPI."""
         image_dir = self.output_dir / (building_type if building_type else "")
         image_dir.mkdir(parents=True, exist_ok=True)
-        output_format = fmt or self.style.default_format
-        path = image_dir / f"{name}.{output_format}"
+        path = image_dir / f"{name}"
         fig.save(path, dpi=image_type.value)
         plt.close(fig)
         return path

@@ -52,6 +52,7 @@ class JournalStyle:
             "#B2182B",  # Red
         )
     )
+    markers: tuple[str, ...] = ("o", "D", "s", "^", "v", "P", "X")
 
     # Default output settings
     default_width: float = 3.54

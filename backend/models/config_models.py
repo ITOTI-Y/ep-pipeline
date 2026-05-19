@@ -34,11 +34,13 @@ class PathsConfig(BaseModel):
     epw_dir: Path = Field(..., description="EPW weather file directory")
     dest_dir: Path = Field(..., description="DEST data directory")
     citys_dir: Path = Field(..., description="Citys output data directory")
+    geo_dir: Path = Field(..., description="Geo data directory")
 
     @field_validator(
         "prototype_dir",
         "tmy_dir",
         "ftmy_dir",
+        "geo_dir",
         "output_dir",
         "baseline_dir",
         "pv_dir",
