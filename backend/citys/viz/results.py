@@ -199,5 +199,5 @@ def generation_all(config: ConfigManager):
     dest_df = pd.read_csv(Path(config.paths.citys_dir) / CITYS_FILE_NAME.dest_coords)
 
     station_distribution(config.paths.geo_dir, epw_cluster_df, dest_df)
-    # correlation_heatmap(epw_feature_df)
+    correlation_heatmap(epw_feature_df)
     pass

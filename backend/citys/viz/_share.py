@@ -13,11 +13,12 @@ SCS_EXTENT: Final = [104.5, 125, 0, 26]
 CENTER_LONGITUDE: Final = (MAP_EXTENT[0] + MAP_EXTENT[1]) / 2
 
 INSET_H = 0.40
-INSET_W = INSET_H * (
-    (SCS_EXTENT[1] - SCS_EXTENT[0]) / (SCS_EXTENT[3] - SCS_EXTENT[2])
-) / (
-    (MAP_EXTENT[1] - MAP_EXTENT[0]) / (MAP_EXTENT[3] - MAP_EXTENT[2])
+INSET_W = (
+    INSET_H
+    * ((SCS_EXTENT[1] - SCS_EXTENT[0]) / (SCS_EXTENT[3] - SCS_EXTENT[2]))
+    / ((MAP_EXTENT[1] - MAP_EXTENT[0]) / (MAP_EXTENT[3] - MAP_EXTENT[2]))
 )
+
 
 def load_geojson(path: Path) -> list:
     with open(path) as f:
