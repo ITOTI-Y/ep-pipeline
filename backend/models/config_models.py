@@ -32,6 +32,7 @@ class PathsConfig(BaseModel):
         default_factory=list, description="Future TMY weather files"
     )
     epw_dir: Path = Field(..., description="EPW weather file directory")
+    ddy_dir: Path = Field(..., description="DDY weather file directory")
     dest_dir: Path = Field(..., description="DEST data directory")
     citys_dir: Path = Field(..., description="Citys output data directory")
     geo_dir: Path = Field(..., description="Geo data directory")
@@ -49,6 +50,11 @@ class PathsConfig(BaseModel):
         "temp_dir",
         "log_dir",
         "visualization_dir",
+        "epw_dir",
+        "ddy_dir",
+        "dest_dir",
+        "citys_dir",
+        "geo_dir",
     )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""

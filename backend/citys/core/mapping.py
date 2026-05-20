@@ -29,10 +29,11 @@ class DestCoords(TypedDict):
 class MatchResult(TypedDict):
     tmyx_city: str
     tmyx_province: str
-    tmyx_files: list[Path]
+    tmyx_epw_file_path: list[Path]
+    tmyx_ddy_file_path: list[Path]
     dest_city: str
     dest_province: str
-    dest_files: list[Path]
+    dest_file_paths: list[Path]
     match_type: Literal["exact", "nearest_same_cluster", "nearest_cross_cluster"]
     distance_km: float
     cluster: int
@@ -78,7 +79,8 @@ def map_tmyx_to_dest(
         tmyx_lat = row["latitude"]
         tmyx_lon = row["longitude"]
         tmyx_province = row["province"]
-        tmyx_file_path = row["file_path"]
+        tmyx_epw_file_path = row["epw_file_path"]
+        tmyx_ddy_file_path = row["ddy_file_path"]
         cluster = row["cluster_label"]
 
         exact = dest_coords_df[
@@ -109,10 +111,11 @@ def map_tmyx_to_dest(
                     MatchResult(
                         tmyx_city=tmyx_name,
                         tmyx_province=tmyx_province,
-                        tmyx_files=[tmyx_file_path],
+                        tmyx_epw_file_path=[tmyx_epw_file_path],
+                        tmyx_ddy_file_path=[tmyx_ddy_file_path],
                         dest_city=dest["city_name"],
                         dest_province=dest["province"],
-                        dest_files=dest_files,
+                        dest_file_paths=dest_files,
                         match_type="exact",
                         distance_km=distance,
                         cluster=int(cluster),
@@ -156,10 +159,11 @@ def map_tmyx_to_dest(
             MatchResult(
                 tmyx_city=tmyx_name,
                 tmyx_province=tmyx_province,
-                tmyx_files=[tmyx_file_path],
+                tmyx_epw_file_path=[tmyx_epw_file_path],
+                tmyx_ddy_file_path=[tmyx_ddy_file_path],
                 dest_city=dest_row["city_name"],
                 dest_province=dest_row["province"],
-                dest_files=dest_files,
+                dest_file_paths=dest_files,
                 match_type=match_type,
                 distance_km=float(dists[best_i]),
                 cluster=int(cluster),

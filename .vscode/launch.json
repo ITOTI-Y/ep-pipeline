@@ -37,13 +37,22 @@
             "args": ["city", "run-all"]
         },
         {
-            "name": "City Dest",
+            "name": "City Download Dest",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "download-dest"]
+        },
+        {
+            "name": "City Download TMYX",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["city", "download-tmyx"]
         },
         {
             "name": "City Extract EPW",

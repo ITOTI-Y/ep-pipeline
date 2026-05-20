@@ -3,7 +3,7 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Final, NamedTuple
+from typing import Final, Literal, NamedTuple
 
 import httpx
 from loguru import logger
@@ -52,6 +52,7 @@ async def _download_one(
     output_dir: Path,
     semaphore: asyncio.Semaphore,
     cfg: DownloadConfigSchema,
+    suffix: Literal["epw", "ddy"],
 ) -> Path | None:
     zip_link = _parse_zip_links(url)
     if zip_link is None:
@@ -59,7 +60,7 @@ async def _download_one(
         return None
 
     link = zip_link.link
-    new_name = f"{zip_link.province}_{zip_link.city}_{zip_link.wmo_id}.epw"
+    new_name = f"{zip_link.province}_{zip_link.city}_{zip_link.wmo_id}.{suffix}"
     dest = output_dir / new_name
     if dest.exists():
         return dest
@@ -77,11 +78,11 @@ async def _download_one(
                     temp_path.write_bytes(resp.content)
                     with zipfile.ZipFile(temp_path, "r") as zip_ref:
                         zip_ref.extractall(temp_dir)
-                        epw_file = next(Path(temp_dir).glob("*.epw"), None)
-                        if epw_file is None:
-                            logger.warning(f"No .epw file in ZIP for {new_name}")
+                        file = next(Path(temp_dir).glob(f"*.{suffix}"), None)
+                        if file is None:
+                            logger.warning(f"No .{suffix} file in ZIP for {new_name}")
                             return None
-                        epw_file.rename(dest)
+                        file.rename(dest)
                 return dest
             except Exception as e:
                 if attempt < cfg.max_retries - 1:
@@ -93,10 +94,11 @@ async def _download_one(
     return dest
 
 
-async def download_epw_dataset(
-    output_dir: Path, cfg: DownloadConfigSchema
+async def download_tmyx_dataset(
+    epw_output_dir: Path, ddy_output_dir: Path, cfg: DownloadConfigSchema
 ) -> list[Path]:
-    output_dir.mkdir(parents=True, exist_ok=True)
+    epw_output_dir.mkdir(parents=True, exist_ok=True)
+    ddy_output_dir.mkdir(parents=True, exist_ok=True)
 
     async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
         index_resp = await client.get(TMYX_BASE_URL)
@@ -106,9 +108,14 @@ async def download_epw_dataset(
         semaphore = asyncio.Semaphore(cfg.concurrency)
         tasks = []
         for link in zip_links:
-            tasks.append(_download_one(client, link, output_dir, semaphore, cfg))
+            tasks.append(
+                _download_one(client, link, epw_output_dir, semaphore, cfg, "epw")
+            )
+            tasks.append(
+                _download_one(client, link, ddy_output_dir, semaphore, cfg, "ddy")
+            )
 
-        pbar = tqdm_async(total=len(tasks), desc="Downloading EPW files", unit="file")
+        pbar = tqdm_async(total=len(tasks), desc="Downloading TMYX files", unit="file")
         downloaded: list[Path] = []
         failed = 0
         for fut in asyncio.as_completed(tasks):
@@ -126,6 +133,6 @@ async def download_epw_dataset(
                 pbar.update(1)
         pbar.close()
     if failed:
-        logger.warning(f"Failed to download {failed} EPW files")
-    logger.info(f"Downloaded {len(downloaded)}/{len(zip_links)} EPW files")
+        logger.warning(f"Failed to download {failed} TMYX files")
+    logger.info(f"Downloaded {len(downloaded)}/{len(zip_links)} TMYX files")
     return downloaded

@@ -13,6 +13,7 @@ paths:
   log_dir: ${paths.output_dir}/logs/
   csv_dir: ${paths.output_dir}/paper_data/
   epw_dir: ${paths.data_dir}/epws/
+  ddy_dir: ${paths.data_dir}/ddys/
   dest_dir: ${paths.data_dir}/dest/
   citys_dir: ${paths.data_dir}/citys/
   geo_dir: ${paths.data_dir}/geo/

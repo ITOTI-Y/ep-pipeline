@@ -17,11 +17,15 @@ CITYS_FILE_NAME = CitysFileName()
 
 
 @app.command()
-def download_epw() -> None:
-    from backend.citys.io.epw import download_epw_dataset
+def download_tmyx() -> None:
+    from backend.citys.io.epw import download_tmyx_dataset
 
     cfg = config
-    asyncio.run(download_epw_dataset(Path(cfg.paths.epw_dir), cfg.citys.download))
+    asyncio.run(
+        download_tmyx_dataset(
+            Path(cfg.paths.epw_dir), Path(cfg.paths.ddy_dir), cfg.citys.download
+        )
+    )
 
 
 @app.command()
@@ -90,10 +94,15 @@ def cluster_epw() -> None:
     tmyx_files = {
         path.stem.split("_")[-1]: path for path in cfg.paths.epw_dir.glob("*.epw")
     }
+    ddy_files = {
+        path.stem.split("_")[-1]: path for path in cfg.paths.ddy_dir.glob("*.ddy")
+    }
     rep_rows = []
     for idx in qc_result.final_indices:
         row = df.iloc[idx].to_dict()
-        row["file_path"] = tmyx_files[str(row["wmo_id"])].resolve()
+        wmo_id = str(row["wmo_id"])
+        row["epw_file_path"] = tmyx_files[wmo_id].resolve()
+        row["ddy_file_path"] = ddy_files[wmo_id].resolve()
         row["selection_type"] = qc_result.selection_types[idx]
         row["cluster_label"] = int(km_result.labels[idx])
         rep_rows.append(row)
@@ -181,23 +190,23 @@ def plot() -> None:
 
 @app.command()
 def run(
-    epw: Annotated[bool, "--epw", typer.Option(help="Download EPW files")] = False,
+    tmyx: Annotated[bool, "--tmyx", typer.Option(help="Download TMYX files")] = False,
     dest: Annotated[bool, "--dest", typer.Option(help="Download DeST models")] = False,
     plt: Annotated[bool, "--plt", "-p", typer.Option(help="Plot results")] = False,
     download: Annotated[
-        bool, "--download", typer.Option(help="Download EPW and DeST files")
+        bool, "--download", typer.Option(help="Download EPW, DDY and DeST files")
     ] = False,
     all: Annotated[bool, "--all", typer.Option(help="Run all steps")] = False,
 ) -> None:
     """Run complete pipeline: download -> extract -> cluster -> plot."""
     if all:
-        epw = True
+        tmyx = True
         dest = True
         plt = True
     if download:
-        download_epw()
+        download_tmyx()
         download_dest()
-    if epw:
+    if tmyx:
         extract_epw()
         cluster_epw()
     if dest:
