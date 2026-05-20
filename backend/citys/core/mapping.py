@@ -11,15 +11,28 @@ from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_async
 
 from backend.citys.core.qc import haversine_km
+from backend.citys.io._share import BUILDING_TYPES
 
 _DISTANCE_THRESHOLD = 50
+
+
+class DestCoords(TypedDict):
+    city_name: str
+    province: str
+    building_type: str
+    latitude: float
+    longitude: float
+    elevation: float
+    file_path: Path
 
 
 class MatchResult(TypedDict):
     tmyx_city: str
     tmyx_province: str
+    tmyx_files: list[Path]
     dest_city: str
     dest_province: str
+    dest_files: list[Path]
     match_type: Literal["exact", "nearest_same_cluster", "nearest_cross_cluster"]
     distance_km: float
     cluster: int
@@ -65,6 +78,7 @@ def map_tmyx_to_dest(
         tmyx_lat = row["latitude"]
         tmyx_lon = row["longitude"]
         tmyx_province = row["province"]
+        tmyx_file_path = row["file_path"]
         cluster = row["cluster_label"]
 
         exact = dest_coords_df[
@@ -82,12 +96,23 @@ def map_tmyx_to_dest(
             distance = float(exact_dists[best_i])
             dest = exact.iloc[best_i]
             if distance < _DISTANCE_THRESHOLD:
+                dest_files = dest_coords_df[
+                    (dest_coords_df["province"] == dest["province"])
+                    & (dest_coords_df["city_name"] == dest["city_name"])
+                ]["file_path"].tolist()
+                if len(dest_files) != len(BUILDING_TYPES):
+                    logger.warning(
+                        f"Exact match found but number of DeST files does not match: {tmyx_name} -> "
+                        f"{dest['city_name']}, {len(dest_files)} != {len(BUILDING_TYPES)}"
+                    )
                 results.append(
                     MatchResult(
                         tmyx_city=tmyx_name,
                         tmyx_province=tmyx_province,
+                        tmyx_files=[tmyx_file_path],
                         dest_city=dest["city_name"],
                         dest_province=dest["province"],
+                        dest_files=dest_files,
                         match_type="exact",
                         distance_km=distance,
                         cluster=int(cluster),
@@ -118,12 +143,23 @@ def map_tmyx_to_dest(
             else "nearest_cross_cluster"
         )
 
+        dest_files = dest_coords_df[
+            (dest_coords_df["province"] == dest_row["province"])
+            & (dest_coords_df["city_name"] == dest_row["city_name"])
+        ]["file_path"].tolist()
+        if len(dest_files) != len(BUILDING_TYPES):
+            logger.warning(
+                f"Nearest match found but number of DeST files does not match: {tmyx_name} -> "
+                f"{dest_row['city_name']}, {len(dest_files)} != {len(BUILDING_TYPES)}"
+            )
         results.append(
             MatchResult(
                 tmyx_city=tmyx_name,
                 tmyx_province=tmyx_province,
+                tmyx_files=[tmyx_file_path],
                 dest_city=dest_row["city_name"],
                 dest_province=dest_row["province"],
+                dest_files=dest_files,
                 match_type=match_type,
                 distance_km=float(dists[best_i]),
                 cluster=int(cluster),
@@ -157,7 +193,7 @@ async def _get_dest_coords(dir_path: Path) -> pd.DataFrame:
     return pd.DataFrame(result)
 
 
-def _parse_one_dest(file_path: Path) -> dict:
+def _parse_one_dest(file_path: Path) -> DestCoords:
     building_type = file_path.stem.split("_")[1]
     with sqlite3.connect(str(file_path)) as conn:
         city_name = conn.execute("SELECT city_name FROM environment").fetchone()[0]
@@ -172,4 +208,5 @@ def _parse_one_dest(file_path: Path) -> dict:
             "latitude": latitude,
             "longitude": longitude,
             "elevation": elevation,
+            "file_path": file_path.resolve(),
         }

@@ -87,9 +87,13 @@ def cluster_epw() -> None:
         forced_cities,
     )
 
+    tmyx_files = {
+        path.stem.split("_")[-1]: path for path in cfg.paths.epw_dir.glob("*.epw")
+    }
     rep_rows = []
     for idx in qc_result.final_indices:
         row = df.iloc[idx].to_dict()
+        row["file_path"] = tmyx_files[str(row["wmo_id"])].resolve()
         row["selection_type"] = qc_result.selection_types[idx]
         row["cluster_label"] = int(km_result.labels[idx])
         rep_rows.append(row)
