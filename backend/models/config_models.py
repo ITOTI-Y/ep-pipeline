@@ -11,7 +11,7 @@ class PathsConfig(BaseModel):
         frozen=False,
     )
 
-    prototype_dir: Path = Field(..., description="Prototype idf file directory path")
+    idf_dir: Path = Field(..., description="IDF file directory path")
     tmy_dir: Path = Field(..., description="TMY weather file directory")
     ftmy_dir: Path = Field(..., description="Future TMY weather file directory")
     output_dir: Path = Field(..., description="Output root directory")
@@ -38,7 +38,7 @@ class PathsConfig(BaseModel):
     geo_dir: Path = Field(..., description="Geo data directory")
 
     @field_validator(
-        "prototype_dir",
+        "idf_dir",
         "tmy_dir",
         "ftmy_dir",
         "geo_dir",
@@ -68,9 +68,7 @@ class PathsConfig(BaseModel):
     def initialize_idf_and_weather_files(self) -> "PathsConfig":
         """Initialize idf and weather files"""
         if not self.idf_files:
-            object.__setattr__(
-                self, "idf_files", list(self.prototype_dir.glob("*.idf"))
-            )
+            object.__setattr__(self, "idf_files", list(self.idf_dir.glob("*.idf")))
         if not self.tmy_files:
             object.__setattr__(self, "tmy_files", list(self.tmy_dir.glob("*/*.epw")))
         if not self.ftmy_files:

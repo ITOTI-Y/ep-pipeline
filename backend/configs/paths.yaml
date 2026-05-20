@@ -1,6 +1,6 @@
 paths:
   data_dir: backend/data
-  prototype_dir: ${paths.data_dir}/prototypes/
+  idf_dir: backend/idfs/
   tmy_dir: ${paths.data_dir}/tmys/
   ftmy_dir: ${paths.data_dir}/ftmys/
   output_dir: backend/output/
