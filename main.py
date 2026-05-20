@@ -250,9 +250,9 @@ def simulate(
 
 @app.command()
 def visualization():
-    from backend.citys.viz.results import station_distribution
+    from backend.citys.viz.results import generation_all
 
-    station_distribution()
+    generation_all(ConfigManager(Path("backend/configs")))
 
 
 @app.command()

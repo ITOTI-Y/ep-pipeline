@@ -1,11 +1,17 @@
 from pathlib import Path
 
 import cartopy.crs as ccrs
+import numpy as np
 import pandas as pd
 from cartopy.feature import ShapelyFeature
 
 from backend.citys._share import CitysFileName, VizFileName
-from backend.citys.core._share import COL_DISPLAY, GROUP_A_COLS, GROUP_C_COLS
+from backend.citys.core._share import (
+    COL_DISPLAY,
+    GROUP_A_COLS,
+    GROUP_B_COLS,
+    GROUP_C_COLS,
+)
 from backend.citys.viz._share import (
     CENTER_LONGITUDE,
     GEO_PROVINCE_FILE,
@@ -138,7 +144,6 @@ def station_distribution(
 
 
 def correlation_heatmap(df: pd.DataFrame) -> None:
-    import numpy as np
     from scipy.cluster.hierarchy import leaves_list, linkage
     from scipy.spatial.distance import squareform
 
@@ -184,7 +189,121 @@ def correlation_heatmap(df: pd.DataFrame) -> None:
         yticklabels=display_labels,
     )
     _chart_generator.save(fig, VIZ_FILE_NAME.correlation_heatmap)
-    pass
+
+
+def pca_analysis(df: pd.DataFrame) -> None:
+
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    x_b = StandardScaler().fit_transform(df[GROUP_B_COLS].to_numpy())
+    pca = PCA().fit(x_b)
+    var = pca.explained_variance_ratio_
+    cum = np.cumsum(var)
+
+    fig, axs = _chart_generator.create_figure(
+        width=FigureWidth.ONE_HALF_COLUMN,
+        aspect_ratio=0.5,
+        ncols=1,
+        nrows=1,
+        sharex=False,
+        sharey=False,
+    )
+
+    ax1 = axs[0]
+    ax1.bar(range(len(var)), var, color=STYLE.colors[0], label="Individual")
+    ax1.plot(
+        range(len(var)),
+        cum,
+        "o-",
+        ms=3,
+        lw=STYLE.line_width,
+        color=STYLE.colors[1],
+        label="Cumulative",
+    )
+    ax1.axhline(
+        y=0.95,
+        color=STYLE.colors[2],
+        linestyle="--",
+        linewidth=STYLE.line_width,
+        label="95%",
+    )
+    n95 = int(np.searchsorted(cum, 0.95) + 1)
+    ax1.axvline(
+        x=n95,
+        color="grey",
+        linestyle=":",
+        linewidth=STYLE.line_width * 0.6,
+        zorder=1,
+    )
+    ax1.text(
+        n95 + 0.4,
+        0.05,
+        f"n = {n95}",
+        fontsize=STYLE.font_size_small,
+        color="grey",
+    )
+    ax1.format(
+        xlabel="Principal component",
+        ylabel="Variance ratio",
+    )
+    ax1.legend(loc="lr", ncol=1, frameon=False)
+
+    _chart_generator.save(fig, VIZ_FILE_NAME.pca_analysis)
+
+
+def cluster_dendrogram(z: np.ndarray, k: int) -> None:
+    from scipy.cluster.hierarchy import dendrogram
+
+    n = z.shape[0] + 1
+    cut_dist = (z[n - k - 1, 2] + z[n - k, 2]) / 2
+
+    fig, ax = _chart_generator.create_figure(
+        width=FigureWidth.DOUBLE_COLUMN,
+        aspect_ratio=0.5,
+    )
+    dendrogram(
+        z, truncate_mode="lastp", p=60, color_threshold=cut_dist, ax=ax, no_labels=True
+    )
+    ax.axhline(
+        cut_dist, color=STYLE.colors[1], linestyle="--", linewidth=STYLE.line_width
+    )
+    ax.format(
+        xlabel="Cluster", ylabel="Ward Distance", title=f"Ward Dendrogram (K={k})"
+    )
+    _chart_generator.save(fig, VIZ_FILE_NAME.cluster_dendrogram)
+
+
+def k_metrics(df: pd.DataFrame, k: int) -> None:
+    fig, axs = _chart_generator.create_figure(
+        width=FigureWidth.DOUBLE_COLUMN, aspect_ratio=0.4, ncols=1
+    )
+    ax = axs[0]
+    for col, label, color, linestyle, marker in zip(
+        ["silhouette", "calinski_harabasz", "gap_statistic"],
+        ["Silhouette Score", "Calinski-Harabasz Index", "Gap Statistic"],
+        [STYLE.colors[0], STYLE.colors[1], STYLE.colors[2]],
+        ["-", "--", ":"],
+        [STYLE.markers[0], STYLE.markers[1], STYLE.markers[2]],
+        strict=True,
+    ):
+        ax.plot(
+            df["k"],
+            df[col],
+            marker=marker,
+            ms=3,
+            lw=STYLE.line_width,
+            color=color,
+            label=label,
+            linestyle=linestyle,
+        )
+    ax.axvline(k, color="red", linestyle="--", linewidth=STYLE.line_width)
+    ax.legend(loc="ur", ncol=1, frameon=False)
+    ax.format(
+        xlabel="K",
+        ylabel="Metric Value",
+    )
+    _chart_generator.save(fig, VIZ_FILE_NAME.k_metrics)
 
 
 def generation_all(config: ConfigManager):
@@ -196,8 +315,16 @@ def generation_all(config: ConfigManager):
     epw_feature_df = pd.read_csv(
         Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_features
     )
+    epw_k_metrics_df = pd.read_csv(
+        Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_k_metrics
+    )
     dest_df = pd.read_csv(Path(config.paths.citys_dir) / CITYS_FILE_NAME.dest_coords)
+    ward_linkage = np.load(
+        Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_ward_linkage
+    )
 
     station_distribution(config.paths.geo_dir, epw_cluster_df, dest_df)
     correlation_heatmap(epw_feature_df)
-    pass
+    pca_analysis(epw_feature_df)
+    cluster_dendrogram(ward_linkage, epw_cluster_df["cluster_label"].nunique())
+    k_metrics(epw_k_metrics_df, epw_cluster_df["cluster_label"].nunique())

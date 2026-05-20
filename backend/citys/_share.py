@@ -27,3 +27,6 @@ class VizFileName(BaseModel):
     )
     station_distribution: str = "01_station_distribution.png"
     correlation_heatmap: str = "02_correlation_heatmap.png"
+    pca_analysis: str = "03_pca_analysis.png"
+    cluster_dendrogram: str = "04_cluster_dendrogram.png"
+    k_metrics: str = "05_k_metrics.png"
