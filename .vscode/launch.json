@@ -1,19 +1,28 @@
 {
     "configurations": [
                 {
-            "name": "Simulate City",
+            "name": "Simulate All Cities",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulate", "--city", "Chicago", "--n-jobs", "1"]
+            "args": ["simulate", "--n-jobs", "1"]
+        },
+        {
+            "name": "Simulate One City",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["simulate", "--city", "Guangzhou", "--n-jobs", "1"]
         },
         {
             "name": "Parse Result",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["parse-result"]
@@ -22,7 +31,7 @@
             "name": "Visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["visualization"]
@@ -31,7 +40,7 @@
             "name": "City Selection",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "run-all"]
@@ -40,7 +49,7 @@
             "name": "City Download Dest",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "download-dest"]
@@ -49,7 +58,7 @@
             "name": "City Download TMYX",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "download-tmyx"]
@@ -58,7 +67,7 @@
             "name": "City Extract EPW",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "extract-epw"]
@@ -67,7 +76,7 @@
             "name": "City Cluster EPW",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "cluster-epw"]
@@ -76,7 +85,7 @@
             "name": "City Mapping",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "mapping-dest-to-tmyx"]
@@ -85,7 +94,7 @@
             "name": "City Plot",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["city", "plot"],

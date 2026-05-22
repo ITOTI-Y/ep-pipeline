@@ -2,8 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models.enums import BuildingType
-
 
 class ECMParameters(BaseModel):
     model_config = ConfigDict(
@@ -11,7 +9,7 @@ class ECMParameters(BaseModel):
         validate_assignment=True,
     )
 
-    building_type: BuildingType = Field(
+    building_type: str = Field(
         ..., description="Type of the building (e.g., Residential, Commercial, etc.)"
     )
 
@@ -83,12 +81,22 @@ class ECMParameters(BaseModel):
         level_map = self._lighting_power_reduction_map[self.building_type]
         return level_map.get(self.lighting_power_reduction_level, None)
 
-    _lighting_power_reduction_map: dict[BuildingType, dict[int, float]] = {
-        BuildingType.OFFICE_LARGE: {1: 0.2, 2: 0.47, 3: 0.53},
-        BuildingType.OFFICE_MEDIUM: {1: 0.2, 2: 0.47, 3: 0.53},
-        BuildingType.APARTMENT_HIGH_RISE: {1: 0.35, 2: 0.45, 3: 0.55},
-        BuildingType.SINGLE_FAMILY_RESIDENTIAL: {1: 0.45, 2: 0.5, 3: 0.64},
-        BuildingType.MULTI_FAMILY_RESIDENTIAL: {1: 0.35, 2: 0.45, 3: 0.55},
+    _lighting_power_reduction_map: dict[str, dict[int, float]] = {
+        "coa": {1: 0.2, 2: 0.47, 3: 0.53},
+        "cob": {1: 0.2, 2: 0.47, 3: 0.53},
+        "goa": {1: 0.35, 2: 0.45, 3: 0.55},
+        "gob": {1: 0.45, 2: 0.5, 3: 0.64},
+        "highs": {1: 0.35, 2: 0.45, 3: 0.55},
+        "hight": {1: 0.35, 2: 0.45, 3: 0.55},
+        "inp": {1: 0.35, 2: 0.45, 3: 0.55},
+        "lh": {1: 0.35, 2: 0.45, 3: 0.55},
+        "sh": {1: 0.35, 2: 0.45, 3: 0.55},
+        "low": {1: 0.35, 2: 0.45, 3: 0.55},
+        "mall": {1: 0.35, 2: 0.45, 3: 0.55},
+        "outp": {1: 0.35, 2: 0.45, 3: 0.55},
+        "sch": {1: 0.35, 2: 0.45, 3: 0.55},
+        "th": {1: 0.35, 2: 0.45, 3: 0.55},
+        "uni": {1: 0.35, 2: 0.45, 3: 0.55},
     }
 
     def to_dict(self) -> dict[str, Any]:

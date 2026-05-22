@@ -1,33 +1,49 @@
 from __future__ import annotations
 
-from datetime import datetime
+from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import NamedTuple
 from uuid import UUID, uuid4
 
 from idfpy import IDF
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-from .enums import SimulationStatus, SimulationType
+from .config_models import IDFFile, WeatherFile
+from .ecm_parameters import ECMParameters
+from .simulation_result import SimulationResult
 
-if TYPE_CHECKING:
-    from .building import Building
-    from .ecm_parameters import ECMParameters
-    from .simulation_result import SimulationResult
-    from .weather_file import Weather
+
+class SimulationStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class SimulationType(StrEnum):
+    BASELINE = "baseline"
+    ECM = "ecm"
+    OPTIMIZATION = "optimization"
+    PV = "pv"
+
+
+class BuildingWeatherCombination(NamedTuple):
+    idf_files: set[IDFFile]
+    weather_files: set[WeatherFile]
 
 
 class SimulationJob(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
-        frozen=False,
+        frozen=True,
         arbitrary_types_allowed=True,
     )
 
-    building: Building = Field(
+    idf_file: IDFFile = Field(
         ..., description="The building object associated with the simulation job."
     )
-    weather: Weather = Field(
+    weather_file: WeatherFile = Field(
         ..., description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
@@ -41,10 +57,6 @@ class SimulationJob(BaseModel):
     )
     id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the simulation job."
-    )
-    created_at: datetime = Field(
-        default_factory=datetime.now,
-        description="Timestamp when the simulation job was created.",
     )
     status: SimulationStatus = Field(
         default=SimulationStatus.PENDING,
@@ -63,14 +75,6 @@ class SimulationJob(BaseModel):
         default=None,
         description="Energy Conservation Measures parameters for the simulation.",
     )
-    started_at: datetime | None = Field(
-        default=None,
-        description="Timestamp when the simulation job started.",
-    )
-    completed_at: datetime | None = Field(
-        default=None,
-        description="Timestamp when the simulation job completed.",
-    )
     result: SimulationResult | None = Field(
         default=None,
         description="The result of the simulation job.",
@@ -79,77 +83,3 @@ class SimulationJob(BaseModel):
         default=None,
         description="Error message if the simulation job failed.",
     )
-
-    @field_validator("output_directory")
-    def validate_output_directory(cls, v: Path) -> Path:
-        if v.exists() and not v.is_dir():
-            raise ValueError(f"Output path '{v}' exists but is not a directory.")
-        return v
-
-    def start(self) -> None:
-        """Mark the simulation job as started."""
-        if self.status != SimulationStatus.PENDING:
-            raise ValueError(
-                f"Cannot start a job that is {self.status}."
-                f" Only PENDING jobs can be started."
-            )
-
-        self.status = SimulationStatus.RUNNING
-        self.started_at = datetime.now()
-
-    def complete(self, result: SimulationResult) -> None:
-        """Mark the simulation job as completed."""
-        if self.status != SimulationStatus.RUNNING:
-            raise ValueError(
-                f"Cannot complete a job that is {self.status}."
-                f" Only RUNNING jobs can be completed."
-            )
-
-        if getattr(result, "job_id", None) != self.id:
-            raise ValueError(
-                f"Result job_id {getattr(result, 'job_id', None)} does not match SimulationJob id {self.id}."
-            )
-        self.status = SimulationStatus.COMPLETED
-        self.completed_at = datetime.now()
-        self.result = result
-
-    def fail(self, error_message: str) -> None:
-        """Mark the simulation job as failed."""
-        if self.status.is_terminal():
-            raise ValueError(
-                f"Cannot fail a job that is {self.status}."
-                f" Job is already in a terminal state."
-            )
-        self.status = SimulationStatus.FAILED
-        self.completed_at = datetime.now()
-        self.error_message = error_message
-
-    def cancel(self) -> None:
-        """Mark the simulation job as cancelled."""
-        if self.status.is_terminal():
-            raise ValueError(
-                f"Cannot cancel a job that is {self.status}."
-                f" Job is already in a terminal state."
-            )
-        self.status = SimulationStatus.CANCELLED
-        self.completed_at = datetime.now()
-
-    def get_cache_key(self) -> str:
-        building_id = self.building.get_identifier()
-        weather_file_id = self.weather.get_identifier() if self.weather else None
-        ecm_hash = hash(self.ecm_parameters) if self.ecm_parameters else 0
-        return (
-            f"{building_id}_{weather_file_id}_{self.simulation_type.value}_{ecm_hash}"
-        )
-
-    def get_duration(self) -> float | None:
-        """Get the duration of the simulation job in seconds."""
-        if self.started_at and self.completed_at:
-            return (self.completed_at - self.started_at).total_seconds()
-        return None
-
-    def __str__(self) -> str:
-        return (
-            f"SimulationJob(id={self.id}, type={self.simulation_type.value}, "
-            f"status={self.status.value})"
-        )

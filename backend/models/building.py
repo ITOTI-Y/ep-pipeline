@@ -4,8 +4,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .enums import BuildingType
-
 
 class Building(BaseModel):
     model_config = ConfigDict(
@@ -17,7 +15,7 @@ class Building(BaseModel):
     )
 
     name: str = Field(..., description="The name of the building.")
-    building_type: BuildingType = Field(..., description="The type of the building.")
+    building_type: str = Field(..., description="The type of the building.")
     location: str = Field(..., description="The location of the building.")
     idf_file_path: Path = Field(
         ..., description="The file path to the building's IDF file."
@@ -59,14 +57,3 @@ class Building(BaseModel):
     def update_num_floors(self, num_floors: int) -> None:
         self.num_floors = num_floors
         self.modified_at = datetime.now()
-
-    def get_identifier(self) -> str:
-        """Returns a string identifier for the building."""
-        return f"{self.location}_{self.building_type.value}"
-
-    def __str__(self) -> str:
-        return (
-            f"Building(name='{self.name}',"
-            f"type={self.building_type.value},"
-            f"location='{self.location}')"
-        )

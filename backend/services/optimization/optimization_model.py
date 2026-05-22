@@ -5,14 +5,14 @@ from deap import base, creator, tools
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
-from backend.models import BuildingType, ECMParameters
+from backend.models import ECMParameters
 from backend.services.optimization.surrogate_model import ISurrogateModel
 from backend.utils.config import ConfigManager
 
 
 class IOptimizationModel(ABC):
     @abstractmethod
-    def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
+    def optimize(self, building_type: str) -> tuple[ECMParameters, float]:
         pass
 
 
@@ -48,15 +48,13 @@ class GeneticAlgorithmModel(IOptimizationModel):
         self._encode_model = encode_model
         self._code = code
 
-    def _decode_chromosome(
-        self, individual: list, building_type: BuildingType
-    ) -> ECMParameters:
+    def _decode_chromosome(self, individual: list, building_type: str) -> ECMParameters:
         params = {"building_type": building_type}
         for i, name in enumerate(self._ecm_parameters_names):
             idx = individual[i]
             value = self._ecm_parameters[name][idx]
             params[name] = value
-        return ECMParameters(**params)  # type: ignore
+        return ECMParameters.model_validate(params)
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
         code_encoded = self._encode_model.transform([[self._code]])
@@ -113,7 +111,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
 
         return crossover_prob, mutation_prob
 
-    def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
+    def optimize(self, building_type: str) -> tuple[ECMParameters, float]:
         self._building_type = building_type
 
         if not hasattr(creator, "FitnessMin"):

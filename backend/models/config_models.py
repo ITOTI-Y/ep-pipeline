@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .__share import IDFFile, WeatherFile
+
 
 class PathsConfig(BaseModel):
     model_config = ConfigDict(
@@ -26,9 +28,11 @@ class PathsConfig(BaseModel):
     data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
     temp_dir: Path = Field(..., description="Temporary directory")
-    idf_files: list[Path] = Field(default_factory=list, description="IDF files")
-    tmy_files: list[Path] = Field(default_factory=list, description="TMY weather files")
-    ftmy_files: list[Path] = Field(
+    idf_files: list[IDFFile] = Field(default_factory=list, description="IDF files")
+    tmy_files: list[WeatherFile] = Field(
+        default_factory=list, description="TMY weather files"
+    )
+    ftmy_files: list[WeatherFile] = Field(
         default_factory=list, description="Future TMY weather files"
     )
     epw_dir: Path = Field(..., description="EPW weather file directory")
@@ -68,11 +72,42 @@ class PathsConfig(BaseModel):
     def initialize_idf_and_weather_files(self) -> "PathsConfig":
         """Initialize idf and weather files"""
         if not self.idf_files:
-            object.__setattr__(self, "idf_files", list(self.idf_dir.glob("*.idf")))
+            for idf_file in self.idf_dir.glob("**/*.idf"):
+                city, building_type, year = idf_file.stem.split("_")
+                self.idf_files.append(
+                    IDFFile(
+                        city=city,
+                        building_type=building_type,
+                        file_path=idf_file,
+                        year=int(year),
+                    )
+                )
         if not self.tmy_files:
-            object.__setattr__(self, "tmy_files", list(self.tmy_dir.glob("*/*.epw")))
+            for tmy_file in self.tmy_dir.glob("**/*.epw"):
+                province, city, wmo_id = tmy_file.stem.split("_")
+                code = "TMY"
+                self.tmy_files.append(
+                    WeatherFile(
+                        file_path=tmy_file,
+                        city=city,
+                        province=province,
+                        wmo_id=int(wmo_id),
+                        code=code,
+                    )
+                )
         if not self.ftmy_files:
-            object.__setattr__(self, "ftmy_files", list(self.ftmy_dir.glob("*/*.epw")))
+            for ftmy_file in self.ftmy_dir.glob("**/*.epw"):
+                province, city, wmo_id = ftmy_file.stem.split("_")
+                code = ftmy_file.parent.stem
+                self.ftmy_files.append(
+                    WeatherFile(
+                        file_path=ftmy_file,
+                        city=city,
+                        province=province,
+                        wmo_id=int(wmo_id),
+                        code=code,
+                    )
+                )
         return self
 
 

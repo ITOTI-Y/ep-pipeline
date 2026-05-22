@@ -11,8 +11,8 @@ from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IFileCleaner,
     IResultParser,
-    ISimulationService,
 )
+from backend.services.simulation._share import ISimulationService
 from backend.utils.config import ConfigManager
 
 
@@ -48,7 +48,7 @@ class ECMService(ISimulationService):
 
         result = SimulationResult(
             job_id=self._job.id,
-            building_type=self._job.building.building_type,
+            building_type=self._job.idf_file.building_type,
         )
 
         try:

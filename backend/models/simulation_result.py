@@ -6,7 +6,6 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .ecm_parameters import ECMParameters
-from .enums import BuildingType
 
 logger = logger.bind(module=__name__)
 
@@ -71,7 +70,7 @@ class SimulationResult(BaseModel):
         default=None,
         description="Path to the SQL file containing detailed simulation data.",
     )
-    building_type: BuildingType = Field(
+    building_type: str = Field(
         ...,
         description="The type of the building.",
     )

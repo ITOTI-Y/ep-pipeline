@@ -19,13 +19,13 @@ from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IFileCleaner,
     IResultParser,
-    ISimulationService,
 )
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
 from backend.services.optimization.surrogate_model import (
     ISurrogateModel,
     XGBoostSurrogateModel,
 )
+from backend.services.simulation._share import ISimulationService
 from backend.utils.config import ConfigManager
 
 FEATURE_NAMES = ECMParametersConfig().keys
@@ -73,7 +73,7 @@ class OptimizationService(ISimulationService):
     def _prepare_surrogate_models(self) -> None:
         surrogate_model_path = (
             self._config.paths.optimization_dir
-            / str(self._job.building.building_type)
+            / str(self._job.idf_file.building_type)
             / "surrogate_model.pkl"
         )
 
@@ -127,7 +127,7 @@ class OptimizationService(ISimulationService):
                 evaluate_metrics = surrogate_model.evaluate()
                 json.dump(evaluate_metrics, f, indent=4)
 
-            if str(building_type) == str(self._job.building.building_type):
+            if str(building_type) == str(self._job.idf_file.building_type):
                 self._surrogate_model = surrogate_model
             logger.info(f"Surrogate model trained for building type {building_type}")
             self._save_surrogate_model(surrogate_model, bt_model_path)
@@ -149,7 +149,7 @@ class OptimizationService(ISimulationService):
             logger.info(f"Encode model saved to {encode_model_path}")
 
     def _get_best_ecm_parameters(self):
-        building_type = self._job.building.building_type
+        building_type = self._job.idf_file.building_type
         surrogate_model = self._surrogate_model
         if surrogate_model is None:
             raise ValueError("Surrogate model not found")
@@ -157,7 +157,7 @@ class OptimizationService(ISimulationService):
             config=self._config,
             surrogate_model=surrogate_model,
             encode_model=self._one_hot_encoder,
-            code=self._job.weather.code,  # type: ignore
+            code=self._job.weather_file.code,
         )
         best_ecm, predicted_eui = optimization_model.optimize(
             building_type=building_type
@@ -183,7 +183,7 @@ class OptimizationService(ISimulationService):
     def execute(self) -> SimulationResult:
         result = SimulationResult(
             job_id=self._job.id,
-            building_type=self._job.building.building_type,
+            building_type=self._job.idf_file.building_type,
         )
         try:
             result = self._executor.run(
@@ -207,7 +207,7 @@ class OptimizationService(ISimulationService):
             result = self.execute()
             result.ecm_parameters = self._job.ecm_parameters or None
             result.predicted_eui = self._predicted_eui
-            result.weather_code = self._job.weather.code
+            result.weather_code = self._job.weather_file.code
             return result
         finally:
             self.cleanup()

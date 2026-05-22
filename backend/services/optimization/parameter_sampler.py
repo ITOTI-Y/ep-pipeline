@@ -2,7 +2,7 @@ import numpy as np
 from loguru import logger
 from scipy.stats.qmc import LatinHypercube
 
-from backend.models import BuildingType, ECMParameters
+from backend.models import ECMParameters
 from backend.utils.config import ConfigManager
 
 # class ParameterSampler:
@@ -48,7 +48,7 @@ class ParameterSampler:
     def sample(
         self,
         n_samples: int,
-        building_type: BuildingType,
+        building_type: str,
     ) -> list[ECMParameters]:
         logger.info(f"Generating {n_samples} samples for building type {building_type}")
 
@@ -99,7 +99,7 @@ class ParameterSampler:
         ecm_samples: list[ECMParameters],
         n_samples: int,
         seen_samples: set[tuple],
-        building_type: BuildingType,
+        building_type: str,
     ):
         attempts = 0
         max_attempts = (n_samples - len(ecm_samples)) * 10

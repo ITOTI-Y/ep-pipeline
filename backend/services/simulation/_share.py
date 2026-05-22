@@ -1,0 +1,56 @@
+from abc import ABC, abstractmethod
+
+from backend.models import SimulationResult
+
+
+class ISimulationService(ABC):
+    @abstractmethod
+    def prepare(self) -> None:
+        """
+        Prepare the simulation context.
+
+        include:
+            - create output directory
+            - validate files existence
+            - setting output variables
+            - apply preparation logic
+        Raises:
+            ValidationError: If validation fails.
+            FileNotFoundError: If required files are missing.
+            PreparationError: If preparation process fails.
+        """
+        pass
+
+    @abstractmethod
+    def execute(self) -> SimulationResult:
+        """
+        Execute the simulation.
+
+        Returns:
+            SimulationResult: The simulation result containing output paths,
+                energy metrics, and execution metadata.
+
+        Raises:
+            SimulationError: If the simulation execution fails.
+            RuntimeError: If EnergyPlus encounters a runtime error.
+        """
+        pass
+
+    @abstractmethod
+    def cleanup(self) -> None:
+        """
+        Clean up temporary files and resources after simulation.
+
+        This method should remove intermediate files and release any
+        resources held during the simulation. It should not raise exceptions.
+
+        """
+        pass
+
+    def run(self) -> SimulationResult:
+        try:
+            self.prepare()
+            result = self.execute()
+            return result
+        finally:
+            self.cleanup()
