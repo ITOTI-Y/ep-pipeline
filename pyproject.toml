@@ -50,6 +50,11 @@ ignore = [
     "E501", # Line too long
 ]
 
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "pydantic.field_validator",
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
