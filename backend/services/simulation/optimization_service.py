@@ -158,7 +158,7 @@ class OptimizationService(ISimulationService):
             building_type=building_type
         )
         self._predicted_eui = predicted_eui
-        self._job.ecm_parameters = best_ecm
+        self._job = self._job.model_copy(update={"ecm_parameters": best_ecm})
 
     def prepare(self) -> None:
         self._get_best_ecm_parameters()
@@ -197,12 +197,8 @@ class OptimizationService(ISimulationService):
             return result
 
     def run(self) -> SimulationResult:
-        try:
-            self.prepare()
-            result = self.execute()
-            result.ecm_parameters = self._job.ecm_parameters or None
-            result.predicted_eui = self._predicted_eui
-            result.weather_code = self._job.weather_file.code
-            return result
-        finally:
-            self.cleanup()
+        result = super().run()
+        result.ecm_parameters = self._job.ecm_parameters or None
+        result.predicted_eui = self._predicted_eui
+        result.weather_code = self._job.weather_file.code
+        return result

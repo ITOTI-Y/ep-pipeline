@@ -11,7 +11,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         job: SimulationJob,
     ) -> SimulationResult:
         idf = job.idf
-        output_prefix = job.output_prefix
+        output_prefix = job.output_prefix or "eplus"
         weather_file = job.weather_file.file_path
         output_directory = job.output_directory
         read_variables = job.read_variables

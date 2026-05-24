@@ -54,10 +54,10 @@ def simulate(
 
     services: dict[SimulationType, list[ISimulationService]] = defaultdict(list)
     for _city, combination in idf_epw_map.items():
-        _basline_services = get_simulation_services(
+        _baseline_services = get_simulation_services(
             config, combination, SimulationType.BASELINE
         )
-        services[SimulationType.BASELINE].extend(_basline_services)
+        services[SimulationType.BASELINE].extend(_baseline_services)
 
         # _ecm_services = get_simulation_services(config, combination, SimulationType.ECM)
         # services[SimulationType.ECM].extend(_ecm_services)

@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from backend.models._share import BUILDING_TYPES
+from backend.models import BUILDING_TYPES
 from backend.utils.config.config_manager import ConfigManager
 
 # ── Constants ────────────────────────────────────────────────────────────────

@@ -78,9 +78,11 @@ def get_simulation_services(
         case SimulationType.PV:
             for job in jobs:
                 baseline_result_path = (
-                    config.paths.baseline_dir
-                    / job.weather_file.city
+                    config.paths.sim_dir
+                    / SimulationType.BASELINE.value
                     / job.weather_file.code
+                    / job.idf_file.city
+                    / job.idf_file.building_type
                     / "result.pkl"
                 )
                 with open(baseline_result_path, "rb") as f:
@@ -101,5 +103,5 @@ def get_simulation_services(
 __all__ = [
     "FileCleaner",
     "ResultParser",
-    "get_simulation_jobs",
+    "get_simulation_services",
 ]

@@ -17,7 +17,7 @@ class SettingApply(IApply):
             logger.error("IDF is not set, skipping")
             raise ValueError("IDF is not set")
         self._configure_setting(job.idf)
-        logger.info("Setting configuration applied successfully")
+        logger.success("Setting configuration applied successfully")
 
     def _configure_setting(self, idf: IDF) -> None:
         sim_control_list = idf.all_of_type(SimulationControl)
@@ -35,5 +35,3 @@ class SettingApply(IApply):
                 "Yes" if has_sizing_plant else "No"
             )
             sim_control.maximum_number_of_hvac_sizing_simulation_passes = 2
-
-        logger.success("Setting configuration applied successfully")

@@ -67,10 +67,6 @@ class ECMService(ISimulationService):
         )
 
     def run(self) -> SimulationResult:
-        try:
-            self.prepare()
-            result = self.execute()
-            result.ecm_parameters = self._job.ecm_parameters or None
-            return result
-        finally:
-            self.cleanup()
+        result = super().run()
+        result.ecm_parameters = self._job.ecm_parameters or None
+        return result

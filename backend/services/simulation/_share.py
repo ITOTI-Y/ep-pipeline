@@ -81,7 +81,6 @@ class ISimulationService(ABC):
     def _copy_schedules(self) -> None:
         schedules_src = self._job.idf_file.file_path.parent / "schedules"
         schedules_dst = self._job.output_directory / "schedules"
-        schedules_dst.mkdir(parents=True, exist_ok=True)
         if schedules_src.is_dir():
             shutil.copytree(schedules_src, schedules_dst, dirs_exist_ok=True)
 
