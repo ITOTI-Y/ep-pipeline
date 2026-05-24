@@ -68,3 +68,8 @@ dev = [
     "ruff>=0.15.14",
     "ty>=0.0.38",
 ]
+
+[tool.ty.src]
+exclude = [
+    "tests/**",
+]

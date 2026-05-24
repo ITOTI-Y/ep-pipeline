@@ -2,6 +2,8 @@ from collections.abc import Generator
 from itertools import product
 from pickle import load
 
+from idfpy import IDF
+
 from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models.simulation_job import (
     BuildingWeatherCombination,
@@ -28,15 +30,21 @@ def get_simulation_services(
     for idf_file, weather_file in product(
         combination.idf_files, combination.weather_files
     ):
+        output_directory = (
+            config.paths.sim_dir
+            / simulation_type.value
+            / weather_file.code
+            / idf_file.city
+            / idf_file.building_type
+        )
         jobs.append(
             SimulationJob(
                 idf_file=idf_file,
+                idf=IDF.load(idf_file.file_path),
                 weather_file=weather_file,
                 simulation_type=simulation_type,
-                output_directory=config.paths.output_dir
-                / weather_file.city
-                / weather_file.code,
-                output_prefix=f"{simulation_type.value}_{weather_file.city}_{weather_file.code}",
+                output_directory=output_directory,
+                output_prefix="eplus",
             )
         )
     match simulation_type:

@@ -22,3 +22,5 @@ simulation:
     - "*.htm"
     - "*.mtr"
     - "*.sql"
+    - "*.dbg"
+    - "*.expidf"

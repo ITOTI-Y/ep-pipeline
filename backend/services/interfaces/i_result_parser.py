@@ -47,6 +47,7 @@ class IResultParser(ABC):
                 WHERE
                     r.Name = 'Surface Outside Face Incident Solar Radiation Rate per Area'
                     AND s.ClassName IN ('Wall', 'Roof')
+                    AND r.DayType NOT IN ('WinterDesignDay', 'SummerDesignDay')
                 GROUP BY
                     r.KeyValue
             """

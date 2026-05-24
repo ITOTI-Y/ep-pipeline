@@ -16,7 +16,7 @@
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulate", "--city", "Guangzhou", "--n-jobs", "1"]
+            "args": ["simulate", "--city", "Guangzhou", "-n", "1"]
         },
         {
             "name": "Parse Result",

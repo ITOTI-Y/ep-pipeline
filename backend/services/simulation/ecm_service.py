@@ -9,10 +9,9 @@ from backend.services.configuration import (
 )
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
-    IFileCleaner,
     IResultParser,
 )
-from backend.services.simulation._share import ISimulationService
+from backend.services.simulation._share import IFileCleaner, ISimulationService
 from backend.utils.config import ConfigManager
 
 
@@ -25,11 +24,7 @@ class ECMService(ISimulationService):
         config: ConfigManager,
         job: SimulationJob,
     ):
-        self._job = job
-        self._executor = executor
-        self._result_parser = result_parser
-        self._file_cleaner = file_cleaner
-        self._config = config
+        super().__init__(executor, result_parser, file_cleaner, config, job)
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)

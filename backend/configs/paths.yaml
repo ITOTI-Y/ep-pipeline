@@ -17,3 +17,4 @@ paths:
   dest_dir: ${paths.data_dir}/dest/
   citys_dir: ${paths.data_dir}/citys/
   geo_dir: ${paths.data_dir}/geo/
+  sim_dir: ${paths.output_dir}/sim/

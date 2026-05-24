@@ -37,7 +37,7 @@ class IDFFile(BaseModel):
     def parse_building_type(cls, v: str) -> str:
         if v.lower() not in BUILDING_TYPES:
             raise ValueError(f"Invalid building type: {v}")
-        return BUILDING_TYPES[v.lower()]
+        return v.lower()
 
     @field_validator("city")
     def normalize_city_name(cls, v: str) -> str:

@@ -17,7 +17,6 @@ from backend.services.configuration import (
 )
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
-    IFileCleaner,
     IResultParser,
 )
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
@@ -25,7 +24,7 @@ from backend.services.optimization.surrogate_model import (
     ISurrogateModel,
     XGBoostSurrogateModel,
 )
-from backend.services.simulation._share import ISimulationService
+from backend.services.simulation._share import IFileCleaner, ISimulationService
 from backend.utils.config import ConfigManager
 
 FEATURE_NAMES = ECMParametersConfig().keys
@@ -48,13 +47,12 @@ class OptimizationService(ISimulationService):
         job: SimulationJob,
         ecm_csv_path: Path | None = None,
     ):
+        super().__init__(executor, result_parser, file_cleaner, config, job)
         np.random.seed(config.optimization.seed)
         self._ecm_csv_path = ecm_csv_path or config.paths.ecm_dir / "results.csv"
         self._ecm_data = pd.read_csv(self._ecm_csv_path)
         logger.info(f"ECM data loaded from {self._ecm_csv_path}")
         self._ecm_parameters_names = config.ecm_parameters.keys
-        self._config = config
-        self._job = job
         self._surrogate_model = None
         self._one_hot_encoder = OneHotEncoder(
             sparse_output=False, handle_unknown="ignore"
@@ -64,9 +62,6 @@ class OptimizationService(ISimulationService):
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
         self._setting_apply = SettingApply(config=config)
-        self._executor = executor
-        self._result_parser = result_parser
-        self._file_cleaner = file_cleaner
 
         self._predicted_eui = None
 

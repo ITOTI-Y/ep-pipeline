@@ -12,7 +12,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
     ) -> SimulationResult:
         idf = job.idf
         output_prefix = job.output_prefix
-        weather_file = job.weather.file_path
+        weather_file = job.weather_file.file_path
         output_directory = job.output_directory
         read_variables = job.read_variables
         job_id = job.id
@@ -28,16 +28,17 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
             raise ValueError("IDF is not set")
 
         output_directory.mkdir(parents=True, exist_ok=True)
-        idf.save(output_directory / f"{output_prefix}.idf")
+        idf_path = output_directory / f"{output_prefix}.idf"
+        idf.save(idf_path)
 
         result = SimulationResult(
             job_id=job_id,
-            building_type=job.building.building_type,
+            building_type=job.idf_file.building_type,
         )
 
         try:
             sim_result = sim(
-                idf=idf,
+                idf=idf_path,
                 weather=weather_file,
                 output_dir=output_directory,
                 output_prefix=output_prefix,

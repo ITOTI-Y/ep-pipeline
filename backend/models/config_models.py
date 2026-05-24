@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .__share import IDFFile, WeatherFile
+from backend.models._share import IDFFile, WeatherFile
 
 
 class PathsConfig(BaseModel):
@@ -40,6 +40,7 @@ class PathsConfig(BaseModel):
     dest_dir: Path = Field(..., description="DEST data directory")
     citys_dir: Path = Field(..., description="Citys output data directory")
     geo_dir: Path = Field(..., description="Geo data directory")
+    sim_dir: Path = Field(..., description="Simulation output directory")
 
     @field_validator(
         "idf_dir",
@@ -59,6 +60,7 @@ class PathsConfig(BaseModel):
         "dest_dir",
         "citys_dir",
         "geo_dir",
+        "sim_dir",
     )
     def validate_directory_exists(cls, v: Path) -> Path:
         """Create directory if not exists and Validate directory exists"""

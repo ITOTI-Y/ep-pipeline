@@ -16,12 +16,11 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from backend.models.enums import BuildingType
+from backend.models._share import BUILDING_TYPES
 from backend.utils.config.config_manager import ConfigManager
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-BUILDING_TYPES = [bt.value for bt in BuildingType]
 WEATHER_CODES = ["TMY", "SSP126", "SSP245", "SSP370", "SSP434", "SSP585"]
 STAGES = ["baseline", "ecm", "pv"]
 

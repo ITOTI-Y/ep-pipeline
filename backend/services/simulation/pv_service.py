@@ -11,10 +11,9 @@ from backend.services.configuration import (
 )
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
-    IFileCleaner,
     IResultParser,
 )
-from backend.services.simulation._share import ISimulationService
+from backend.services.simulation._share import IFileCleaner, ISimulationService
 from backend.utils.config import ConfigManager
 
 
@@ -28,11 +27,7 @@ class PVService(ISimulationService):
         job: SimulationJob,
         surfaces: list[Surface],
     ):
-        self._config = config
-        self._job = job
-        self._executor = executor
-        self._result_parser = result_parser
-        self._file_cleaner = file_cleaner
+        super().__init__(executor, result_parser, file_cleaner, config, job)
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
         self._pv_apply = PVApply(config=config, surfaces=surfaces)
