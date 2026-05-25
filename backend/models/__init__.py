@@ -5,7 +5,6 @@ from .config_models import PVConfig, StorageConfig
 from .ecm_parameters import ECMParameters
 from .simulation_job import SimulationJob
 from .simulation_result import SimulationResult, Surface
-from .weather_file import Weather
 
 __all__ = [
     "BUILDING_TYPES",
@@ -18,6 +17,5 @@ __all__ = [
     "SimulationType",
     "StorageConfig",
     "Surface",
-    "Weather",
 ]
 SimulationJob.model_rebuild()

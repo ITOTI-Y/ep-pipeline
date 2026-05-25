@@ -78,3 +78,15 @@ class WeatherFile(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.province}_{self.city}_{self.wmo_id}"
+
+    def __hash__(self) -> int:
+        return hash((self.province, self.city, self.code))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, WeatherFile):
+            return NotImplemented
+        return (self.province, self.city, self.code) == (
+            other.province,
+            other.city,
+            other.code,
+        )

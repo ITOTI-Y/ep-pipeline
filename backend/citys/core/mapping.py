@@ -29,8 +29,8 @@ class DestCoords(TypedDict):
 class MatchResult(TypedDict):
     tmyx_city: str
     tmyx_province: str
-    tmyx_epw_file_path: list[Path]
-    tmyx_ddy_file_path: list[Path]
+    tmyx_epw_file_paths: list[Path]
+    tmyx_ddy_file_paths: list[Path]
     dest_city: str
     dest_province: str
     dest_file_paths: list[Path]
@@ -46,7 +46,7 @@ def map_tmyx_to_dest(
     dest_dir: Path,
     dest_coords_file: Path,
     out_file: Path,
-) -> None:
+) -> pd.DataFrame:
 
     if dest_coords_file.exists():
         dest_coords_df = pd.read_csv(dest_coords_file)
@@ -111,8 +111,8 @@ def map_tmyx_to_dest(
                     MatchResult(
                         tmyx_city=tmyx_name,
                         tmyx_province=tmyx_province,
-                        tmyx_epw_file_path=[tmyx_epw_file_path],
-                        tmyx_ddy_file_path=[tmyx_ddy_file_path],
+                        tmyx_epw_file_paths=[tmyx_epw_file_path],
+                        tmyx_ddy_file_paths=[tmyx_ddy_file_path],
                         dest_city=dest["city_name"],
                         dest_province=dest["province"],
                         dest_file_paths=dest_files,
@@ -159,8 +159,8 @@ def map_tmyx_to_dest(
             MatchResult(
                 tmyx_city=tmyx_name,
                 tmyx_province=tmyx_province,
-                tmyx_epw_file_path=[tmyx_epw_file_path],
-                tmyx_ddy_file_path=[tmyx_ddy_file_path],
+                tmyx_epw_file_paths=[tmyx_epw_file_path],
+                tmyx_ddy_file_paths=[tmyx_ddy_file_path],
                 dest_city=dest_row["city_name"],
                 dest_province=dest_row["province"],
                 dest_file_paths=dest_files,
@@ -176,6 +176,7 @@ def map_tmyx_to_dest(
         f"Mapping: {len(df)} pairs -> {df['dest_city'].nunique()} unique DeST cities, "
         f"same-cluster rate={(df['match_type'] != 'nearest_cross_cluster').mean():.1%}"
     )
+    return df
 
 
 async def _get_dest_coords(dir_path: Path) -> pd.DataFrame:

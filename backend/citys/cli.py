@@ -158,7 +158,12 @@ def download_dest() -> None:
 
 
 @app.command()
-def mapping_dest_to_tmyx() -> None:
+def mapping_dest_to_tmyx(
+    epw_output_dir: Annotated[
+        Path | None,
+        typer.Option("-o", "--output-dir", help="Output directory for TMYX files"),
+    ] = None,
+) -> None:
     import pandas as pd
 
     from backend.citys.core.mapping import map_tmyx_to_dest
@@ -171,7 +176,7 @@ def mapping_dest_to_tmyx() -> None:
     labels = pd.read_csv(out / CITYS_FILE_NAME.epw_cluster_assignments)[
         "cluster_label"
     ].to_numpy()
-    map_tmyx_to_dest(
+    result = map_tmyx_to_dest(
         rep_df,
         labels,
         meta_df,
@@ -179,6 +184,15 @@ def mapping_dest_to_tmyx() -> None:
         out / CITYS_FILE_NAME.dest_coords,
         out / CITYS_FILE_NAME.dest_mapped_results,
     )
+    if epw_output_dir is not None:
+        import shutil
+
+        epw_output_dir.mkdir(parents=True, exist_ok=True)
+        for _, row in result.iterrows():
+            epw_file_paths = row["tmyx_epw_file_paths"]
+            for file in epw_file_paths:
+                path = Path(file)
+                shutil.copy(path, epw_output_dir / path.name)
 
 
 @app.command()
