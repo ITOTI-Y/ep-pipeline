@@ -9,7 +9,6 @@ paths:
   ecm_dir: ${paths.output_dir}/ecm/
   optimization_dir: ${paths.output_dir}/optimization/
   visualization_dir: ${paths.output_dir}/visualization/
-  temp_dir: ${paths.data_dir}/temp/
   log_dir: ${paths.output_dir}/logs/
   csv_dir: ${paths.output_dir}/paper_data/
   epw_dir: ${paths.data_dir}/epws/

@@ -27,7 +27,6 @@ class PathsConfig(BaseModel):
     csv_dir: Path = Field(..., description="CSV output directory")
     data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
-    temp_dir: Path = Field(..., description="Temporary directory")
     idf_files: list[IDFFile] = Field(default_factory=list, description="IDF files")
     tmy_files: list[WeatherFile] = Field(
         default_factory=list, description="TMY weather files"
@@ -52,7 +51,6 @@ class PathsConfig(BaseModel):
         "pv_dir",
         "ecm_dir",
         "optimization_dir",
-        "temp_dir",
         "log_dir",
         "visualization_dir",
         "epw_dir",
