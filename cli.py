@@ -47,13 +47,33 @@ def simulate(
         lambda: BuildingWeatherCombination(set(), set())
     )
 
-    for idf_file in config.paths.idf_files:
-        for weather_file in config.paths.ftmy_files + config.paths.tmy_files:
-            if idf_file.city == weather_file.city and (
-                city is None or idf_file.city == city.lower()
-            ):
-                idf_epw_map[idf_file.city].idf_files.add(idf_file)
-                idf_epw_map[idf_file.city].weather_files.add(weather_file)
+    def _get_mapping(config: ConfigManager) -> dict[str, BuildingWeatherCombination]:
+        import pandas as pd
+
+        from backend.citys._share import CitysFileName
+
+        df = pd.read_csv(config.paths.citys_dir / CitysFileName().dest_mapped_results)
+        for idf_file in config.paths.idf_files:
+            idf_city = idf_file.city
+            tmyx_wmo_id = int(
+                df[df["dest_city"].str.lower() == idf_city.lower()][
+                    "tmyx_epw_file_paths"
+                ].values[0][-12:-6]
+            )
+            weather_files = [
+                ftmy_file
+                for ftmy_file in config.paths.ftmy_files
+                if ftmy_file.wmo_id == tmyx_wmo_id
+            ] + [
+                tmy_file
+                for tmy_file in config.paths.tmy_files
+                if tmy_file.wmo_id == tmyx_wmo_id
+            ]
+            idf_epw_map[idf_city].idf_files.add(idf_file)
+            idf_epw_map[idf_city].weather_files.add(weather_files[0])
+        return idf_epw_map
+
+    idf_epw_map = _get_mapping(config)
 
     services: dict[SimulationType, list[ISimulationService]] = defaultdict(list)
     for _city, combination in idf_epw_map.items():
