@@ -45,13 +45,19 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 readvars=read_variables,
             )
 
-            result.success = not (sim_result.err and sim_result.err.has_fatal)
+            result.success = not (
+                sim_result.err
+                and sim_result.err.has_fatal
+                and sim_result.return_code != 0
+            )
 
             if result.success:
                 logger.success(
                     f"EnergyPlus simulation completed successfully: {output_prefix}"
                 )
             else:
+                if sim_result.err and sim_result.err.fatal_errors:
+                    result.errors.extend(sim_result.err.fatal_errors)
                 logger.error(
                     f"EnergyPlus simulation completed with errors: {result.errors}"
                 )

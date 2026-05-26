@@ -37,6 +37,9 @@ def simulate(
         typer.Option("--n-jobs", "-n", help="The number of jobs to run in parallel"),
     ] = cpu_count() - 2 if cpu_count() > 2 else 1,
 ):
+    def _init_worker(log_dir: str) -> None:
+        set_logger(Path(log_dir))
+
     config = ConfigManager(Path("backend/configs"))
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
@@ -71,9 +74,13 @@ def simulate(
         # services[SimulationType.PV].extend(_pv_services)
 
     for _, simulation_services in services.items():
-        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-            delayed(service.run)() for service in simulation_services
-        )
+        _ = Parallel(
+            n_jobs=n_jobs,
+            verbose=10,
+            backend="loky",
+            initializer=_init_worker,
+            initargs=(str(config.paths.log_dir),),
+        )(delayed(service.run)() for service in simulation_services)
 
 
 @app.command()

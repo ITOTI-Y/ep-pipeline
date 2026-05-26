@@ -175,27 +175,6 @@ class OptimizationService(ISimulationService):
             exclude_files=("*.sql", "*.csv"),
         )
 
-    def execute(self) -> SimulationResult:
-        result = SimulationResult(
-            job_id=self._job.id,
-            building_type=self._job.idf_file.building_type,
-        )
-        try:
-            result = self._executor.run(
-                job=self._job,
-            )
-            result = self._result_parser.parse(
-                result=result,
-                job=self._job,
-            )
-            return result
-        except Exception as e:
-            logger.exception(
-                f"Failed to execute optimization simulation for job {self._job.id}"
-            )
-            result.add_error(str(e))
-            return result
-
     def run(self) -> SimulationResult:
         result = super().run()
         result.ecm_parameters = self._job.ecm_parameters or None

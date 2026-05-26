@@ -4,6 +4,8 @@ import shutil
 from abc import ABC, abstractmethod
 from pickle import dump
 
+from loguru import logger
+
 from backend.models import SimulationJob, SimulationResult
 from backend.services.interfaces import IEnergyPlusExecutor, IResultParser
 from backend.utils.config import ConfigManager
@@ -41,20 +43,31 @@ class ISimulationService(ABC):
         """
         pass
 
-    @abstractmethod
-    def execute(self) -> SimulationResult:
-        """
-        Execute the simulation.
+    def _execute(self) -> SimulationResult:
+        logger.info(
+            f"Executing simulation for {self._job.simulation_type.value} job {self._job.id}"
+        )
 
-        Returns:
-            SimulationResult: The simulation result containing output paths,
-                energy metrics, and execution metadata.
+        result = SimulationResult(
+            job_id=self._job.id,
+            building_type=self._job.idf_file.building_type,
+        )
 
-        Raises:
-            SimulationError: If the simulation execution fails.
-            RuntimeError: If EnergyPlus encounters a runtime error.
-        """
-        pass
+        try:
+            result = self._executor.run(
+                job=self._job,
+            )
+            result = self._result_parser.parse(
+                result=result,
+                job=self._job,
+            )
+            return result
+        except Exception as e:
+            logger.exception(
+                f"Failed to execute simulation for {self._job.simulation_type.value} job {self._job.id}"
+            )
+            result.add_error(str(e))
+            return result
 
     @abstractmethod
     def cleanup(self) -> None:
@@ -71,9 +84,10 @@ class ISimulationService(ABC):
         try:
             self.prepare()
             self._copy_schedules()
-            result = self.execute()
-            with open(self._job.output_directory / "result.pkl", "wb") as f:
-                dump(result, f)
+            result = self._execute()
+            if result.success:
+                with open(self._job.output_directory / "result.pkl", "wb") as f:
+                    dump(result, f)
             return result
         finally:
             self.cleanup()
