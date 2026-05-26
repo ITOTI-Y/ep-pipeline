@@ -22,7 +22,7 @@ class ResultParser(IResultParser):
         result.variables_csv_path = job.output_directory / f"{job.output_prefix}out.csv"
         result.sql_path = job.output_directory / f"{job.output_prefix}out.sql"
 
-        if result.sql_path.exists():
+        if result.sql_path is not None and result.sql_path.exists():
             self._parse_from_sql(result, result.sql_path)
         return result
 

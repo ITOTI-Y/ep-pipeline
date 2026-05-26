@@ -1,3 +1,5 @@
+import os
+
 from idfpy.sim import simulate as sim
 from loguru import logger
 
@@ -12,8 +14,8 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
     ) -> SimulationResult:
         idf = job.idf
         output_prefix = job.output_prefix or "eplus"
-        weather_file = job.weather_file.file_path
-        output_directory = job.output_directory
+        output_directory = job.output_directory.resolve()
+        weather_file = job.weather_file.file_path.resolve()
         read_variables = job.read_variables
         job_id = job.id
 
@@ -37,13 +39,18 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         )
 
         try:
-            sim_result = sim(
-                idf=idf_path,
-                weather=weather_file,
-                output_dir=output_directory,
-                output_prefix=output_prefix,
-                readvars=read_variables,
-            )
+            prev_cwd = os.getcwd()
+            try:
+                os.chdir(output_directory)
+                sim_result = sim(
+                    idf=idf_path,
+                    weather=weather_file,
+                    output_dir=output_directory,
+                    output_prefix=output_prefix,
+                    readvars=read_variables,
+                )
+            finally:
+                os.chdir(prev_cwd)
 
             result.success = sim_result.return_code == 0 and not (
                 sim_result.err and sim_result.err.has_fatal
@@ -56,6 +63,10 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
             else:
                 if sim_result.err and sim_result.err.fatal_errors:
                     result.errors.extend(sim_result.err.fatal_errors)
+                elif sim_result.stdout:
+                    for line in sim_result.stdout.splitlines():
+                        if "filesystem error" in line or "Fatal" in line:
+                            result.errors.append(line.strip())
                 logger.error(
                     f"EnergyPlus simulation completed with errors: {result.errors}"
                 )
