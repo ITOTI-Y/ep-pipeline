@@ -525,7 +525,7 @@ requires-dist = [
     { name = "deap", specifier = ">=1.4.3" },
     { name = "eppy", specifier = ">=0.5.63" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "idfpy", specifier = ">=26.1.0.post5" },
+    { name = "idfpy", specifier = "==26.1.*" },
     { name = "joblib", specifier = ">=1.5.2" },
     { name = "kmedoids", specifier = ">=0.5.4" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -998,6 +998,10 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/4a/e6dde6fde7feef1b9bed1e0387b2492115fda39b4057f070c442498ae4ed/kmedoids-0.5.4-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:aca6446893b8d88a64996eee9c684de19c93048d4c86aed2b18a6c6c8ef5af0e", size = 500607, upload-time = "2025-11-04T11:00:58.638Z" },
     { url = "https://files.pythonhosted.org/packages/e9/fa/4e148647a1e56a8ce97d3c3e90eff6aa99bccc922f596d4c139f86ed05b7/kmedoids-0.5.4-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:f1ba92ed4b0ce620c81dfc976fcb75bdce391b03e8e1068c072862bf88e600fd", size = 553475, upload-time = "2025-11-04T11:01:00.073Z" },
     { url = "https://files.pythonhosted.org/packages/27/e6/c3c808550851ce62bfdb6802a5835dcbf54fe9e4976469d51eab1f065da9/kmedoids-0.5.4-cp314-none-win_amd64.whl", hash = "sha256:f057f398747439b3bf5e17326ad905484d874d3c9a4838163c70ae789517c85a", size = 390008, upload-time = "2025-11-04T11:01:01.798Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/9a/a645fb15d5d8305ddcf38ebd32c09a64fce593fafe7954050ce1f4454ddf/kmedoids-0.5.4-cp315-cp315-manylinux_2_28_aarch64.whl", hash = "sha256:5abf094fea854401d4ca5c34284b5bc164ec6fb2a259082e7b55e1befe81e8a1", size = 423665, upload-time = "2026-05-22T12:47:54.993Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/ee/a48e4146edd4ec77363ec3433d3cad2191e565bb1556215de0bed10c1995/kmedoids-0.5.4-cp315-cp315-manylinux_2_28_x86_64.whl", hash = "sha256:44684600660cc7a70204459dff6e6cff48fbff1ce8c9d0fb2ec297c5a0d7245c", size = 457303, upload-time = "2026-05-22T12:47:56.771Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/e4/717cec906f77cc9156d825b1eea32947e1c6a35b6fecf67c1f3b1897e6a9/kmedoids-0.5.4-cp315-cp315-musllinux_1_2_aarch64.whl", hash = "sha256:61b9a38a5f1386aa01c6d750a88959d2bd7d04bf86685ba6a147fc4924f1ee26", size = 489625, upload-time = "2026-05-22T12:47:58.427Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/81/a95332cb4c08fae2591a8db20e42cf3f46e55987e55387e28d1742f68dbf/kmedoids-0.5.4-cp315-cp315-musllinux_1_2_x86_64.whl", hash = "sha256:a43bf223fb1e528bdc302fc9bfe3d402ca0de5073b958833d6ae54bd5ceedf1d", size = 532704, upload-time = "2026-05-22T12:48:00.081Z" },
 ]
 
 [[package]]

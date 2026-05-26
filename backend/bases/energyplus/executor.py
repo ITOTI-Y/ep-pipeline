@@ -45,10 +45,8 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
                 readvars=read_variables,
             )
 
-            result.success = not (
-                sim_result.err
-                and sim_result.err.has_fatal
-                and sim_result.return_code != 0
+            result.success = sim_result.return_code == 0 and not (
+                sim_result.err and sim_result.err.has_fatal
             )
 
             if result.success:

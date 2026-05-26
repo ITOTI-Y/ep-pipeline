@@ -45,7 +45,7 @@ class ISimulationService(ABC):
 
     def _execute(self) -> SimulationResult:
         logger.info(
-            f"Executing simulation for {self._job.simulation_type.value} job {self._job.id}"
+            f"Executing simulation for {self._job.simulation_type.value} job City: {self._job.idf_file.city} Building Type: {self._job.idf_file.building_type}"
         )
 
         result = SimulationResult(
@@ -57,14 +57,15 @@ class ISimulationService(ABC):
             result = self._executor.run(
                 job=self._job,
             )
-            result = self._result_parser.parse(
-                result=result,
-                job=self._job,
-            )
+            if result.success:
+                result = self._result_parser.parse(
+                    result=result,
+                    job=self._job,
+                )
             return result
         except Exception as e:
             logger.exception(
-                f"Failed to execute simulation for {self._job.simulation_type.value} job {self._job.id}"
+                f"Failed to execute simulation for {self._job.simulation_type.value} job City: {self._job.idf_file.city} Building Type: {self._job.idf_file.building_type}"
             )
             result.add_error(str(e))
             return result
