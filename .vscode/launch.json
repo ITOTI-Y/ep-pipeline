@@ -1,13 +1,22 @@
 {
     "configurations": [
                 {
-            "name": "Simulate All Cities",
+            "name": "Simulate All Cities single thread",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["simulate", "--n-jobs", "1"]
+        },
+        {
+            "name": "Simulate All Cities multi thread",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["simulate"]
         },
         {
             "name": "Simulate One City",
