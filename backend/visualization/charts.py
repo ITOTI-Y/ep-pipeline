@@ -1082,8 +1082,8 @@ class ChartGenerator:
             if a_row.empty or b_row.empty:
                 logger.warning(f"Missing data for {building_type}, skipping")
                 continue
-            value_a = a_row["carbon_intensity_kgm2"].values[0]
-            value_b = b_row["carbon_intensity_kgm2"].values[0]
+            value_a = a_row["carbon_intensity_kgm2"].mean()
+            value_b = b_row["carbon_intensity_kgm2"].mean()
             ratio = value_b / value_a if value_a != 0 else float("inf")
 
             ax3.bar(
@@ -1142,7 +1142,7 @@ class ChartGenerator:
             xticklabels=list(BUILDING_NAME.values()),
             xrotation=45,
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title="eGRID vs Cambium - 2025",
+            title="eGRID vs Cambium - 6-scenario mean 2025",
         )
 
         self.save(

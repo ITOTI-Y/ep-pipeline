@@ -25,8 +25,10 @@ class PathsConfig(BaseModel):
     csv_dir: Path = Field(..., description="CSV output directory")
     data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
-    eplus_executable: Path = Field(..., description="EnergyPlus executable path")
-    idd_file: Path = Field(..., description="IDD file path")
+    eplus_executable: Path | None = Field(
+        default=None, description="EnergyPlus executable path"
+    )
+    idd_file: Path | None = Field(default=None, description="IDD file path")
     temp_dir: Path = Field(..., description="Temporary directory")
     idf_files: list[Path] = Field(default_factory=list, description="IDF files")
     tmy_files: list[Path] = Field(default_factory=list, description="TMY weather files")
@@ -34,14 +36,14 @@ class PathsConfig(BaseModel):
         default_factory=list, description="Future TMY weather files"
     )
 
-    @field_validator("eplus_executable", "idd_file")
-    def validate_file_exists(cls, v: Path) -> Path:
-        """Validate file exists"""
-        if not v.exists():
-            raise ValueError(f"File does not exist: {v}")
-        if not v.is_file():
-            raise ValueError(f"Path is not a file: {v}")
-        return v
+    # @field_validator("eplus_executable", "idd_file")
+    # def validate_file_exists(cls, v: Path) -> Path:
+    #     """Validate file exists"""
+    #     if not v.exists():
+    #         raise ValueError(f"File does not exist: {v}")
+    #     if not v.is_file():
+    #         raise ValueError(f"Path is not a file: {v}")
+    #     return v
 
     @field_validator(
         "prototype_dir",
