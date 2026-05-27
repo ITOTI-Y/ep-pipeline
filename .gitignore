@@ -15,8 +15,10 @@ wheels/
 
 # Output files
 output/
-data/*
-
+backend/data/*
+backend/data/idfs/*
+backend/data/ddy/*
+backend/data/citys/*
 !data/ftmys
 !data/tmys
 !data/prototypes
