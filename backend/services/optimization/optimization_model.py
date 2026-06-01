@@ -1,26 +1,18 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
 from deap import base, creator, tools
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import BuildingType, ECMParameters
-from backend.services.optimization.surrogate_model import ISurrogateModel
+from backend.services.optimization.surrogate_model import XGBoostSurrogateModel
 from backend.utils.config import ConfigManager
 
 
-class IOptimizationModel(ABC):
-    @abstractmethod
-    def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
-        pass
-
-
-class GeneticAlgorithmModel(IOptimizationModel):
+class GeneticAlgorithmModel:
     def __init__(
         self,
         config: ConfigManager,
-        surrogate_model: ISurrogateModel,
+        surrogate_model: XGBoostSurrogateModel,
         encode_model: OneHotEncoder,
         code: str,
     ):
@@ -47,6 +39,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
         self._surrogate_model = surrogate_model
         self._encode_model = encode_model
         self._code = code
+        self._code_encoded = encode_model.transform([[code]])
 
     def _decode_chromosome(
         self, individual: list, building_type: BuildingType
@@ -59,14 +52,11 @@ class GeneticAlgorithmModel(IOptimizationModel):
         return ECMParameters(**params)  # type: ignore
 
     def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
-        code_encoded = self._encode_model.transform([[self._code]])
         features = [
             ecm_parameters.model_dump().get(name, 0.0)
             for name in self._ecm_parameters_names
         ]
-
-        features = np.concatenate([[features], code_encoded], axis=1)
-        return features
+        return np.concatenate([[features], self._code_encoded], axis=1)
 
     def _create_individual(self, icls: type[list]) -> list:
         individual = icls(

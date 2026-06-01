@@ -1,14 +1,10 @@
 from loguru import logger
 
 from backend.models import SimulationJob
-from backend.services.interfaces import IFileCleaner
 from backend.utils.config import ConfigManager
 
 
-class FileCleaner(IFileCleaner):
-    def __init__(self):
-        pass
-
+class FileCleaner:
     def clean(
         self,
         job: SimulationJob,

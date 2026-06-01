@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult, Surface
+from backend.models import SimulationJob, Surface
 from backend.services.configuration import (
     OutputApply,
     PeriodApply,
@@ -9,21 +9,19 @@ from backend.services.configuration import (
     SettingApply,
     StorageApply,
 )
-from backend.services.interfaces import (
-    IEnergyPlusExecutor,
-    IFileCleaner,
-    IResultParser,
-    ISimulationService,
-)
+from backend.services.interfaces import ISimulationService
+from backend.services.simulation.executor import EnergyPlusExecutor
+from backend.services.simulation.file_cleaner import FileCleaner
+from backend.services.simulation.result_parser import ResultParser
 from backend.utils.config import ConfigManager
 
 
 class PVService(ISimulationService):
     def __init__(
         self,
-        executor: IEnergyPlusExecutor,
-        result_parser: IResultParser,
-        file_cleaner: IFileCleaner,
+        executor: EnergyPlusExecutor,
+        result_parser: ResultParser,
+        file_cleaner: FileCleaner,
         config: ConfigManager,
         job: SimulationJob,
         surfaces: list[Surface],
@@ -50,38 +48,3 @@ class PVService(ISimulationService):
         self._storage_apply.apply(self._job)
         self._setting_apply.apply(self._job)
         logger.info("PV preparation completed successfully")
-
-    def execute(self) -> SimulationResult:
-        logger.info(f"Executing PV simulation for job {self._job.id}")
-
-        result = SimulationResult(
-            job_id=self._job.id,
-            building_type=self._job.building.building_type,
-        )
-
-        try:
-            result = self._executor.run(
-                job=self._job,
-            )
-            result = self._result_parser.parse(
-                result=result,
-                job=self._job,
-            )
-            return result
-        except Exception as e:
-            logger.exception("Failed to execute PV simulation")
-            result.add_error(str(e))
-            return result
-
-    def cleanup(self) -> None:
-        self._file_cleaner.clean(
-            job=self._job, config=self._config, exclude_files=("*.sql", "*.csv")
-        )
-
-    def run(self) -> SimulationResult:
-        try:
-            self.prepare()
-            result = self.execute()
-            return result
-        finally:
-            self.cleanup()

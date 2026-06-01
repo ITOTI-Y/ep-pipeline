@@ -1,65 +1,65 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
 
-from eppy.modeleditor import IDF
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
 from loguru import logger
 
 from backend.models import SimulationResult
 
+if TYPE_CHECKING:
+    from backend.models import SimulationJob
+    from backend.services.simulation.executor import EnergyPlusExecutor
+    from backend.services.simulation.file_cleaner import FileCleaner
+    from backend.services.simulation.result_parser import ResultParser
+    from backend.utils.config import ConfigManager
+
 
 class ISimulationService(ABC):
+    """Template for an EnergyPlus simulation stage.
+
+    Subclasses set ``_job``, ``_config``, ``_executor``, ``_result_parser`` and
+    ``_file_cleaner`` in ``__init__`` and implement ``prepare()``. The shared
+    ``execute()``/``cleanup()``/``run()`` flow is provided here; override
+    ``_cleanup_exclude`` to change which files survive cleanup, or ``run()`` to
+    attach stage-specific fields to the result.
+    """
+
+    _job: SimulationJob
+    _config: ConfigManager
+    _executor: EnergyPlusExecutor
+    _result_parser: ResultParser
+    _file_cleaner: FileCleaner
+    _cleanup_exclude: tuple[str, ...] = ("*.sql", "*.csv")
+
     @abstractmethod
     def prepare(self) -> None:
-        """
-        Prepare the simulation context.
+        """Apply stage-specific configuration to the IDF before execution."""
 
-        include:
-            - create output directory
-            - validate files existence
-            - setting output variables
-            - apply preparation logic
-        Raises:
-            ValidationError: If validation fails.
-            FileNotFoundError: If required files are missing.
-            PreparationError: If preparation process fails.
-        """
-        pass
-
-    @abstractmethod
     def execute(self) -> SimulationResult:
-        """
-        Execute the simulation.
+        logger.info(f"Executing simulation for job {self._job.id}")
+        result = SimulationResult(
+            job_id=self._job.id,
+            building_type=self._job.building.building_type,
+        )
+        try:
+            result = self._executor.run(job=self._job)
+            return self._result_parser.parse(result=result, job=self._job)
+        except Exception as e:
+            logger.exception(f"Failed to execute simulation for job {self._job.id}")
+            result.add_error(str(e))
+            return result
 
-        Returns:
-            SimulationResult: The simulation result containing output paths,
-                energy metrics, and execution metadata.
-
-        Raises:
-            SimulationError: If the simulation execution fails.
-            RuntimeError: If EnergyPlus encounters a runtime error.
-        """
-        pass
-
-    @abstractmethod
     def cleanup(self) -> None:
-        """
-        Clean up temporary files and resources after simulation.
-
-        This method should remove intermediate files and release any
-        resources held during the simulation. It should not raise exceptions.
-
-        """
-        pass
+        self._file_cleaner.clean(
+            job=self._job,
+            config=self._config,
+            exclude_files=self._cleanup_exclude,
+        )
 
     def run(self) -> SimulationResult:
         try:
             self.prepare()
-            result = self.execute()
-            return result
+            return self.execute()
         finally:
             self.cleanup()
-
-    def _remove_objects(self, idf: IDF, object_type: str) -> None:
-        objects = list(idf.idfobjects.get(object_type, []))
-        for obj in objects:
-            idf.removeidfobject(obj)
-            logger.debug(f"Removed {object_type} object: {obj}")

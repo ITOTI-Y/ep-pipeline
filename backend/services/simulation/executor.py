@@ -5,10 +5,9 @@ from eppy.modeleditor import IDF
 from loguru import logger
 
 from backend.models import SimulationJob, SimulationResult
-from backend.services.interfaces import IEnergyPlusExecutor
 
 
-class EnergyPlusExecutor(IEnergyPlusExecutor):
+class EnergyPlusExecutor:
     _SEVERE_PATTERN = re.compile(r"\*\*\s+Severe\s+\*\*.*", re.IGNORECASE)
     _FATAL_PATTERN = re.compile(r"\*\*\s+Fatal\s+\*\*.*", re.IGNORECASE)
     _WARNING_PATTERN = re.compile(r"\*\*\s+Warning\s+\*\*.*", re.IGNORECASE)

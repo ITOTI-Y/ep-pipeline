@@ -15,17 +15,12 @@ from backend.services.configuration import (
     PeriodApply,
     SettingApply,
 )
-from backend.services.interfaces import (
-    IEnergyPlusExecutor,
-    IFileCleaner,
-    IResultParser,
-    ISimulationService,
-)
+from backend.services.interfaces import ISimulationService
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
-from backend.services.optimization.surrogate_model import (
-    ISurrogateModel,
-    XGBoostSurrogateModel,
-)
+from backend.services.optimization.surrogate_model import XGBoostSurrogateModel
+from backend.services.simulation.executor import EnergyPlusExecutor
+from backend.services.simulation.file_cleaner import FileCleaner
+from backend.services.simulation.result_parser import ResultParser
 from backend.utils.config import ConfigManager
 
 FEATURE_NAMES = ECMParametersConfig().keys
@@ -41,9 +36,9 @@ TARGET_NAMES = [
 class OptimizationService(ISimulationService):
     def __init__(
         self,
-        executor: IEnergyPlusExecutor,
-        result_parser: IResultParser,
-        file_cleaner: IFileCleaner,
+        executor: EnergyPlusExecutor,
+        result_parser: ResultParser,
+        file_cleaner: FileCleaner,
         config: ConfigManager,
         job: SimulationJob,
         ecm_csv_path: Path | None = None,
@@ -133,7 +128,7 @@ class OptimizationService(ISimulationService):
             self._save_surrogate_model(surrogate_model, bt_model_path)
 
     def _save_surrogate_model(
-        self, surrogate_model: ISurrogateModel, surrogate_model_path: Path
+        self, surrogate_model: XGBoostSurrogateModel, surrogate_model_path: Path
     ) -> None:
         surrogate_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(surrogate_model_path, "wb") as f:
@@ -173,41 +168,9 @@ class OptimizationService(ISimulationService):
         self._setting_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
-    def cleanup(self) -> None:
-        self._file_cleaner.clean(
-            job=self._job,
-            config=self._config,
-            exclude_files=("*.sql", "*.csv"),
-        )
-
-    def execute(self) -> SimulationResult:
-        result = SimulationResult(
-            job_id=self._job.id,
-            building_type=self._job.building.building_type,
-        )
-        try:
-            result = self._executor.run(
-                job=self._job,
-            )
-            result = self._result_parser.parse(
-                result=result,
-                job=self._job,
-            )
-            return result
-        except Exception as e:
-            logger.exception(
-                f"Failed to execute optimization simulation for job {self._job.id}"
-            )
-            result.add_error(str(e))
-            return result
-
     def run(self) -> SimulationResult:
-        try:
-            self.prepare()
-            result = self.execute()
-            result.ecm_parameters = self._job.ecm_parameters or None
-            result.predicted_eui = self._predicted_eui
-            result.weather_code = self._job.weather.code
-            return result
-        finally:
-            self.cleanup()
+        result = super().run()
+        result.ecm_parameters = self._job.ecm_parameters or None
+        result.predicted_eui = self._predicted_eui
+        result.weather_code = self._job.weather.code
+        return result

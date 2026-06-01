@@ -223,18 +223,25 @@ class ECMApply(IApply):
 
         logger.info(f"Modified {modified_count} ventilation objects")
 
-    def _apply_cooling_coil_and_chiller_parameters(
-        self, job: SimulationJob, parameters: ECMParameters
+    def _apply_cop_parameters(
+        self,
+        job: SimulationJob,
+        cop_value: float | None,
+        cop_field_names: list[str],
+        equipment_type_prefixes: tuple[str, ...],
+        label: str,
     ) -> None:
-        """
-        apply cooling coil and chiller parameters to idf object
+        """Write a single COP value into every matching coil/chiller field.
 
         Args:
-            job (SimulationJob): Simulation job
-            parameters (ECMParameters): ECM parameters
+            job: Simulation job holding the IDF.
+            cop_value: COP to write; skipped when None.
+            cop_field_names: IDF field names to set on each matching object.
+            equipment_type_prefixes: Object-type prefixes selecting equipment.
+            label: Human-readable tag for log messages.
         """
-        if parameters.cooling_cop is None:
-            logger.warning("Cooling COP is not set, skipping")
+        if cop_value is None:
+            logger.warning(f"{label} COP is not set, skipping")
             return
 
         if job.idf is None:
@@ -243,99 +250,65 @@ class ECMApply(IApply):
         idf = job.idf
 
         modified_count = 0
-
-        cop_field_names = [
-            "Gross_Rated_Cooling_COP",
-            "Reference_COP",
-            "Rated_COP",
-            "High_Speed_Gross_Rated_Cooling_COP",
-            "Low_Speed_Gross_Rated_Cooling_COP",
-            "Rated_COP_at_Speed_1",
-            "Rated_COP_at_Speed_2",
-        ]
-
-        all_object_types = idf.idfobjects.keys()
-
-        cooling_equipment_types = [
+        equipment_types = [
             obj_type
-            for obj_type in all_object_types
-            if obj_type.startswith("COIL:COOLING") or obj_type.startswith("CHILLER:")
+            for obj_type in idf.idfobjects
+            if obj_type.startswith(equipment_type_prefixes)
         ]
 
-        for equipment_type in cooling_equipment_types:
+        for equipment_type in equipment_types:
             try:
-                equipment_list = idf.idfobjects.get(equipment_type, [])
-
-                for equipment in equipment_list:
+                for equipment in idf.idfobjects.get(equipment_type, []):
                     for cop_field_name in cop_field_names:
                         if hasattr(equipment, cop_field_name):
-                            setattr(equipment, cop_field_name, parameters.cooling_cop)
+                            setattr(equipment, cop_field_name, cop_value)
                             logger.debug(
-                                f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.Name}"
+                                f"Set {cop_field_name} to {cop_value} for {equipment.Name}"
                             )
                             modified_count += 1
             except Exception:
                 logger.exception(f"Failed to process {equipment_type} objects")
                 continue
 
-        logger.info(f"Modified {modified_count} coil and chiller objects")
+        logger.info(f"Modified {modified_count} {label} coil and chiller objects")
+
+    def _apply_cooling_coil_and_chiller_parameters(
+        self, job: SimulationJob, parameters: ECMParameters
+    ) -> None:
+        self._apply_cop_parameters(
+            job,
+            parameters.cooling_cop,
+            [
+                "Gross_Rated_Cooling_COP",
+                "Reference_COP",
+                "Rated_COP",
+                "High_Speed_Gross_Rated_Cooling_COP",
+                "Low_Speed_Gross_Rated_Cooling_COP",
+                "Rated_COP_at_Speed_1",
+                "Rated_COP_at_Speed_2",
+            ],
+            ("COIL:COOLING", "CHILLER:"),
+            "cooling",
+        )
 
     def _apply_heating_coil_and_chiller_parameters(
         self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
-        """
-        apply heating coil and chiller parameters to idf object
-
-        Args:
-            job (SimulationJob): Simulation job
-            parameters (ECMParameters): ECM parameters
-        """
-        if parameters.heating_cop is None:
-            logger.warning("Heating COP is not set, skipping")
-            return
-
-        if job.idf is None:
-            logger.error("IDF is not set, skipping")
-            raise ValueError("IDF is not set")
-        idf = job.idf
-
-        modified_count = 0
-
-        cop_field_names = [
-            "Gross_Rated_Heating_COP",
-            "Reference_COP",
-            "Rated_COP",
-            "High_Speed_Gross_Rated_Heating_COP",
-            "Low_Speed_Gross_Rated_Heating_COP",
-            "Rated_COP_at_Speed_1",
-            "Rated_COP_at_Speed_2",
-        ]
-
-        all_object_types = idf.idfobjects.keys()
-
-        heating_equipment_types = [
-            obj_type
-            for obj_type in all_object_types
-            if obj_type.startswith("COIL:HEATING")
-        ]
-
-        for equipment_type in heating_equipment_types:
-            try:
-                equipment_list = idf.idfobjects.get(equipment_type, [])
-
-                for equipment in equipment_list:
-                    for cop_field_name in cop_field_names:
-                        if hasattr(equipment, cop_field_name):
-                            setattr(equipment, cop_field_name, parameters.heating_cop)
-                            logger.debug(
-                                f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.Name}"
-                            )
-                            modified_count += 1
-            except Exception:
-                logger.exception(f"Failed to process {equipment_type} objects")
-                continue
-
-        logger.info(f"Modified {modified_count} heating coil objects")
+        self._apply_cop_parameters(
+            job,
+            parameters.heating_cop,
+            [
+                "Gross_Rated_Heating_COP",
+                "Reference_COP",
+                "Rated_COP",
+                "High_Speed_Gross_Rated_Heating_COP",
+                "Low_Speed_Gross_Rated_Heating_COP",
+                "Rated_COP_at_Speed_1",
+                "Rated_COP_at_Speed_2",
+            ],
+            ("COIL:HEATING",),
+            "heating",
+        )
 
     def _apply_cooling_air_temperature_parameters(
         self, job: SimulationJob, parameters: ECMParameters

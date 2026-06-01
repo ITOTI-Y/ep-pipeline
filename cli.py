@@ -9,7 +9,6 @@ from joblib import Parallel, cpu_count, delayed
 from loguru import logger
 from typer import Typer
 
-from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
     Building,
     BuildingType,
@@ -27,6 +26,7 @@ from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
     BaselineService,
     ECMService,
+    EnergyPlusExecutor,
     FileCleaner,
     OptimizationService,
     PVService,

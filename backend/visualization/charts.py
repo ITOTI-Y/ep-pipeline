@@ -1735,8 +1735,6 @@ class ChartGenerator:
 
         self.save(fig, "Fig04. Chicago Location Map", building_type=None)
 
-        pass
-
     def data_to_csv(self) -> None:
         data = []
         for building_type in BUILDING_ORDER:

@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
 from loguru import logger
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -9,25 +7,7 @@ from xgboost import XGBRegressor
 from backend.utils.config import ConfigManager
 
 
-class ISurrogateModel(ABC):
-    @abstractmethod
-    def __init__(self, config: ConfigManager) -> None:
-        pass
-
-    @abstractmethod
-    def train(self, x: np.ndarray, y: np.ndarray) -> None:
-        pass
-
-    @abstractmethod
-    def evaluate(self) -> dict[str, float]:
-        pass
-
-    @abstractmethod
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        pass
-
-
-class XGBoostSurrogateModel(ISurrogateModel):
+class XGBoostSurrogateModel:
     def __init__(self, config: ConfigManager) -> None:
         self._config = config
         self._seed = config.optimization.seed
