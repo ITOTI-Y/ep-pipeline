@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult
+from backend.models import SimulationJobSchema, SimulationResultSchema
 from backend.services.configuration import (
     ECMApply,
     OutputApply,
@@ -23,7 +23,7 @@ class ECMService(ISimulationService):
         result_parser: ResultParser,
         file_cleaner: FileCleaner,
         config: ConfigManager,
-        job: SimulationJob,
+        job: SimulationJobSchema,
     ):
         self._job = job
         self._executor = executor
@@ -43,7 +43,7 @@ class ECMService(ISimulationService):
         self._setting_apply.apply(self._job)
         logger.info("ECM preparation completed")
 
-    def run(self) -> SimulationResult:
+    def run(self) -> SimulationResultSchema:
         result = super().run()
         result.ecm_parameters = self._job.ecm_parameters or None
         return result

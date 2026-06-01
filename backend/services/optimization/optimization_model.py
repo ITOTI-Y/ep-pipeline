@@ -3,7 +3,7 @@ from deap import base, creator, tools
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
-from backend.models import BuildingType, ECMParameters
+from backend.models import BuildingType, ECMParametersSchema
 from backend.services.optimization.surrogate_model import XGBoostSurrogateModel
 from backend.utils.config import ConfigManager
 
@@ -43,15 +43,15 @@ class GeneticAlgorithmModel:
 
     def _decode_chromosome(
         self, individual: list, building_type: BuildingType
-    ) -> ECMParameters:
+    ) -> ECMParametersSchema:
         params = {"building_type": building_type}
         for i, name in enumerate(self._ecm_parameters_names):
             idx = individual[i]
             value = self._ecm_parameters[name][idx]
             params[name] = value
-        return ECMParameters(**params)  # type: ignore
+        return ECMParametersSchema(**params)  # type: ignore
 
-    def _encode_to_features(self, ecm_parameters: ECMParameters) -> np.ndarray:
+    def _encode_to_features(self, ecm_parameters: ECMParametersSchema) -> np.ndarray:
         features = [
             ecm_parameters.model_dump().get(name, 0.0)
             for name in self._ecm_parameters_names
@@ -103,7 +103,9 @@ class GeneticAlgorithmModel:
 
         return crossover_prob, mutation_prob
 
-    def optimize(self, building_type: BuildingType) -> tuple[ECMParameters, float]:
+    def optimize(
+        self, building_type: BuildingType
+    ) -> tuple[ECMParametersSchema, float]:
         self._building_type = building_type
 
         if not hasattr(creator, "FitnessMin"):

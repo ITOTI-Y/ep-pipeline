@@ -10,11 +10,11 @@ from loguru import logger
 from typer import Typer
 
 from backend.models import (
-    Building,
+    BuildingSchema,
     BuildingType,
-    SimulationJob,
+    SimulationJobSchema,
     SimulationType,
-    Weather,
+    WeatherSchema,
 )
 from backend.script.parse_data import (  # noqa: F401
     parse_optimal_data,
@@ -39,10 +39,10 @@ app = Typer()
 
 def base_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
-) -> Generator[tuple[SimulationJob, BaselineService]]:
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
+) -> Generator[tuple[SimulationJobSchema, BaselineService]]:
     for building, weather in buildings_weather_combinations:
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=building,
             weather=weather,
             simulation_type=SimulationType.BASELINE,
@@ -63,8 +63,8 @@ def base_services_prepare(
 
 def ecm_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
-) -> Generator[tuple[SimulationJob, ECMService]]:
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
+) -> Generator[tuple[SimulationJobSchema, ECMService]]:
     n_sample = 512
 
     sampler = ParameterSampler(config=config)
@@ -74,7 +74,7 @@ def ecm_services_prepare(
             n_samples=n_sample, building_type=building.building_type
         )
         for i, ecm_sample in enumerate(ecm_samples):
-            job = SimulationJob(
+            job = SimulationJobSchema(
                 building=building,
                 weather=weather,
                 simulation_type=SimulationType.ECM,
@@ -97,11 +97,11 @@ def ecm_services_prepare(
 
 def optimization_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
 ):
     ecm_csv_path = config.paths.ecm_dir / "results.csv"
     for building, weather in buildings_weather_combinations:
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=building,
             weather=weather,
             simulation_type=SimulationType.OPTIMIZATION,
@@ -124,7 +124,7 @@ def optimization_services_prepare(
 
 def pv_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
 ):
     baseline_dir = config.paths.baseline_dir
     for building, weather in buildings_weather_combinations:
@@ -135,7 +135,7 @@ def pv_services_prepare(
             / weather.code
             / "optimization_.idf"
         )
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=b,
             weather=weather,
             simulation_type=SimulationType.PV,
@@ -165,7 +165,7 @@ def pv_services_prepare(
 @app.command()
 def simulation_all():
     def _single_run(
-        job: SimulationJob, service: ISimulationService, config: ConfigManager
+        job: SimulationJobSchema, service: ISimulationService, config: ConfigManager
     ):
         set_logger(config.paths.log_dir)
         IDF.setiddname(str(config.paths.idd_file))
@@ -186,7 +186,7 @@ def simulation_all():
 
     buildings = []
     for idf_file in idf_files:
-        building = Building(
+        building = BuildingSchema(
             name=idf_file.stem,
             building_type=BuildingType.from_str(idf_file.stem),
             location="Chicago",
@@ -196,7 +196,7 @@ def simulation_all():
 
     weathers = []
     for weather_file in weather_files:
-        weather = Weather(
+        weather = WeatherSchema(
             file_path=weather_file,
             location="Chicago",
         )

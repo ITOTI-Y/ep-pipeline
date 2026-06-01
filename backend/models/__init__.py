@@ -1,22 +1,22 @@
-from .building import Building
-from .config_models import PVConfig, StorageConfig
-from .ecm_parameters import ECMParameters
+from .building import BuildingSchema
+from .config_models import PVConfigSchema, StorageConfigSchema
+from .ecm_parameters import ECMParametersSchema
 from .enums import BuildingType, SimulationStatus, SimulationType
-from .simulation_job import SimulationJob
-from .simulation_result import SimulationResult, Surface
-from .weather_file import Weather
+from .simulation_job import SimulationJobSchema
+from .simulation_result import SimulationResultSchema, SurfaceSchema
+from .weather_file import WeatherSchema
 
 __all__ = [
-    "Building",
+    "BuildingSchema",
     "BuildingType",
-    "ECMParameters",
-    "PVConfig",
-    "SimulationJob",
-    "SimulationResult",
+    "ECMParametersSchema",
+    "PVConfigSchema",
+    "SimulationJobSchema",
+    "SimulationResultSchema",
     "SimulationStatus",
     "SimulationType",
-    "StorageConfig",
-    "Surface",
-    "Weather",
+    "StorageConfigSchema",
+    "SurfaceSchema",
+    "WeatherSchema",
 ]
-SimulationJob.model_rebuild()
+SimulationJobSchema.model_rebuild()

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationJob, Surface
+from backend.models import SimulationJobSchema, SurfaceSchema
 from backend.services.configuration import (
     OutputApply,
     PeriodApply,
@@ -23,8 +23,8 @@ class PVService(ISimulationService):
         result_parser: ResultParser,
         file_cleaner: FileCleaner,
         config: ConfigManager,
-        job: SimulationJob,
-        surfaces: list[Surface],
+        job: SimulationJobSchema,
+        surfaces: list[SurfaceSchema],
     ):
         self._config = config
         self._job = job

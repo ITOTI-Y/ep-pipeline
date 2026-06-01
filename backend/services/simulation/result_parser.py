@@ -5,7 +5,7 @@ from typing import ClassVar
 import pandas as pd
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult, Surface
+from backend.models import SimulationJobSchema, SimulationResultSchema, SurfaceSchema
 
 
 class ResultParser:
@@ -85,9 +85,9 @@ class ResultParser:
 
     def parse(
         self,
-        result: SimulationResult,
-        job: SimulationJob,
-    ) -> SimulationResult:
+        result: SimulationResultSchema,
+        job: SimulationJobSchema,
+    ) -> SimulationResultSchema:
         result.table_csv_path = job.output_directory / f"{job.output_prefix}tbl.csv"
         result.meter_csv_path = job.output_directory / f"{job.output_prefix}mtr.csv"
         result.variables_csv_path = job.output_directory / f"{job.output_prefix}out.csv"
@@ -97,7 +97,7 @@ class ResultParser:
             self._parse_from_sql(result, result.sql_path)
         return result
 
-    def _parse_from_sql(self, result: SimulationResult, sql_path: Path) -> None:
+    def _parse_from_sql(self, result: SimulationResultSchema, sql_path: Path) -> None:
         conn = sqlite3.connect(str(sql_path))
         try:
             self._parse_energy_from_sql(result, conn)
@@ -107,7 +107,7 @@ class ResultParser:
             conn.close()
 
     def _parse_energy_from_sql(
-        self, result: SimulationResult, conn: sqlite3.Connection
+        self, result: SimulationResultSchema, conn: sqlite3.Connection
     ) -> None:
         try:
             query = self.ENERGY_QUERY
@@ -124,7 +124,7 @@ class ResultParser:
             result.add_error(f"Failed to parse energy from SQL: {e}")
 
     def _parse_area_from_sql(
-        self, result: SimulationResult, conn: sqlite3.Connection
+        self, result: SimulationResultSchema, conn: sqlite3.Connection
     ) -> None:
         try:
             query = self.AREA_QUERY
@@ -139,14 +139,14 @@ class ResultParser:
             result.add_error(f"Failed to parse area from SQL: {e}")
 
     def _parse_irradiation_from_sql(
-        self, result: SimulationResult, conn: sqlite3.Connection
+        self, result: SimulationResultSchema, conn: sqlite3.Connection
     ) -> None:
         try:
             query = self.IRRADIATION_QUERY
             df = pd.read_sql_query(query, conn)
             for _, row in df.iterrows():
                 result.surfaces.append(
-                    Surface(
+                    SurfaceSchema(
                         name=str(row["name"]),
                         type=str(row["type"]),
                         hour_count=int(row["hour_count"]),

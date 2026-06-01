@@ -7,8 +7,8 @@ import pandas as pd
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
-from backend.models import SimulationJob, SimulationResult
-from backend.models.config_models import ECMParametersConfig
+from backend.models import SimulationJobSchema, SimulationResultSchema
+from backend.models.config_models import ECMParametersConfigSchema
 from backend.services.configuration import (
     ECMApply,
     OutputApply,
@@ -23,7 +23,7 @@ from backend.services.simulation.file_cleaner import FileCleaner
 from backend.services.simulation.result_parser import ResultParser
 from backend.utils.config import ConfigManager
 
-FEATURE_NAMES = ECMParametersConfig().keys
+FEATURE_NAMES = ECMParametersConfigSchema().keys
 
 TARGET_NAMES = [
     "net_site_eui",
@@ -40,7 +40,7 @@ class OptimizationService(ISimulationService):
         result_parser: ResultParser,
         file_cleaner: FileCleaner,
         config: ConfigManager,
-        job: SimulationJob,
+        job: SimulationJobSchema,
         ecm_csv_path: Path | None = None,
     ):
         np.random.seed(config.optimization.seed)
@@ -168,7 +168,7 @@ class OptimizationService(ISimulationService):
         self._setting_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
-    def run(self) -> SimulationResult:
+    def run(self) -> SimulationResultSchema:
         result = super().run()
         result.ecm_parameters = self._job.ecm_parameters or None
         result.predicted_eui = self._predicted_eui

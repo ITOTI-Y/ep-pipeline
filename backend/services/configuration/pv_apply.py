@@ -3,19 +3,19 @@ from eppy.geometry.surface import area
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationJob, Surface
+from backend.models import SimulationJobSchema, SurfaceSchema
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
 
 class PVApply(IApply):
-    def __init__(self, config: ConfigManager, surfaces: list[Surface]):
+    def __init__(self, config: ConfigManager, surfaces: list[SurfaceSchema]):
         super().__init__()
         self._config = config
         self._surfaces = surfaces
         self._generators_and_surfaces = []
 
-    def apply(self, job: SimulationJob) -> None:
+    def apply(self, job: SimulationJobSchema) -> None:
         logger.info("Applying PV configuration")
         if job.idf is None:
             logger.error("IDF is not set, skipping")
@@ -182,7 +182,7 @@ class PVApply(IApply):
         inverter.Inverter_Efficiency = 0.96
         logger.success("PV inverter configured successfully")
 
-    def _get_surace_area(self, idf: IDF, surface: Surface) -> float:
+    def _get_surace_area(self, idf: IDF, surface: SurfaceSchema) -> float:
         surface_object = idf.getobject("BUILDINGSURFACE:DETAILED", surface.name)
 
         if surface_object is None:

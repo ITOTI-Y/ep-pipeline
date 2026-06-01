@@ -20,7 +20,7 @@ from matplotlib.patches import Patch
 from shapely import union_all
 from shapely.geometry import box
 
-from backend.models import SimulationResult
+from backend.models import SimulationResultSchema
 from backend.utils.config import ConfigManager
 from backend.visualization._share import (
     C_ASHRAE,
@@ -144,8 +144,10 @@ class ChartGenerator:
         self.baseline_results = self._load_results(self.paths.baseline_dir)
         self.optimization_results = self._load_results(self.paths.optimization_dir)
 
-    def _load_results(self, directory: Path) -> dict[str, dict[str, SimulationResult]]:
-        results: dict[str, dict[str, SimulationResult]] = defaultdict(dict)
+    def _load_results(
+        self, directory: Path
+    ) -> dict[str, dict[str, SimulationResultSchema]]:
+        results: dict[str, dict[str, SimulationResultSchema]] = defaultdict(dict)
         for pkl_file in directory.glob("**/result.pkl"):
             with open(pkl_file, "rb") as f:
                 data = load(f)
@@ -1782,7 +1784,7 @@ class ChartGenerator:
 
     def _require_total_source_eui(
         self,
-        result: SimulationResult,
+        result: SimulationResultSchema,
         result_label: str,
         building_type: str,
         weather_code: str,
@@ -1804,7 +1806,7 @@ class ChartGenerator:
         building_type: str,
         weather_code: str,
         data_type: str,
-        data: SimulationResult,
+        data: SimulationResultSchema,
     ) -> dict:
         result = {}
         result["data_type"] = data_type

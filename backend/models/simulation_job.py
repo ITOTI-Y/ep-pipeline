@@ -11,23 +11,23 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from .enums import SimulationStatus, SimulationType
 
 if TYPE_CHECKING:
-    from .building import Building
-    from .ecm_parameters import ECMParameters
-    from .simulation_result import SimulationResult
-    from .weather_file import Weather
+    from .building import BuildingSchema
+    from .ecm_parameters import ECMParametersSchema
+    from .simulation_result import SimulationResultSchema
+    from .weather_file import WeatherSchema
 
 
-class SimulationJob(BaseModel):
+class SimulationJobSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
         arbitrary_types_allowed=True,
     )
 
-    building: Building = Field(
+    building: BuildingSchema = Field(
         ..., description="The building object associated with the simulation job."
     )
-    weather: Weather = Field(
+    weather: WeatherSchema = Field(
         ..., description="The weather file object associated with the simulation job."
     )
     simulation_type: SimulationType = Field(
@@ -59,7 +59,7 @@ class SimulationJob(BaseModel):
         default=None,
         description="The IDF object for the simulation.",
     )
-    ecm_parameters: ECMParameters | None = Field(
+    ecm_parameters: ECMParametersSchema | None = Field(
         default=None,
         description="Energy Conservation Measures parameters for the simulation.",
     )
@@ -71,7 +71,7 @@ class SimulationJob(BaseModel):
         default=None,
         description="Timestamp when the simulation job completed.",
     )
-    result: SimulationResult | None = Field(
+    result: SimulationResultSchema | None = Field(
         default=None,
         description="The result of the simulation job.",
     )
@@ -97,7 +97,7 @@ class SimulationJob(BaseModel):
         self.status = SimulationStatus.RUNNING
         self.started_at = datetime.now()
 
-    def complete(self, result: SimulationResult) -> None:
+    def complete(self, result: SimulationResultSchema) -> None:
         """Mark the simulation job as completed."""
         if self.status != SimulationStatus.RUNNING:
             raise ValueError(
@@ -150,6 +150,6 @@ class SimulationJob(BaseModel):
 
     def __str__(self) -> str:
         return (
-            f"SimulationJob(id={self.id}, type={self.simulation_type.value}, "
+            f"SimulationJobSchema(id={self.id}, type={self.simulation_type.value}, "
             f"status={self.status.value})"
         )

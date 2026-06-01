@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class PathsConfig(BaseModel):
+class PathsConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         arbitrary_types_allowed=True,
@@ -58,7 +58,7 @@ class PathsConfig(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def initialize_idf_and_weather_files(self) -> "PathsConfig":
+    def initialize_idf_and_weather_files(self) -> "PathsConfigSchema":
         """Initialize idf and weather files"""
         if not self.idf_files:
             object.__setattr__(
@@ -71,7 +71,7 @@ class PathsConfig(BaseModel):
         return self
 
 
-class SimulationConfig(BaseModel):
+class SimulationConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -134,7 +134,7 @@ class SimulationConfig(BaseModel):
         return f"{start} to {end}"
 
 
-class ECMParametersConfig(BaseModel):
+class ECMParametersConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -178,7 +178,7 @@ class ECMParametersConfig(BaseModel):
         return list(self.model_dump().keys())
 
 
-class PVConfig(BaseModel):
+class PVConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -187,7 +187,7 @@ class PVConfig(BaseModel):
     coverage: dict = Field(default_factory=dict, description="Coverage")
 
 
-class StorageConfig(BaseModel):
+class StorageConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -196,7 +196,7 @@ class StorageConfig(BaseModel):
     max_power: dict = Field(default_factory=dict, description="Storage max power")
 
 
-class GeneticAlgorithmConfig(BaseModel):
+class GeneticAlgorithmConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
     )
@@ -225,12 +225,13 @@ class GeneticAlgorithmConfig(BaseModel):
     )
 
 
-class OptimizationConfig(BaseModel):
+class OptimizationConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
     )
 
     seed: int = Field(default=0, description="Random seed")
-    genetic: GeneticAlgorithmConfig = Field(
-        default_factory=GeneticAlgorithmConfig, description="Genetic configuration"
+    genetic: GeneticAlgorithmConfigSchema = Field(
+        default_factory=GeneticAlgorithmConfigSchema,
+        description="Genetic configuration",
     )

@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from backend.models import SimulationResult
+from backend.models import SimulationResultSchema
 
 if TYPE_CHECKING:
-    from backend.models import SimulationJob
+    from backend.models import SimulationJobSchema
     from backend.services.simulation.executor import EnergyPlusExecutor
     from backend.services.simulation.file_cleaner import FileCleaner
     from backend.services.simulation.result_parser import ResultParser
@@ -25,7 +25,7 @@ class ISimulationService(ABC):
     attach stage-specific fields to the result.
     """
 
-    _job: SimulationJob
+    _job: SimulationJobSchema
     _config: ConfigManager
     _executor: EnergyPlusExecutor
     _result_parser: ResultParser
@@ -36,9 +36,9 @@ class ISimulationService(ABC):
     def prepare(self) -> None:
         """Apply stage-specific configuration to the IDF before execution."""
 
-    def execute(self) -> SimulationResult:
+    def execute(self) -> SimulationResultSchema:
         logger.info(f"Executing simulation for job {self._job.id}")
-        result = SimulationResult(
+        result = SimulationResultSchema(
             job_id=self._job.id,
             building_type=self._job.building.building_type,
         )
@@ -57,7 +57,7 @@ class ISimulationService(ABC):
             exclude_files=self._cleanup_exclude,
         )
 
-    def run(self) -> SimulationResult:
+    def run(self) -> SimulationResultSchema:
         try:
             self.prepare()
             return self.execute()

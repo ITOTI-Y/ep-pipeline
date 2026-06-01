@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationJob
+from backend.models import SimulationJobSchema
 from backend.services.configuration import OutputApply, PeriodApply
 from backend.services.interfaces import ISimulationService
 from backend.services.simulation.executor import EnergyPlusExecutor
@@ -16,7 +16,7 @@ class BaselineService(ISimulationService):
         result_parser: ResultParser,
         file_cleaner: FileCleaner,
         config: ConfigManager,
-        job: SimulationJob,
+        job: SimulationJobSchema,
     ):
         self._job = job
         self._executor = executor
