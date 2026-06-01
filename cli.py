@@ -243,5 +243,12 @@ def parse_result():
     parse_result_parameters(ConfigManager(Path("backend/configs")))
 
 
+@app.command()
+def prepare_paper_data():
+    from backend.script.prepare_paper_data import main
+
+    main()
+
+
 if __name__ == "__main__":
     app()

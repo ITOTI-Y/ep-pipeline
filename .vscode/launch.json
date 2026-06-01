@@ -4,7 +4,7 @@
             "name": "Simulation",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["simulation-all"]
@@ -13,7 +13,7 @@
             "name": "Parse Result",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["parse-result"]
@@ -22,10 +22,19 @@
             "name": "Visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["visualization"]
+        },
+        {
+            "name": "Prepare Paper Data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["prepare-paper-data"]
         }
     ]
 }

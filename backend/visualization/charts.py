@@ -1827,13 +1827,13 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        # self.data_to_csv()
-        # self.baseline_eui_heatmap()
-        # self.ecm_improvement_heatmap()
-        # self.optimal_improvement_violin()
-        # self.storage_soc()
-        # self.waterfall()
+        self.data_to_csv()
+        self.baseline_eui_heatmap()
+        self.ecm_improvement_heatmap()
+        self.optimal_improvement_violin()
+        self.storage_soc()
+        self.waterfall()
         self.carbon_three_plane()
-        # self.typical_day_storage_soc(weather_code="TMY")
+        self.typical_day_storage_soc(weather_code="TMY")
         self.neutrality_timeline()
         self.chicago_location_map()
