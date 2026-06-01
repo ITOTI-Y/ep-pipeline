@@ -527,7 +527,7 @@ def load_cambium(scenario: str, year: int) -> CambiumFactors:
     adjustment is needed — doing so would double-count T&D losses (~+3.7-3.9%).
     """
     path = cambium_path(scenario, year)
-    df = pd.read_csv(
+    df = pd.read_csv(  # type: ignore
         path,
         skiprows=5,
         usecols=["aer_load_co2e", "lrmer_co2e"],
