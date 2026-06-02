@@ -14,13 +14,14 @@ class XGBoostSurrogateModel:
         self._model = XGBRegressor(
             random_state=self._seed,
             objective="reg:squarederror",
-            max_depth=8,
-            learning_rate=0.02,
+            n_estimators=300,
+            max_depth=6,
+            learning_rate=0.1,
             subsample=0.8,
             colsample_bytree=0.8,
+            tree_method="hist",
             multi_strategy="multi_output_tree",
             eval_metric="rmse",
-            # early_stopping_rounds=10,
         )
         self._x_test: np.ndarray = np.array([])
         self._y_test: np.ndarray = np.array([])

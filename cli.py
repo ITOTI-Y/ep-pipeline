@@ -250,5 +250,17 @@ def prepare_paper_data():
     main()
 
 
+@app.command()
+def benchmark_surrogate():
+    from backend.services.optimization.surrogate_benchmark import SurrogateBenchmark
+
+    config = ConfigManager(Path("backend/configs"))
+    df = SurrogateBenchmark(config).run()
+    output_path = config.paths.csv_dir / "02b_surrogate_benchmark.csv"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, index=False)
+    logger.info(f"Surrogate benchmark written to {output_path}")
+
+
 if __name__ == "__main__":
     app()

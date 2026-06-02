@@ -174,6 +174,10 @@ class ChartGenerator:
     def _energy_summary(self) -> pd.DataFrame:
         return pd.read_csv(self.csv_dir / "01_energy_summary.csv")
 
+    @functools.cached_property
+    def _surrogate_benchmark(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "02b_surrogate_benchmark.csv")
+
     def create_figure(
         self,
         width: FigureWidth = FigureWidth.SINGLE_COLUMN,
