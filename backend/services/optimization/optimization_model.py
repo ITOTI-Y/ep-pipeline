@@ -4,7 +4,7 @@ from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import BuildingType, ECMParametersSchema
-from backend.services.optimization.surrogate_model import XGBoostSurrogateModel
+from backend.services.optimization.surrogate_model import CatboostSurrogateModel
 from backend.utils.config import ConfigManager
 
 
@@ -12,7 +12,7 @@ class GeneticAlgorithmModel:
     def __init__(
         self,
         config: ConfigManager,
-        surrogate_model: XGBoostSurrogateModel,
+        surrogate_model: CatboostSurrogateModel,
         encode_model: OneHotEncoder,
         code: str,
     ):

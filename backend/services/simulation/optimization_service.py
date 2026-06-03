@@ -17,7 +17,9 @@ from backend.services.configuration import (
 )
 from backend.services.interfaces import ISimulationService
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
-from backend.services.optimization.surrogate_model import XGBoostSurrogateModel
+from backend.services.optimization.surrogate_model import (
+    CatboostSurrogateModel,
+)
 from backend.services.simulation.executor import EnergyPlusExecutor
 from backend.services.simulation.file_cleaner import FileCleaner
 from backend.services.simulation.result_parser import ResultParser
@@ -92,7 +94,7 @@ class OptimizationService(ISimulationService):
                     f"Skipping {building_type}: insufficient samples ({len(data)})"
                 )
                 continue
-            surrogate_model = XGBoostSurrogateModel(config=self._config)
+            surrogate_model = CatboostSurrogateModel(config=self._config)
             categorical_features = self._one_hot_encoder.transform(
                 data["code"].values.reshape(-1, 1)
             )
@@ -128,7 +130,7 @@ class OptimizationService(ISimulationService):
             self._save_surrogate_model(surrogate_model, bt_model_path)
 
     def _save_surrogate_model(
-        self, surrogate_model: XGBoostSurrogateModel, surrogate_model_path: Path
+        self, surrogate_model: CatboostSurrogateModel, surrogate_model_path: Path
     ) -> None:
         surrogate_model_path.parent.mkdir(parents=True, exist_ok=True)
         with open(surrogate_model_path, "wb") as f:
