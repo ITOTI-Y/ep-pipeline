@@ -17,7 +17,6 @@ from backend.models import (
     WeatherSchema,
 )
 from backend.script.parse_data import (  # noqa: F401
-    parse_optimal_data,
     parse_result_parameters,
     parse_results_to_csv,
 )
@@ -214,20 +213,18 @@ def simulation_all():
     # )
     # parse_results_to_csv(config)
 
-    # optimization_services = optimization_services_prepare(
-    #     config, buildings_weather_combinations
-    # )
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in optimization_services
-    # )
+    optimization_services = optimization_services_prepare(
+        config, buildings_weather_combinations
+    )
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in optimization_services
+    )
 
     pv_services = pv_services_prepare(config, buildings_weather_combinations)
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config) for job, service in pv_services
     )
-
-    # parse_optimal_data(config)
 
 
 @app.command()

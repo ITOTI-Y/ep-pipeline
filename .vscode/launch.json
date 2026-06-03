@@ -35,6 +35,15 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["prepare-paper-data"]
+        },
+        {
+            "name": "Surrogate Benchmark",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["benchmark-surrogate"]
         }
     ]
 }

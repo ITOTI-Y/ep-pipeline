@@ -6,6 +6,7 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 from catboost import CatBoostRegressor
+from joblib import Parallel, cpu_count, delayed
 from lightgbm import LGBMRegressor
 from loguru import logger
 from sklearn.base import clone
@@ -114,6 +115,7 @@ def build_registry(seed: int) -> dict[str, ModelSpec]:
                     learning_rate=_LEARNING_RATE,
                     max_depth=_MAX_DEPTH,
                     random_state=seed,
+                    n_jobs=1,
                     verbose=-1,
                 )
             ),
@@ -227,22 +229,27 @@ class SurrogateBenchmark:
             metrics[f"output_{i + 1}_r2_mean"] = float(np.mean(per_target_r2[i]))
         return metrics
 
+    def _run_one(self, building_type: str, data: pd.DataFrame, model_name: str, model_spec: ModelSpec) -> dict[str, Any]:
+        x, y = self._build_xy(data)
+        logger.info(f"CV {model_name} on {building_type} (n={len(data)})")
+        metrics = self._cv_one(model_spec, x, y)
+        logger.success(f"CV {model_name} on {building_type} (n={len(data)}) completed")
+        return {
+            "building_type": building_type,
+            "model": model_name,
+            "multioutput_strategy": model_spec.multioutput,
+            **metrics,
+        }
+
     def run(self) -> pd.DataFrame:
+        from itertools import product
         registry = build_registry(self._seed)
         rows: list[dict[str, Any]] = []
-        for building_type, data in self._data.groupby("building_type"):
-            x, y = self._build_xy(data)
-            for name, spec in registry.items():
-                logger.info(f"CV {name} on {building_type} (n={len(data)})")
-                metrics = self._cv_one(spec, x, y)
-                rows.append(
-                    {
-                        "building_type": str(building_type),
-                        "model": name,
-                        "multioutput_strategy": spec.multioutput,
-                        **metrics,
-                    }
-                )
+        results = Parallel(n_jobs=cpu_count() - 2 if cpu_count() > 2 else 1, verbose=10, backend="loky")(
+            delayed(self._run_one)(building_type, data, model_name, model_spec)
+            for (building_type, data), (model_name, model_spec) in product(self._data.groupby("building_type"), registry.items())
+        )
+        rows.extend(results)
 
         df = pd.DataFrame(rows)
         numeric_cols = [
