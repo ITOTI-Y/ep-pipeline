@@ -162,7 +162,7 @@ def pv_services_prepare(
 
 
 @app.command()
-def simulation_all():
+def simulation_all(city: str):
     def _single_run(
         job: SimulationJobSchema, service: ISimulationService, config: ConfigManager
     ):
@@ -195,6 +195,8 @@ def simulation_all():
 
     weathers = []
     for weather_file in weather_files:
+        if city.lower() not in weather_file.stem.lower():
+            continue
         weather = WeatherSchema(
             file_path=weather_file,
             location="Chicago",
@@ -205,11 +207,15 @@ def simulation_all():
 
     n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
 
-    # base_services = base_services_prepare(config, buildings_weather_combinations)
+    base_services = base_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in base_services
+    )
     # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
     #     delayed(_single_run)(job, service, config)
-    #     for job, service in chain(base_services, ecm_services)
+    #     for job, service in ecm_services
     # )
     # parse_results_to_csv(config)
 

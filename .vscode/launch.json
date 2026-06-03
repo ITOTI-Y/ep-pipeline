@@ -7,7 +7,7 @@
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulation-all"]
+            "args": ["simulation-all", "Chicago"]
         },
         {
             "name": "Parse Result",
