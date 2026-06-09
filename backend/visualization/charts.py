@@ -1741,6 +1741,176 @@ class ChartGenerator:
 
         self.save(fig, "Fig04. Chicago Location Map", building_type=None)
 
+    def surrogate_model_comparison(self) -> None:
+        selected_models = ["CatBoost"]
+        offset_models = ["RandomForest", "LightGBM", "MLP", "XGBoost"]
+        df = self._surrogate_benchmark
+        per_model = (
+            df[df["building_type"] != "All"]
+            .groupby("model")
+            .agg(
+                r2=("r2_mean", "mean"),
+                lat=("predict_latency_ms_mean", "mean"),
+                fit=("fit_time_s_mean", "mean"),
+            )
+            .reset_index()
+        )
+
+        family_of = {
+            "CatBoost": "Boosting",
+            "LightGBM": "Boosting",
+            "XGBoost": "Boosting",
+            "GradientBoosting": "Boosting",
+            "RandomForest": "Bagging",
+            "ExtraTrees": "Bagging",
+            "MLP": "Neural net",
+            "Ridge": "Linear / kernel",
+            "SVR": "Linear / kernel",
+            "DecisionTree": "Tree / instance",
+            "KNN": "Tree / instance",
+        }
+        families = [
+            "Boosting",
+            "Bagging",
+            "Neural net",
+            "Linear / kernel",
+            "Tree / instance",
+        ]
+        family_color = {fam: self.style.get_color(i) for i, fam in enumerate(families)}
+
+        fit_max = per_model["fit"].max()
+
+        def size_of(fit: float) -> float:
+            return 20.0 + 50.0 * (fit / fit_max)
+
+        fig, ax = self.create_figure(
+            width=FigureWidth.SINGLE_COLUMN,
+            aspect_ratio=0.9,
+        )
+
+        ordered = per_model.sort_values("lat")
+        fx: list[float] = []
+        fy: list[float] = []
+        best_r2 = -np.inf
+        for _, r in ordered.iterrows():
+            if r["r2"] > best_r2:
+                fx.append(r["lat"])
+                fy.append(r["r2"])
+                best_r2 = r["r2"]
+        ax.plot(
+            fx,
+            fy,
+            color="grey",
+            linestyle="--",
+            linewidth=self.style.line_width,
+            zorder=1,
+        )
+
+        for _, row in per_model.iterrows():
+            m = row["model"]
+            color = family_color[family_of[m]]
+            if m in selected_models:
+                ax.scatter(
+                    row["lat"],
+                    row["r2"],
+                    s=size_of(row["fit"]),
+                    color=color,
+                    edgecolor="black",
+                    linestyle="solid",
+                    linewidth=self.style.line_width * 0.8,
+                    zorder=2,
+                )
+            else:
+                ax.scatter(
+                    row["lat"],
+                    row["r2"],
+                    s=size_of(row["fit"]),
+                    color=color,
+                    edgecolor="white",
+                    linewidth=self.style.line_width * 0.6,
+                    zorder=3,
+                )
+            ax.annotate(
+                m,
+                (row["lat"], row["r2"]),
+                textcoords="offset points",
+                xytext=(4, 8) if m not in offset_models else (4, -10),
+                fontsize=self.style.font_size_small,
+                color=color,
+                zorder=5,
+            )
+
+        family_handles = [
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                markersize=5,
+                markerfacecolor=family_color[f],
+                markeredgecolor="white",
+                label=f,
+            )
+            for f in families
+        ]
+
+        family_handles.extend(
+            [
+                Line2D(
+                    [],
+                    [],
+                    marker="o",
+                    linestyle="none",
+                    markersize=5,
+                    color="white",
+                    markerfacecolor="white",
+                    markeredgecolor="black",
+                    markeredgewidth=self.style.line_width * 0.8,
+                    label="Selected models",
+                )
+            ]
+        )
+
+        ax.legend(
+            handles=family_handles,
+            loc="lr",
+            ncols=1,
+            title="Model family",
+            fontsize=self.style.font_size_small,
+        )
+
+        size_handles = [
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                markersize=float(np.sqrt(size_of(v))),
+                markerfacecolor="grey",
+                markeredgecolor="white",
+                label=f"{v:g}",
+            )
+            for v in (0.5, 2.0, 5.0)
+        ]
+        ax.legend(
+            handles=size_handles,
+            loc="ur",
+            ncols=1,
+            title="Train time (s)",
+            fontsize=self.style.font_size_small,
+        )
+
+        ax.format(
+            xscale="log",
+            xlim=(0.025, 150),
+            ylim=(0.75, 1.02),
+            xlabel="inference latency (ms, log scale)",
+            ylabel="R$^2$",
+            title="Surrogate Accuracy vs. Inference Speed",
+        )
+
+        self.save(fig, "Fig16. Surrogate Model Comparison", building_type=None)
+
     def data_to_csv(self) -> None:
         data = []
         for building_type in BUILDING_ORDER:
@@ -1832,12 +2002,13 @@ class ChartGenerator:
 
     def generate_all(self) -> None:
         self.data_to_csv()
-        self.baseline_eui_heatmap()
-        self.ecm_improvement_heatmap()
-        self.optimal_improvement_violin()
-        self.storage_soc()
-        self.waterfall()
-        self.carbon_three_plane()
-        self.typical_day_storage_soc(weather_code="TMY")
-        self.neutrality_timeline()
-        self.chicago_location_map()
+        # self.baseline_eui_heatmap()
+        # self.ecm_improvement_heatmap()
+        # self.optimal_improvement_violin()
+        # self.storage_soc()
+        # self.waterfall()
+        # self.carbon_three_plane()
+        # self.typical_day_storage_soc(weather_code="TMY")
+        # self.neutrality_timeline()
+        # self.chicago_location_map()
+        self.surrogate_model_comparison()
