@@ -209,8 +209,7 @@ def simulation_all(city: str):
 
     base_services = base_services_prepare(config, buildings_weather_combinations)
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in base_services
+        delayed(_single_run)(job, service, config) for job, service in base_services
     )
     # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
     # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(

@@ -229,7 +229,13 @@ class SurrogateBenchmark:
             metrics[f"output_{i + 1}_r2_mean"] = float(np.mean(per_target_r2[i]))
         return metrics
 
-    def _run_one(self, building_type: str, data: pd.DataFrame, model_name: str, model_spec: ModelSpec) -> dict[str, Any]:
+    def _run_one(
+        self,
+        building_type: str,
+        data: pd.DataFrame,
+        model_name: str,
+        model_spec: ModelSpec,
+    ) -> dict[str, Any]:
         x, y = self._build_xy(data)
         logger.info(f"CV {model_name} on {building_type} (n={len(data)})")
         metrics = self._cv_one(model_spec, x, y)
@@ -243,11 +249,16 @@ class SurrogateBenchmark:
 
     def run(self) -> pd.DataFrame:
         from itertools import product
+
         registry = build_registry(self._seed)
         rows: list[dict[str, Any]] = []
-        results = Parallel(n_jobs=cpu_count() - 2 if cpu_count() > 2 else 1, verbose=10, backend="loky")(
+        results = Parallel(
+            n_jobs=cpu_count() - 2 if cpu_count() > 2 else 1, verbose=10, backend="loky"
+        )(
             delayed(self._run_one)(building_type, data, model_name, model_spec)
-            for (building_type, data), (model_name, model_spec) in product(self._data.groupby("building_type"), registry.items())
+            for (building_type, data), (model_name, model_spec) in product(
+                self._data.groupby("building_type"), registry.items()
+            )
         )
         rows.extend(results)
 

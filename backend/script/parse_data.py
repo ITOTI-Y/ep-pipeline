@@ -23,6 +23,7 @@ def parse_results_to_csv(config: ConfigManager):
     df = pd.DataFrame(results)
     df.to_csv(results_dir / "results.csv", index=False)
 
+
 def parse_result_parameters(config: ConfigManager):
     import json
 
