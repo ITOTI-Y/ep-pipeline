@@ -211,12 +211,12 @@ def simulation_all(city: str):
     _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
         delayed(_single_run)(job, service, config) for job, service in base_services
     )
-    # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in ecm_services
-    # )
-    # parse_results_to_csv(config)
+    ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+        delayed(_single_run)(job, service, config)
+        for job, service in ecm_services
+    )
+    parse_results_to_csv(config)
 
     optimization_services = optimization_services_prepare(
         config, buildings_weather_combinations
