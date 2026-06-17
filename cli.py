@@ -1,13 +1,15 @@
 from collections.abc import Generator
 from copy import deepcopy
+from enum import Enum
 from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
+from typing import Annotated
 
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
-from typer import Typer
+from typer import Option, Typer
 
 from backend.models import (
     BuildingSchema,
@@ -16,7 +18,7 @@ from backend.models import (
     SimulationType,
     WeatherSchema,
 )
-from backend.script.parse_data import (  # noqa: F401
+from backend.script.parse_data import (
     parse_result_parameters,
     parse_results_to_csv,
 )
@@ -34,6 +36,14 @@ from backend.services.simulation import (
 from backend.utils.config import ConfigManager, set_logger
 
 app = Typer()
+
+
+class SimulationMode(Enum):
+    all = "all"
+    baseline = "baseline"
+    ecm = "ecm"
+    optimization = "optimization"
+    pv = "pv"
 
 
 def base_services_prepare(
@@ -162,7 +172,19 @@ def pv_services_prepare(
 
 
 @app.command()
-def simulation_all(city: str):
+def simulation_all(
+    city: Annotated[str, Option(help="The city to simulate")],
+    mode: Annotated[
+        list[SimulationMode],
+        Option(help="The mode to run the simulation"),
+    ],
+    n_jobs: Annotated[
+        int,
+        Option(
+            help="The number of jobs to run in parallel",
+        ),
+    ] = cpu_count() - 2 if cpu_count() > 2 else 1,
+):
     def _single_run(
         job: SimulationJobSchema, service: ISimulationService, config: ConfigManager
     ):
@@ -177,6 +199,7 @@ def simulation_all(city: str):
 
         return result
 
+    modes = {m.value for m in mode}
     config = ConfigManager(Path("backend/configs"))
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
@@ -205,31 +228,32 @@ def simulation_all(city: str):
 
     buildings_weather_combinations = list(product(buildings, weathers))
 
-    n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
+    if "all" in modes or "baseline" in modes:
+        base_services = base_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in base_services
+        )
+    if "all" in modes or "ecm" in modes:
+        ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in ecm_services
+        )
+        parse_results_to_csv(config)
 
-    base_services = base_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in base_services
-    )
-    ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in ecm_services
-    )
-    parse_results_to_csv(config)
+    if "all" in modes or "optimization" in modes:
+        optimization_services = optimization_services_prepare(
+            config, buildings_weather_combinations
+        )
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config)
+            for job, service in optimization_services
+        )
 
-    optimization_services = optimization_services_prepare(
-        config, buildings_weather_combinations
-    )
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config)
-        for job, service in optimization_services
-    )
-
-    pv_services = pv_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in pv_services
-    )
+    if "all" in modes or "pv" in modes:
+        pv_services = pv_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in pv_services
+        )
 
 
 @app.command()
