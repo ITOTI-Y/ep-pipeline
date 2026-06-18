@@ -217,13 +217,14 @@ def run(
         tmyx = True
         dest = True
         plt = True
-    if download:
-        download_tmyx()
-        download_dest()
     if tmyx:
+        if download:
+            download_tmyx()
         extract_epw()
         cluster_epw()
     if dest:
+        if download:
+            download_dest()
         mapping_dest_to_tmyx()
     if plt:
         plot()

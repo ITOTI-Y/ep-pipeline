@@ -52,7 +52,7 @@
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["city", "run-all"]
+            "args": ["city", "run", "--all", "--download"]
         },
         {
             "name": "City Download Dest",
