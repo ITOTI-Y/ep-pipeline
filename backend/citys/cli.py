@@ -170,7 +170,7 @@ def mapping_dest_to_tmyx(
 
     cfg = config
     out = Path(cfg.paths.citys_dir)
-    dest_dir = Path(cfg.paths.dest_dir)
+    sqlite_dir = Path(cfg.paths.dest_dir) / "sqlite"
     rep_df = pd.read_csv(out / CITYS_FILE_NAME.epw_representative_cities)
     meta_df = pd.read_csv(out / CITYS_FILE_NAME.epw_meta_data)
     labels = pd.read_csv(out / CITYS_FILE_NAME.epw_cluster_assignments)[
@@ -180,7 +180,7 @@ def mapping_dest_to_tmyx(
         rep_df,
         labels,
         meta_df,
-        dest_dir,
+        sqlite_dir,
         out / CITYS_FILE_NAME.dest_coords,
         out / CITYS_FILE_NAME.dest_mapped_results,
     )
