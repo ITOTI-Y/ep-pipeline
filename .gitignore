@@ -15,10 +15,8 @@ wheels/
 
 # Output files
 output/
-data/
+backend/data/*
 
-!data/ftmys
-!data/tmys
-!data/prototypes
+!backend/data/geo
 .claude/
 _dev/
