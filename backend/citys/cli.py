@@ -45,10 +45,10 @@ def cluster_epw() -> None:
     import pandas as pd
 
     from backend.citys.core.cluster import (
+        build_energy_space,
         compute_ward_linkage,
-        evaluate_k_range,
         run_kmedoids,
-        select_optimal_k,
+        select_k_by_coverage,
     )
     from backend.citys.core.preprocess import preprocess
     from backend.citys.core.qc import run_qc
@@ -58,7 +58,7 @@ def cluster_epw() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(output_dir / CITYS_FILE_NAME.epw_features)
-    _corr, x, _feature_names, meta_df, prep_info = preprocess(df, cfg.citys.preprocess)
+    _, _, _, meta_df, prep_info = preprocess(df, cfg.citys.preprocess)
 
     with open(output_dir / CITYS_FILE_NAME.epw_features_process_info, "w") as f:
         json.dump(prep_info, f, indent=2)
@@ -67,25 +67,25 @@ def cluster_epw() -> None:
         output_dir / CITYS_FILE_NAME.epw_meta_data, index=False, encoding="utf-8-sig"
     )
 
-    z = compute_ward_linkage(x)
-    metrics_df = evaluate_k_range(x, z, cfg.citys.cluster)
-    metrics_df.to_csv(output_dir / CITYS_FILE_NAME.epw_k_metrics, index=False)
-
+    x_energy = build_energy_space(df, cfg.citys.preprocess.pca_variance)
+    z = compute_ward_linkage(x_energy)
     if cfg.citys.cluster.override_k is not None:
         optimal_k = cfg.citys.cluster.override_k
         logger.info(f"Using override K={optimal_k}")
-    else:
-        optimal_k = select_optimal_k(metrics_df)
-        logger.info(f"Auto-selected K={optimal_k}")
 
-    km_result = run_kmedoids(x, optimal_k)
+    else:
+        optimal_k, coverage_df = select_k_by_coverage(x_energy, df, cfg.citys.cluster)
+        coverage_df.to_csv(output_dir / CITYS_FILE_NAME.epw_k_metrics, index=False)
+        logger.info(f"Coverage-selected K={optimal_k}")
+
+    km_result = run_kmedoids(x_energy, optimal_k)
 
     forced_cities = cfg.citys.forced_cities
 
     qc_result = run_qc(
         km_result.medoid_indices,
         km_result.labels,
-        x,
+        x_energy,
         df,
         meta_df,
         forced_cities,

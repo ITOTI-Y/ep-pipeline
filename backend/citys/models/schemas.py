@@ -17,6 +17,18 @@ class PreprocessConfigSchema(BaseCitySchema):
     )
 
 
+class CoverageToleranceSchema(BaseCitySchema):
+    temp: float = Field(
+        0.8, gt=0.0, description="Max P95 temperature (HDD/CDD) coverage error"
+    )
+    solar: float = Field(
+        0.9, gt=0.0, description="Max P95 solar (GHI/DHI) coverage error"
+    )
+    wind: float = Field(
+        1.1, gt=0.0, description="Max P95 wind coverage error (intentionally loose)"
+    )
+
+
 class ClusterConfigSchema(BaseCitySchema):
     k_min: int = Field(20, ge=2, description="The minimum number of clusters")
     k_max: int = Field(60, ge=2, description="The maximum number of clusters")
@@ -24,6 +36,7 @@ class ClusterConfigSchema(BaseCitySchema):
         None, ge=2, description="The number of clusters to override"
     )
     n_gap_refs: int = Field(20, ge=5, description="The number of gap references")
+    coverage_tol: CoverageToleranceSchema = CoverageToleranceSchema()
 
 
 class DownloadConfigSchema(BaseCitySchema):

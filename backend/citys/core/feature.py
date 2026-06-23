@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
+from backend.citys.io.geo import lookup_province
+
 EPW_COL_DRY_BULB_TEMPERATURE: Final = 6
 EPW_COL_DEW_POINT_TEMPERATURE: Final = 7
 EPW_COL_GLOBAL_HORIZONTAL_RADIATION: Final = 13
@@ -29,12 +31,15 @@ def _parse_epw_header(path: Path) -> EPWHeader:
         line1 = f.readline().strip().split(",")
         for remove in REMOVE_LIST:
             line1[1] = line1[1].removesuffix(remove)
+    latitude = float(line1[6])
+    longitude = float(line1[7])
+    province = lookup_province(latitude, longitude)
     return EPWHeader(
         city=line1[1].split("-")[0],
-        province=line1[2],
+        province=province,
         wmo_id=line1[5],
-        latitude=float(line1[6]),
-        longitude=float(line1[7]),
+        latitude=latitude,
+        longitude=longitude,
         elevation=float(line1[9]),
     )
 

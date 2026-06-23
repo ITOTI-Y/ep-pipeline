@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -7,10 +7,66 @@ from loguru import logger
 from numpy.typing import NDArray
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import pdist, squareform
+from sklearn.decomposition import PCA
 from sklearn.metrics import calinski_harabasz_score, silhouette_score
+from sklearn.preprocessing import StandardScaler
 
 from backend.citys._share import RANDOM_SEED
+from backend.citys.core._share import GROUP_A_COLS, GROUP_B_COLS
 from backend.citys.models.schemas import ClusterConfigSchema
+
+COVERAGE_GROUPS: Final = {
+    "temp": ["hdd18", "cdd18"],
+    "solar": ["annual_ghi", "annual_dhi"],
+    "wind": ["annual_mean_wind_speed"],
+}
+
+
+def build_energy_space(df: pd.DataFrame, pca_variance: float) -> NDArray:
+    x_a = StandardScaler().fit_transform(df[GROUP_A_COLS].to_numpy())
+    x_b = StandardScaler().fit_transform(df[GROUP_B_COLS].to_numpy())
+    x_b_pca = PCA(n_components=pca_variance, svd_solver="full").fit_transform(x_b)
+    x_b_pca = StandardScaler().fit_transform(x_b_pca)
+    return np.hstack([x_a, x_b_pca])
+
+
+def select_k_by_coverage(
+    x_energy: NDArray, df: pd.DataFrame, cfg: ClusterConfigSchema
+) -> tuple[int, pd.DataFrame]:
+    resources = {
+        name: StandardScaler().fit_transform(df[cols].to_numpy())
+        for name, cols in COVERAGE_GROUPS.items()
+    }
+    tol = {
+        "temp": cfg.coverage_tol.temp,
+        "solar": cfg.coverage_tol.solar,
+        "wind": cfg.coverage_tol.wind,
+    }
+    dist = squareform(pdist(x_energy, metric="euclidean"))
+    rows = []
+    for k in range(cfg.k_min, cfg.k_max + 1):
+        result = fasterpam(dist, k, random_state=RANDOM_SEED)
+        assigned = np.asarray(result.medoids)[np.asarray(result.labels)]
+        record: dict[str, float | int | bool] = {"k": k}
+        meets = True
+        for name, mat in resources.items():
+            p95 = float(np.percentile(np.linalg.norm(mat - mat[assigned], axis=1), 95))
+            record[f"p95_{name}"] = p95
+            meets = meets and p95 <= tol[name]
+        record["meets_all"] = meets
+        rows.append(record)
+    coverage_df = pd.DataFrame(rows)
+    feasible = coverage_df.loc[coverage_df["meets_all"], "k"]
+    if len(feasible):
+        k = int(feasible.min())
+        logger.info(f"Coverage K={k} (per-resource P95 within {tol})")
+    else:
+        k = int(cfg.k_max)
+        logger.warning(
+            f"No K in [{cfg.k_min}, {cfg.k_max}] meets per-resource tol {tol}; "
+            f"using k_max={k}. Relax wind tolerance or raise k_max."
+        )
+    return k, coverage_df
 
 
 class KMedoidsResult(NamedTuple):
@@ -66,27 +122,15 @@ def _compute_wk(x: NDArray, labels: NDArray) -> float:
     return wk
 
 
-def select_optimal_k(metrics_df: pd.DataFrame) -> int:
-    k_sil = int(metrics_df.loc[metrics_df["silhouette"].idxmax(), "k"])
-    k_ch = int(metrics_df.loc[metrics_df["calinski_harabasz"].idxmax(), "k"])
-
-    k_gap = None
-    for i in range(len(metrics_df) - 1):
-        gap_k = metrics_df.iloc[i]["gap_statistic"]
-        gap_k1 = metrics_df.iloc[i + 1]["gap_statistic"]
-        sk1 = metrics_df.iloc[i + 1]["gap_sk"]
-        if gap_k >= gap_k1 - sk1:
-            k_gap = int(metrics_df.iloc[i]["k"])
-            break
-    if k_gap is None:
-        k_gap = int(metrics_df.loc[metrics_df["gap_statistic"].idxmax(), "k"])
-
-    candidates = [k_sil, k_ch, k_gap]
-    logger.info(f"K votes: Sil={k_sil}, CH={k_ch}, Gap={k_gap}")
-    for k in candidates:
-        if candidates.count(k) >= 2:
-            return k
-    return k_sil
+def select_optimal_k(metrics_df: pd.DataFrame, sil_tol: float = 0.1) -> int:
+    sil_max = float(metrics_df["silhouette"].max())
+    threshold = sil_max * (1.0 - sil_tol)
+    eligible = metrics_df.loc[metrics_df["silhouette"] >= threshold, "k"]
+    k = int(eligible.min())
+    logger.info(
+        f"Selected K={k} (silhouette within {sil_tol:.0%} of peak {sil_max:.4f})"
+    )
+    return k
 
 
 def run_kmedoids(x: NDArray, k: int) -> KMedoidsResult:

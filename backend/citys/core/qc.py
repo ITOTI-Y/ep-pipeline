@@ -87,6 +87,7 @@ def _check_forced(
     forced_names: list[str],
 ) -> list[int]:
     current = list(indices)
+    current_set = set(current)
     for name in forced_names:
         name_lower = name.lower()
         matched = [
@@ -96,9 +97,10 @@ def _check_forced(
         ]
         if not matched:
             continue
-        idx = matched[0]
-        if idx not in current:
-            current.append(idx)
+        if any(i in current_set for i in matched):
+            continue
+        current.append(matched[0])
+        current_set.add(matched[0])
     return current
 
 

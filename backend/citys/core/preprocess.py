@@ -46,6 +46,7 @@ def preprocess(df: pd.DataFrame, cfg: PreprocessConfigSchema) -> PreprocessResul
 
     pca = PCA(n_components=cfg.pca_variance, svd_solver="full")
     x_b_pca = pca.fit_transform(x_b)
+    x_b_pca = StandardScaler().fit_transform(x_b_pca)
 
     x_c_w = x_c * cfg.geo_weight
     x = np.hstack([x_a, x_b_pca, x_c_w])

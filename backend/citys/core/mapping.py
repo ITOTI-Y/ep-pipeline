@@ -11,7 +11,7 @@ from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_async
 
 from backend.citys.core.qc import haversine_km
-from backend.citys.io._share import BUILDING_TYPES
+from backend.citys.io._share import BTYPE_SHORT
 
 _DISTANCE_THRESHOLD = 50
 
@@ -102,10 +102,10 @@ def map_tmyx_to_dest(
                     (dest_coords_df["province"] == dest["province"])
                     & (dest_coords_df["city_name"] == dest["city_name"])
                 ]["file_path"].tolist()
-                if len(dest_files) != len(BUILDING_TYPES):
+                if len(dest_files) != len(BTYPE_SHORT):
                     logger.warning(
                         f"Exact match found but number of DeST files does not match: {tmyx_name} -> "
-                        f"{dest['city_name']}, {len(dest_files)} != {len(BUILDING_TYPES)}"
+                        f"{dest['city_name']}, {len(dest_files)} != {len(BTYPE_SHORT)}"
                     )
                 results.append(
                     MatchResult(
@@ -132,29 +132,62 @@ def map_tmyx_to_dest(
         if same_cluster.empty:
             same_cluster = dest_coords_df
 
-        dists = haversine_km(
+        same_cluster["dist"] = haversine_km(
             tmyx_lat,
             tmyx_lon,
             same_cluster["latitude"].to_numpy(),
             same_cluster["longitude"].to_numpy(),
         )
-        best_i = int(np.argmin(dists))
+        best_i = int(np.argmin(same_cluster["dist"].to_numpy()))
         dest_row = same_cluster.iloc[best_i]
+        dist = float(same_cluster["dist"].iloc[best_i])
         match_type = (
             "nearest_same_cluster"
             if len(same_cluster) < len(dest_coords_df)
             else "nearest_cross_cluster"
         )
 
-        dest_files = dest_coords_df[
+        dest_files_with_btypes = dest_coords_df[
             (dest_coords_df["province"] == dest_row["province"])
             & (dest_coords_df["city_name"] == dest_row["city_name"])
-        ]["file_path"].tolist()
-        if len(dest_files) != len(BUILDING_TYPES):
+        ][["file_path", "building_type"]]
+        dest_files = dest_files_with_btypes["file_path"].tolist()
+        dest_btypes = dest_files_with_btypes["building_type"].tolist()
+        if len(dest_btypes) != len(BTYPE_SHORT):
             logger.warning(
                 f"Nearest match found but number of DeST files does not match: {tmyx_name} -> "
-                f"{dest_row['city_name']}, {len(dest_files)} != {len(BUILDING_TYPES)}"
+                f"{dest_row['city_name']}, {len(dest_btypes)} != {len(BTYPE_SHORT)}"
             )
+            not_found_btypes = set(BTYPE_SHORT.values()) - set(dest_btypes)
+            for btype in not_found_btypes:
+                other_dests = same_cluster[same_cluster["building_type"] == btype]
+                if other_dests.empty:
+                    same_btype_dests = dest_coords_df[
+                        dest_coords_df["building_type"] == btype
+                    ]
+                    best_i = int(
+                        np.argmin(
+                            haversine_km(
+                                tmyx_lat,
+                                tmyx_lon,
+                                same_btype_dests["latitude"].to_numpy(),
+                                same_btype_dests["longitude"].to_numpy(),
+                            )
+                        )
+                    )
+                    dest_files.append(same_btype_dests.iloc[best_i]["file_path"])
+                    dest_btypes.append(btype)
+                    logger.warning(
+                        f"Using {btype} from {same_btype_dests.iloc[best_i]['city_name']} representing {dest_row['city_name']}"
+                    )
+                    continue
+                best_i = int(np.argmin(other_dests["dist"].to_numpy()))
+                dest_files.append(other_dests.iloc[best_i]["file_path"])
+                dest_btypes.append(btype)
+                logger.warning(
+                    f"Using {btype} from {other_dests.iloc[best_i]['city_name']} representing {dest_row['city_name']}"
+                )
+        assert len(dest_files) == len(BTYPE_SHORT)
         results.append(
             MatchResult(
                 tmyx_city=tmyx_name,
@@ -165,7 +198,7 @@ def map_tmyx_to_dest(
                 dest_province=dest_row["province"],
                 dest_file_paths=dest_files,
                 match_type=match_type,
-                distance_km=float(dists[best_i]),
+                distance_km=dist,
                 cluster=int(cluster),
             )
         )
