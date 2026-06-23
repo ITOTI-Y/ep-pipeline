@@ -12,6 +12,7 @@ from backend.citys.core._share import (
     GROUP_B_COLS,
     GROUP_C_COLS,
 )
+from backend.citys.models.schemas import CitySelectionConfigSchema
 from backend.citys.viz._share import (
     CENTER_LONGITUDE,
     GEO_PROVINCE_FILE,
@@ -274,35 +275,50 @@ def cluster_dendrogram(z: np.ndarray, k: int) -> None:
     _chart_generator.save(fig, VIZ_FILE_NAME.cluster_dendrogram)
 
 
-def k_metrics(df: pd.DataFrame, k: int) -> None:
+def k_metrics(feature_df: pd.DataFrame, cfg: CitySelectionConfigSchema, k: int) -> None:
+    from kmedoids import fasterpam
+    from scipy.spatial.distance import pdist, squareform
+
+    from backend.citys._share import RANDOM_SEED
+    from backend.citys.core.cluster import build_energy_space
+
+    resources = {
+        "hdd18": r"$\mathrm{HDD}_{18}$",
+        "cdd18": r"$\mathrm{CDD}_{18}$",
+        "annual_ghi": "GHI",
+        "annual_mean_wind_speed": "Wind speed",
+    }
+    x_energy = build_energy_space(feature_df, cfg.preprocess.pca_variance)
+    dist = squareform(pdist(x_energy, metric="euclidean"))
+    ranges = {c: float(feature_df[c].max() - feature_df[c].min()) for c in resources}
+    ks = list(range(cfg.cluster.k_min, cfg.cluster.k_max + 1))
+    curves: dict[str, list[float]] = {c: [] for c in resources}
+    for kk in ks:
+        result = fasterpam(dist, kk, random_state=RANDOM_SEED)
+        assigned = np.asarray(result.medoids)[np.asarray(result.labels)]
+        for c in resources:
+            v = feature_df[c].to_numpy()
+            p95 = float(np.percentile(np.abs(v - v[assigned]), 95))
+            curves[c].append(p95 / ranges[c] * 100.0)
+
     fig, axs = _chart_generator.create_figure(
-        width=FigureWidth.DOUBLE_COLUMN, aspect_ratio=0.4, ncols=1
+        width=FigureWidth.DOUBLE_COLUMN, aspect_ratio=0.6, ncols=1
     )
     ax = axs[0]
-    for col, label, color, linestyle, marker in zip(
-        ["silhouette", "calinski_harabasz", "gap_statistic"],
-        ["Silhouette Score", "Calinski-Harabasz Index", "Gap Statistic"],
-        [STYLE.colors[0], STYLE.colors[1], STYLE.colors[2]],
-        ["-", "--", ":"],
-        [STYLE.markers[0], STYLE.markers[1], STYLE.markers[2]],
-        strict=True,
-    ):
+    ax.axhspan(10.0, 15.0, color="gray", alpha=0.12, label="Target 10-15%")
+    for i, (col, label) in enumerate(resources.items()):
         ax.plot(
-            df["k"],
-            df[col],
-            marker=marker,
+            ks,
+            curves[col],
+            marker=STYLE.markers[i % len(STYLE.markers)],
             ms=3,
             lw=STYLE.line_width,
-            color=color,
+            color=STYLE.colors[i % len(STYLE.colors)],
             label=label,
-            linestyle=linestyle,
         )
     ax.axvline(k, color="red", linestyle="--", linewidth=STYLE.line_width)
     ax.legend(loc="ur", ncol=1, frameon=False)
-    ax.format(
-        xlabel="K",
-        ylabel="Metric Value",
-    )
+    ax.format(xlabel="K", ylabel="P95 error (% of national range)")
     _chart_generator.save(fig, VIZ_FILE_NAME.k_metrics)
 
 
@@ -315,9 +331,6 @@ def generation_all(config: ConfigManager):
     epw_feature_df = pd.read_csv(
         Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_features
     )
-    epw_k_metrics_df = pd.read_csv(
-        Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_k_metrics
-    )
     dest_df = pd.read_csv(Path(config.paths.citys_dir) / CITYS_FILE_NAME.dest_coords)
     ward_linkage = np.load(
         Path(config.paths.citys_dir) / CITYS_FILE_NAME.epw_ward_linkage
@@ -327,4 +340,8 @@ def generation_all(config: ConfigManager):
     correlation_heatmap(epw_feature_df)
     pca_analysis(epw_feature_df)
     cluster_dendrogram(ward_linkage, epw_cluster_df["cluster_label"].nunique())
-    k_metrics(epw_k_metrics_df, epw_cluster_df["cluster_label"].nunique())
+    k_metrics(
+        epw_feature_df,
+        config.citys,
+        epw_cluster_df["cluster_label"].nunique(),
+    )
