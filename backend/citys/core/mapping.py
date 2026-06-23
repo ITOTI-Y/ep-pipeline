@@ -2,7 +2,7 @@ import asyncio
 import sqlite3
 from pathlib import Path
 from typing import Literal, TypedDict
-
+import json
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -69,7 +69,7 @@ def map_tmyx_to_dest(
     dest_coords_df = dest_coords_df.copy()
     dest_coords_df["cluster"] = labels[nearest_tmyx]
 
-    results = []
+    results: list[MatchResult] = []
     for _, row in tqdm(
         representative_indices.iterrows(),
         total=len(representative_indices),
@@ -204,9 +204,9 @@ def map_tmyx_to_dest(
         )
 
     df = pd.DataFrame(results)
-    df.to_csv(out_file, index=False)
+    df.to_json(out_file, orient="records", indent=4)
     logger.info(
-        f"Mapping: {len(df)} pairs -> {df['dest_city'].nunique()} unique DeST cities, "
+        f"Mapping: {len(results)} pairs -> {df['dest_city'].nunique()} unique DeST cities, "
         f"same-cluster rate={(df['match_type'] != 'nearest_cross_cluster').mean():.1%}"
     )
     return df

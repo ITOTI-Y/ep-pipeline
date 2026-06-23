@@ -18,7 +18,7 @@ class CitysFileName(BaseModel):
     epw_ward_linkage: str = "07_epw_ward_linkage.npy"
     dest_catalog: str = "08_dest_catalog.json"
     dest_coords: str = "09_dest_coords.csv"
-    dest_mapped_results: str = "10_dest_mapped_results.csv"
+    dest_mapped_results: str = "10_dest_mapped_results.json"
 
 
 class VizFileName(BaseModel):
