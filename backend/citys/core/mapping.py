@@ -2,7 +2,7 @@ import asyncio
 import sqlite3
 from pathlib import Path
 from typing import Literal, TypedDict
-import json
+
 import numpy as np
 import pandas as pd
 from loguru import logger
