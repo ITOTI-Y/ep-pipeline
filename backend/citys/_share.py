@@ -2,7 +2,9 @@ from typing import Final
 
 from pydantic import BaseModel, ConfigDict
 
-RANDOM_SEED: Final = 0
+from backend.models.config_models import OptimizationConfig
+
+RANDOM_SEED: Final = OptimizationConfig().seed
 
 
 class CitysFileName(BaseModel):
