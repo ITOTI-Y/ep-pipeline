@@ -4,16 +4,16 @@
             "name": "Simulation",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulation-all"]
+            "args": ["simulation-all", "Chicago"]
         },
         {
             "name": "Parse Result",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["parse-result"]
@@ -22,10 +22,28 @@
             "name": "Visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["visualization"]
+        },
+        {
+            "name": "Prepare Paper Data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["prepare-paper-data"]
+        },
+        {
+            "name": "Surrogate Benchmark",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["benchmark-surrogate"]
         }
     ]
 }

@@ -1,7 +1,7 @@
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationJob
+from backend.models import SimulationJobSchema
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
@@ -11,7 +11,7 @@ class OutputApply(IApply):
         super().__init__()
         self._config = config
 
-    def apply(self, job: SimulationJob) -> None:
+    def apply(self, job: SimulationJobSchema) -> None:
         logger.info("Applying output configuration")
         if job.idf is None:
             logger.error("IDF is not set, skipping")
@@ -53,7 +53,10 @@ class OutputApply(IApply):
             ("Site Outdoor Air Drybulb Temperature", "Hourly"),
             ("Zone Mean Air Temperature", "Hourly"),
             ("Facility Total Electricity Demand Rate", "Hourly"),
-            ("Surface Outside Face Incident Solar Radiation Rate per Area", "Hourly"),
+            (
+                "Surface Outside Face Incident Solar Radiation Rate per Area",
+                "Hourly",
+            ),
             ("Facility Total Purchased Electricity Rate", "Monthly"),
             ("Generator Produced DC Electricity Rate", "Hourly"),
             ("Electric Storage Simple Charge State", "Hourly"),

@@ -1,7 +1,7 @@
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationJob
+from backend.models import SimulationJobSchema
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
@@ -11,7 +11,7 @@ class PeriodApply(IApply):
         super().__init__()
         self._config = config
 
-    def apply(self, job: SimulationJob) -> None:
+    def apply(self, job: SimulationJobSchema) -> None:
         logger.info("Applying period configuration")
         if job.idf is None:
             logger.error("IDF is not set, skipping")

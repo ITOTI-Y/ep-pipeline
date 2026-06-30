@@ -1,5 +1,5 @@
 """
-Unit tests for ECMParameters value object.
+Unit tests for ECMParametersSchema value object.
 
 Tests cover:
 - Parameter validation and constraints
@@ -14,16 +14,16 @@ Tests cover:
 import pytest
 from pydantic import ValidationError
 
-from backend.models.ecm_parameters import ECMParameters
+from backend.models.ecm_parameters import ECMParametersSchema
 from backend.models.enums import BuildingType
 
 
 class TestECMParametersCreation:
-    """Test ECMParameters creation and validation."""
+    """Test ECMParametersSchema creation and validation."""
 
     def test_create_with_building_type_only(self):
-        """Test creating ECMParameters with only required building_type."""
-        params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
+        """Test creating ECMParametersSchema with only required building_type."""
+        params = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
 
         assert params.building_type == BuildingType.OFFICE_LARGE
         assert params.window_u_value is None
@@ -39,8 +39,8 @@ class TestECMParametersCreation:
         assert params.lighting_power_reduction_level is None
 
     def test_create_with_all_valid_parameters(self):
-        """Test creating ECMParameters with all valid parameters."""
-        params = ECMParameters(
+        """Test creating ECMParametersSchema with all valid parameters."""
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_MEDIUM,
             window_u_value=1.5,
             window_shgc=0.4,
@@ -68,12 +68,12 @@ class TestECMParametersCreation:
 
 
 class TestECMParametersValidation:
-    """Test validation constraints on ECMParameters."""
+    """Test validation constraints on ECMParametersSchema."""
 
     def test_window_u_value_negative_fails(self):
         """Test that negative window U-value raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 window_u_value=-1.0,
             )
@@ -82,7 +82,7 @@ class TestECMParametersValidation:
     def test_window_shgc_below_zero_fails(self):
         """Test that SHGC below 0 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 window_shgc=-0.1,
             )
@@ -91,7 +91,7 @@ class TestECMParametersValidation:
     def test_window_shgc_above_one_fails(self):
         """Test that SHGC above 1 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 window_shgc=1.5,
             )
@@ -99,13 +99,13 @@ class TestECMParametersValidation:
 
     def test_window_shgc_boundary_values(self):
         """Test SHGC boundary values (0 and 1) are valid."""
-        params_zero = ECMParameters(
+        params_zero = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.0,
         )
         assert params_zero.window_shgc == 0.0
 
-        params_one = ECMParameters(
+        params_one = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=1.0,
         )
@@ -114,7 +114,7 @@ class TestECMParametersValidation:
     def test_visible_transmittance_below_zero_fails(self):
         """Test that visible transmittance below 0 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 visible_transmittance=-0.1,
             )
@@ -123,7 +123,7 @@ class TestECMParametersValidation:
     def test_visible_transmittance_above_one_fails(self):
         """Test that visible transmittance above 1 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 visible_transmittance=1.1,
             )
@@ -132,7 +132,7 @@ class TestECMParametersValidation:
     def test_wall_insulation_negative_fails(self):
         """Test that negative wall insulation raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 wall_insulation=-1.0,
             )
@@ -141,7 +141,7 @@ class TestECMParametersValidation:
     def test_infiltration_rate_negative_fails(self):
         """Test that negative infiltration rate raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 infiltration_rate=-0.5,
             )
@@ -150,7 +150,7 @@ class TestECMParametersValidation:
     def test_natural_ventilation_area_negative_fails(self):
         """Test that negative natural ventilation area raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 natural_ventilation_area=-5.0,
             )
@@ -159,7 +159,7 @@ class TestECMParametersValidation:
     def test_cop_below_one_fails(self):
         """Test that COP below 1.0 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 cooling_cop=0.5,
                 heating_cop=0.5,
@@ -168,7 +168,7 @@ class TestECMParametersValidation:
 
     def test_cop_exactly_one_is_valid(self):
         """Test that COP of exactly 1.0 is valid."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             cooling_cop=1.0,
             heating_cop=1.0,
@@ -179,7 +179,7 @@ class TestECMParametersValidation:
     def test_lighting_power_reduction_level_below_one_fails(self):
         """Test that lighting level below 1 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 lighting_power_reduction_level=0,
             )
@@ -188,7 +188,7 @@ class TestECMParametersValidation:
     def test_lighting_power_reduction_level_above_three_fails(self):
         """Test that lighting level above 3 raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ECMParameters(
+            ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 lighting_power_reduction_level=4,
             )
@@ -197,7 +197,7 @@ class TestECMParametersValidation:
     def test_lighting_power_reduction_level_boundary_values(self):
         """Test lighting level boundary values (1, 2, 3) are valid."""
         for level in [1, 2, 3]:
-            params = ECMParameters(
+            params = ECMParametersSchema(
                 building_type=BuildingType.OFFICE_LARGE,
                 lighting_power_reduction_level=level,
             )
@@ -209,12 +209,12 @@ class TestLightingPowerReductionProperty:
 
     def test_lighting_power_reduction_none_when_level_none(self):
         """Test that property returns None when level is None."""
-        params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
+        params = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
         assert params.lighting_power_reduction is None
 
     def test_lighting_power_reduction_office_large_level_1(self):
         """Test lighting reduction for OFFICE_LARGE at level 1."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=1,
         )
@@ -222,7 +222,7 @@ class TestLightingPowerReductionProperty:
 
     def test_lighting_power_reduction_office_large_level_2(self):
         """Test lighting reduction for OFFICE_LARGE at level 2."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
@@ -230,7 +230,7 @@ class TestLightingPowerReductionProperty:
 
     def test_lighting_power_reduction_office_large_level_3(self):
         """Test lighting reduction for OFFICE_LARGE at level 3."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=3,
         )
@@ -239,7 +239,7 @@ class TestLightingPowerReductionProperty:
     def test_lighting_power_reduction_office_medium_all_levels(self):
         """Test lighting reduction for OFFICE_MEDIUM at all levels."""
         for level, expected in [(1, 0.2), (2, 0.47), (3, 0.53)]:
-            params = ECMParameters(
+            params = ECMParametersSchema(
                 building_type=BuildingType.OFFICE_MEDIUM,
                 lighting_power_reduction_level=level,
             )
@@ -248,7 +248,7 @@ class TestLightingPowerReductionProperty:
     def test_lighting_power_reduction_apartment_high_rise_all_levels(self):
         """Test lighting reduction for APARTMENT_HIGH_RISE at all levels."""
         for level, expected in [(1, 0.35), (2, 0.45), (3, 0.55)]:
-            params = ECMParameters(
+            params = ECMParametersSchema(
                 building_type=BuildingType.APARTMENT_HIGH_RISE,
                 lighting_power_reduction_level=level,
             )
@@ -257,7 +257,7 @@ class TestLightingPowerReductionProperty:
     def test_lighting_power_reduction_single_family_all_levels(self):
         """Test lighting reduction for SINGLE_FAMILY_RESIDENTIAL at all levels."""
         for level, expected in [(1, 0.45), (2, 0.5), (3, 0.64)]:
-            params = ECMParameters(
+            params = ECMParametersSchema(
                 building_type=BuildingType.SINGLE_FAMILY_RESIDENTIAL,
                 lighting_power_reduction_level=level,
             )
@@ -266,7 +266,7 @@ class TestLightingPowerReductionProperty:
     def test_lighting_power_reduction_multi_family_all_levels(self):
         """Test lighting reduction for MULTI_FAMILY_RESIDENTIAL at all levels."""
         for level, expected in [(1, 0.35), (2, 0.45), (3, 0.55)]:
-            params = ECMParameters(
+            params = ECMParametersSchema(
                 building_type=BuildingType.MULTI_FAMILY_RESIDENTIAL,
                 lighting_power_reduction_level=level,
             )
@@ -274,17 +274,17 @@ class TestLightingPowerReductionProperty:
 
 
 class TestECMParametersImmutability:
-    """Test that ECMParameters is immutable (frozen)."""
+    """Test that ECMParametersSchema is immutable (frozen)."""
 
     def test_cannot_modify_building_type(self):
         """Test that building_type cannot be modified after creation."""
-        params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
+        params = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
         with pytest.raises(ValidationError):
             params.building_type = BuildingType.OFFICE_MEDIUM
 
     def test_cannot_modify_window_u_value(self):
         """Test that window_u_value cannot be modified after creation."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
@@ -293,7 +293,7 @@ class TestECMParametersImmutability:
 
     def test_cannot_add_new_attributes(self):
         """Test that new attributes cannot be added."""
-        params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
+        params = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
         with pytest.raises(ValidationError):
             params.new_attribute = "value"  # type: ignore
 
@@ -303,7 +303,7 @@ class TestECMParametersToDictMethod:
 
     def test_to_dict_excludes_none_values(self):
         """Test that to_dict excludes None values."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
@@ -316,7 +316,7 @@ class TestECMParametersToDictMethod:
 
     def test_to_dict_includes_all_set_values(self):
         """Test that to_dict includes all set values."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
@@ -335,7 +335,7 @@ class TestECMParametersToDictMethod:
 
     def test_to_dict_with_lighting_level(self):
         """Test to_dict includes lighting_power_reduction_level but not the calculated property."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             lighting_power_reduction_level=2,
         )
@@ -351,11 +351,11 @@ class TestECMParametersMergeMethod:
 
     def test_merge_with_same_building_type(self):
         """Test merging parameters with same building type."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
         )
@@ -368,13 +368,13 @@ class TestECMParametersMergeMethod:
 
     def test_merge_overwrites_existing_values(self):
         """Test that merge overwrites existing values from first parameter."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             cooling_cop=3.0,
             heating_cop=3.0,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             cooling_cop=4.0,
             heating_cop=4.0,
@@ -388,8 +388,8 @@ class TestECMParametersMergeMethod:
 
     def test_merge_different_building_types_raises_error(self):
         """Test that merging different building types raises ValueError."""
-        params1 = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
-        params2 = ECMParameters(building_type=BuildingType.OFFICE_MEDIUM)
+        params1 = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
+        params2 = ECMParametersSchema(building_type=BuildingType.OFFICE_MEDIUM)
 
         with pytest.raises(
             ValueError, match="Cannot merge ECMParameters with different building types"
@@ -398,11 +398,11 @@ class TestECMParametersMergeMethod:
 
     def test_merge_preserves_immutability(self):
         """Test that merge creates a new object and doesn't modify originals."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_shgc=0.4,
         )
@@ -423,11 +423,11 @@ class TestECMParametersHashAndEquality:
 
     def test_equal_parameters_have_same_hash(self):
         """Test that equal parameters have the same hash."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
@@ -437,11 +437,11 @@ class TestECMParametersHashAndEquality:
 
     def test_different_parameters_not_equal(self):
         """Test that different parameters are not equal."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=2.0,
         )
@@ -450,15 +450,15 @@ class TestECMParametersHashAndEquality:
 
     def test_parameters_can_be_used_in_set(self):
         """Test that parameters can be used in a set (hashable)."""
-        params1 = ECMParameters(
+        params1 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params2 = ECMParameters(
+        params2 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
-        params3 = ECMParameters(
+        params3 = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=2.0,
         )
@@ -467,10 +467,10 @@ class TestECMParametersHashAndEquality:
         assert len(param_set) == 2  # params1 and params2 are equal
 
     def test_equality_with_non_ecmparameters(self):
-        """Test equality comparison with non-ECMParameters object."""
-        params = ECMParameters(building_type=BuildingType.OFFICE_LARGE)
+        """Test equality comparison with non-ECMParametersSchema object."""
+        params = ECMParametersSchema(building_type=BuildingType.OFFICE_LARGE)
 
-        assert params != "not an ECMParameters"
+        assert params != "not an ECMParametersSchema"
         assert params != 42
         assert params is not None
 
@@ -480,19 +480,19 @@ class TestECMParametersStringRepresentation:
 
     def test_str_with_single_parameter(self):
         """Test string representation with single parameter."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )
         result = str(params)
 
-        assert "ECMParameters(" in result
+        assert "ECMParametersSchema(" in result
         assert "building_type=OfficeLarge" in result
         assert "window_u_value=1.5" in result
 
     def test_str_with_multiple_parameters(self):
         """Test string representation with multiple parameters."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
             window_shgc=0.4,
@@ -501,7 +501,7 @@ class TestECMParametersStringRepresentation:
         )
         result = str(params)
 
-        assert "ECMParameters(" in result
+        assert "ECMParametersSchema(" in result
         assert "building_type=OfficeLarge" in result
         assert "window_u_value=1.5" in result
         assert "window_shgc=0.4" in result
@@ -510,7 +510,7 @@ class TestECMParametersStringRepresentation:
 
     def test_str_excludes_none_values(self):
         """Test that string representation excludes None values."""
-        params = ECMParameters(
+        params = ECMParametersSchema(
             building_type=BuildingType.OFFICE_LARGE,
             window_u_value=1.5,
         )

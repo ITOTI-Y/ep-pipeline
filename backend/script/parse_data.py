@@ -24,24 +24,6 @@ def parse_results_to_csv(config: ConfigManager):
     df.to_csv(results_dir / "results.csv", index=False)
 
 
-def parse_optimal_data(config: ConfigManager):
-    optimization_dir = config.paths.optimization_dir
-    baseline_dir = config.paths.baseline_dir
-    optimization_files = list(optimization_dir.glob("**/result.pkl"))
-    baseline_files = list(baseline_dir.glob("**/result.pkl"))
-    optimization_files.sort()
-    baseline_files.sort()
-    for optimization_file, baseline_file in zip(
-        optimization_files, baseline_files, strict=True
-    ):
-        with open(optimization_file, "rb") as f:
-            optimization_result = load(f)
-        with open(baseline_file, "rb") as f:
-            baseline_result = load(f)
-        logger.info(f"Optimization result: {optimization_result}")
-        logger.info(f"Baseline result: {baseline_result}")
-
-
 def parse_result_parameters(config: ConfigManager):
     import json
 

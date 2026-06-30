@@ -20,8 +20,19 @@ from matplotlib.patches import Patch
 from shapely import union_all
 from shapely.geometry import box
 
-from backend.models import SimulationResult
+from backend.models import SimulationResultSchema
 from backend.utils.config import ConfigManager
+from backend.visualization._share import (
+    C_ASHRAE,
+    C_COMED,
+    C_ILLINOIS,
+    C_PJMWEST_EDGE,
+    C_RFCW,
+    COMED_COUNTY_FIPS,
+    PJM_WEST_COUNTY_FIPS,
+    RFCW_PARTIAL,
+    RFCW_STATES,
+)
 from backend.visualization.journal_style import (
     BUILDING_AND_ENVIRONMENT_STYLE,
     FigureWidth,
@@ -94,67 +105,8 @@ STAGE_CFG = {
     "pv": "net_site_eui",
 }
 
-RFCW_STATES = ["Illinois", "Indiana", "Ohio", "West Virginia", "Pennsylvania"]
-RFCW_PARTIAL = ["Maryland", "Virginia", "Kentucky", "Michigan"]
-C_RFCW, C_RFCWC_EDGE = "#56B4E9", "#009E73"
-C_COMED, C_ASHRAE = "#E69F00", "#CC79A7"
 C_CHICAGO, C_LAKE = "#D55E00", "#c5dff0"
 C_BG_LAND, C_STATE_EDGE, C_COUNTY_EDGE = "#f5f5f0", "#888888", "#bbbbbb"
-COMED_COUNTY_FIPS = [
-    "17031",
-    "17043",
-    "17089",
-    "17097",
-    "17111",
-    "17197",
-    "17037",
-    "17063",
-    "17093",
-    "17007",
-    "17201",
-    "17177",
-    "17141",
-    "17103",
-    "17099",
-    "17105",
-    "17091",
-    "17075",
-    "17085",
-    "17015",
-    "17195",
-    "17161",
-    "17073",
-    "17011",
-    "17155",
-    "17123",
-    "17175",
-    "17095",
-    "17187",
-    "17071",
-    "17131",
-    "17143",
-    "17179",
-    "17203",
-    "17113",
-    "17039",
-    "17107",
-    "17115",
-    "17053",
-    "17019",
-    "17183",
-    "17147",
-    "17041",
-    "17029",
-    "17045",
-    "17035",
-    "17023",
-    "17139",
-    "17173",
-    "17021",
-    "17167",
-    "17125",
-    "17135",
-]
 CHI_FIPS = ["17031", "17043", "17089", "17097", "17111", "17197"]
 ASHRAE_5A_LT = 39.5
 CHICAGO_LON, CHICAGO_LAT = -87.6298, 41.8781
@@ -192,8 +144,10 @@ class ChartGenerator:
         self.baseline_results = self._load_results(self.paths.baseline_dir)
         self.optimization_results = self._load_results(self.paths.optimization_dir)
 
-    def _load_results(self, directory: Path) -> dict[str, dict[str, SimulationResult]]:
-        results: dict[str, dict[str, SimulationResult]] = defaultdict(dict)
+    def _load_results(
+        self, directory: Path
+    ) -> dict[str, dict[str, SimulationResultSchema]]:
+        results: dict[str, dict[str, SimulationResultSchema]] = defaultdict(dict)
         for pkl_file in directory.glob("**/result.pkl"):
             with open(pkl_file, "rb") as f:
                 data = load(f)
@@ -219,6 +173,10 @@ class ChartGenerator:
     @functools.cached_property
     def _energy_summary(self) -> pd.DataFrame:
         return pd.read_csv(self.csv_dir / "01_energy_summary.csv")
+
+    @functools.cached_property
+    def _surrogate_benchmark(self) -> pd.DataFrame:
+        return pd.read_csv(self.csv_dir / "02b_surrogate_benchmark.csv")
 
     def create_figure(
         self,
@@ -481,6 +439,8 @@ class ChartGenerator:
             colorbar="r",
             labels=True,
             precision=1,
+            vmin=70,
+            vmax=160,
         )
         ax.format(
             aspect="auto",
@@ -496,26 +456,58 @@ class ChartGenerator:
     def ecm_improvement_heatmap(self) -> None:
         df = self._energy_summary
         df = df[df["stage"] == "ecm"]
-        pivot = df.pivot(
+        pivot_percent = df.pivot(
             index="building_type", columns="weather_code", values="ecm_improvement_pct"
         ).loc[BUILDING_ORDER, WEATHER_ORDER]
+        pivot_eui = df.pivot(
+            index="building_type", columns="weather_code", values="total_site_eui"
+        ).loc[BUILDING_ORDER, WEATHER_ORDER]
 
-        pivot.index = [BUILDING_NAME[i] for i in pivot.index]
-
-        fig, ax = self.create_figure(
+        pivot_percent.index = [BUILDING_NAME[i] for i in pivot_percent.index]
+        pivot_eui.index = [BUILDING_NAME[i] for i in pivot_eui.index]
+        fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
             aspect_ratio=0.5,
+            nrows=2,
+            ncols=1,
+            sharey=False,
         )
-        ax.heatmap(
-            pivot,
+        axs.format(
+            abc="a",
+            abcloc="ul",
+        )
+
+        axs[0].heatmap(
+            pivot_eui,
+            cmap="YlOrRd",
+            colorbar="r",
+            labels=True,
+            precision=1,
+            vmin=70,
+            vmax=160,
+        )
+        axs[0].format(
+            aspect="auto",
+            xlabel="",
+            title="Site EUI (kWh m$^{-2}$ yr$^{-1}$) by ECM Optimization",
+            titleweight="bold",
+            titleloc="l",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
+        )
+
+        axs[1].heatmap(
+            pivot_percent,
             cmap="Blues",
             colorbar="r",
             labels=True,
             formatter="simple",
             precision=1,
             formatter_kw={"suffix": "%"},
+            vmin=5,
+            vmax=27.5,
         )
-        ax.format(
+        axs[1].format(
             aspect="auto",
             xlabel="",
             title="Site EUI Improvement by ECM Optimization (%)",
@@ -597,6 +589,7 @@ class ChartGenerator:
         ax.format(
             xticks=xticks,
             xticklabels=xticklabels,
+            ylim=(-25, 175),
             xlim=(-0.5, len(BUILDING_ORDER) - 0.5),
             title="Optimization Potential Distribution Across Climate Scenarios",
             titleweight="bold",
@@ -749,7 +742,7 @@ class ChartGenerator:
             xlabel="Year",
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
             xlim=(2024, 2053),
-            ylim=(-10, ymax),
+            ylim=(-10, 20),
             title="Carbon Neutrality Pathway Timeline (Mode A, MidCase with Scenario Bands)",
             titleweight="bold",
             titlesize=self.style.font_size_title,
@@ -905,10 +898,10 @@ class ChartGenerator:
                     fontweight="bold",
                 )
         ax1.legend(loc="ur")
-        y_min, ymax = ax1.get_ylim()
         ax1.format(
             xlim=(x[0] - 0.5, x[-1] + 0.75),
-            ylim=(y_min - 20 if y_min < 0 else 0, ymax + 20),
+            ylim=(-50, 200),
+            # yticks=np.arange(-40, 201, 20),
             ylabel="Site EUI (kWh/m²/yr)",
             title="Three-stage energy reduction pathway (6-scenario mean)",
         )
@@ -965,10 +958,9 @@ class ChartGenerator:
             va="bottom",
             style="italic",
         )
-        y2_min, y2_max = ax2.get_ylim()
         ax2.format(
             xlim=(x[0] - 0.5, x[-1] + 0.75),
-            ylim=(y2_min - 20 if y2_min < 0 else 0, y2_max + 65),
+            ylim=(0, 300),
             xticks=x,
             xticklabels=list(BUILDING_NAME.values()),
             ylabel="BCRC (%)",
@@ -1130,8 +1122,8 @@ class ChartGenerator:
             if a_row.empty or b_row.empty:
                 logger.warning(f"Missing data for {building_type}, skipping")
                 continue
-            value_a = a_row["carbon_intensity_kgm2"].values[0]
-            value_b = b_row["carbon_intensity_kgm2"].values[0]
+            value_a = a_row["carbon_intensity_kgm2"].mean()
+            value_b = b_row["carbon_intensity_kgm2"].mean()
             ratio = value_b / value_a if value_a != 0 else float("inf")
 
             ax3.bar(
@@ -1190,7 +1182,7 @@ class ChartGenerator:
             xticklabels=list(BUILDING_NAME.values()),
             xrotation=45,
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
-            title="eGRID vs Cambium - 2025",
+            title="eGRID vs Cambium - 6-scenario mean 2025",
         )
 
         self.save(
@@ -1204,6 +1196,18 @@ class ChartGenerator:
             name="admin_1_states_provinces",
         )
         reader = shapereader.Reader(path)
+
+        county_path = shapereader.natural_earth(
+            resolution="10m",
+            category="cultural",
+            name="admin_2_counties_lakes",
+        )
+        county_reader = shapereader.Reader(county_path)
+        pjm_west_counties = [
+            rec.geometry
+            for rec in county_reader.records()
+            if rec.attributes.get("CODE_LOCAL") in PJM_WEST_COUNTY_FIPS
+        ]
 
         lakes_50m = cfeature.NaturalEarthFeature("physical", "lakes", "50m")
         ocean_50m = cfeature.NaturalEarthFeature("physical", "ocean", "50m")
@@ -1255,7 +1259,7 @@ class ChartGenerator:
             facecolor=C_RFCW,
             edgecolor=C_STATE_EDGE,
             linewidth=self.style.line_width,
-            alpha=0.5,
+            alpha=0.8,
         )
         ax.add_geometries(
             rfcw_partial,
@@ -1266,19 +1270,19 @@ class ChartGenerator:
             alpha=0.3,
         )
         ax.add_geometries(
-            [union_all(rfcw_cores)],
+            [union_all(pjm_west_counties)],
             ccrs.PlateCarree(),
-            facecolor="none",
-            edgecolor=C_RFCWC_EDGE,
+            facecolor=C_PJMWEST_EDGE,
+            edgecolor=C_PJMWEST_EDGE,
             linewidth=self.style.line_width,
-            linestyle="--",
-            alpha=0.9,
+            linestyle="-",
+            alpha=0.35,
         )
         ax.add_geometries(
             il_state,
             ccrs.PlateCarree(),
-            facecolor=C_COMED,
-            alpha=0.4,
+            facecolor=C_ILLINOIS,
+            alpha=0.0,
         )
         ax.add_geometries(
             ashrae_box,
@@ -1358,20 +1362,20 @@ class ChartGenerator:
             )
 
         ax.text(
-            -84,
+            -88,
             41,
-            "Cambium GEA: RFCWc",
+            "Cambium GEA:\nPJM_West",
             transform=ccrs.PlateCarree(),
             ha="center",
             va="center",
             fontsize=self.style.font_size_small,
             fontstyle="italic",
-            color=C_RFCWC_EDGE,
+            color=C_PJMWEST_EDGE,
             path_effects=[path_effects.withStroke(linewidth=0.8, foreground="white")],
         )
 
         ax.format(
-            title="eGRID & Cambium RFCWc Region",
+            title="eGRID RFCW & Cambium PJM_West",
             fontsize=self.style.font_size_small,
         )
 
@@ -1655,7 +1659,7 @@ class ChartGenerator:
             "Location: 41.88°N, 87.63°W\n"
             "ASHRAE Zone: 5A (Cool-Humid)\n"
             "eGRID Subregion: RFCW\n"
-            "Cambium GEA: RFCWc\n"
+            "Cambium GEA: PJM_West\n"
             "Utility: ComEd (Exelon)\n"
             "Grid: PJM Interconnection",
             transform=ax.transAxes,
@@ -1674,7 +1678,7 @@ class ChartGenerator:
             Patch(
                 facecolor=C_RFCW,
                 edgecolor=C_STATE_EDGE,
-                alpha=0.5,
+                alpha=0.8,
                 label="eGRID RFCW subregion (core)",
             ),
             Patch(
@@ -1683,13 +1687,11 @@ class ChartGenerator:
                 alpha=0.3,
                 label="eGRID RFCW (partial coverage)",
             ),
-            Line2D(
-                [0],
-                [0],
-                color=C_RFCWC_EDGE,
-                linestyle="--",
-                linewidth=self.style.line_width,
-                label="Cambium GEA RFCWc boundary",
+            Patch(
+                facecolor=C_PJMWEST_EDGE,
+                edgecolor=C_PJMWEST_EDGE,
+                alpha=0.35,
+                label="Cambium GEA PJM_West",
             ),
             Patch(
                 facecolor=C_COMED,
@@ -1773,7 +1775,175 @@ class ChartGenerator:
 
         self.save(fig, "Fig04. Chicago Location Map", building_type=None)
 
-        pass
+    def surrogate_model_comparison(self) -> None:
+        selected_models = ["CatBoost"]
+        offset_models = ["RandomForest", "LightGBM", "MLP", "XGBoost"]
+        df = self._surrogate_benchmark
+        per_model = (
+            df[df["building_type"] != "All"]
+            .groupby("model")
+            .agg(
+                r2=("r2_mean", "mean"),
+                lat=("predict_latency_ms_mean", "mean"),
+                fit=("fit_time_s_mean", "mean"),
+            )
+            .reset_index()
+        )
+
+        family_of = {
+            "CatBoost": "Boosting",
+            "LightGBM": "Boosting",
+            "XGBoost": "Boosting",
+            "GradientBoosting": "Boosting",
+            "RandomForest": "Bagging",
+            "ExtraTrees": "Bagging",
+            "MLP": "Neural net",
+            "Ridge": "Linear / kernel",
+            "SVR": "Linear / kernel",
+            "DecisionTree": "Tree / instance",
+            "KNN": "Tree / instance",
+        }
+        families = [
+            "Boosting",
+            "Bagging",
+            "Neural net",
+            "Linear / kernel",
+            "Tree / instance",
+        ]
+        family_color = {fam: self.style.get_color(i) for i, fam in enumerate(families)}
+
+        fit_max = per_model["fit"].max()
+
+        def size_of(fit: float) -> float:
+            return 20.0 + 50.0 * (fit / fit_max)
+
+        fig, ax = self.create_figure(
+            width=FigureWidth.SINGLE_COLUMN,
+            aspect_ratio=0.9,
+        )
+
+        ordered = per_model.sort_values("lat")
+        fx: list[float] = []
+        fy: list[float] = []
+        best_r2 = -np.inf
+        for _, r in ordered.iterrows():
+            if r["r2"] > best_r2:
+                fx.append(r["lat"])
+                fy.append(r["r2"])
+                best_r2 = r["r2"]
+        ax.plot(
+            fx,
+            fy,
+            color="grey",
+            linestyle="--",
+            linewidth=self.style.line_width,
+            zorder=1,
+        )
+
+        for _, row in per_model.iterrows():
+            m = row["model"]
+            color = family_color[family_of[m]]
+            if m in selected_models:
+                ax.scatter(
+                    row["lat"],
+                    row["r2"],
+                    s=size_of(row["fit"]),
+                    color=color,
+                    edgecolor="black",
+                    linestyle="solid",
+                    linewidth=self.style.line_width * 0.8,
+                    zorder=2,
+                )
+            else:
+                ax.scatter(
+                    row["lat"],
+                    row["r2"],
+                    s=size_of(row["fit"]),
+                    color=color,
+                    edgecolor="white",
+                    linewidth=self.style.line_width * 0.6,
+                    zorder=3,
+                )
+            ax.annotate(
+                m,
+                (row["lat"], row["r2"]),
+                textcoords="offset points",
+                xytext=(4, 8) if m not in offset_models else (4, -10),
+                fontsize=self.style.font_size_small,
+                color=color,
+                zorder=5,
+            )
+
+        family_handles = [
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                markersize=5,
+                markerfacecolor=family_color[f],
+                markeredgecolor="white",
+                label=f,
+            )
+            for f in families
+        ]
+
+        family_handles.extend(
+            [
+                Line2D(
+                    [],
+                    [],
+                    marker="o",
+                    linestyle="none",
+                    markersize=5,
+                    color="white",
+                    markerfacecolor="white",
+                    markeredgecolor="black",
+                    markeredgewidth=self.style.line_width * 0.8,
+                    label="Selected models",
+                )
+            ]
+        )
+
+        ax.legend(
+            handles=family_handles,
+            loc="lr",
+            ncols=1,
+            title="Model family",
+            fontsize=self.style.font_size_small,
+        )
+
+        size_handles = [
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                markersize=float(np.sqrt(size_of(v))),
+                markerfacecolor="grey",
+                markeredgecolor="white",
+                label=f"{v:g}",
+            )
+            for v in (0.5, 2.0, 5.0)
+        ]
+        ax.legend(
+            handles=size_handles,
+            loc="ur",
+            ncols=1,
+            title="Train time (s)",
+            fontsize=self.style.font_size_small,
+        )
+
+        ax.format(
+            xscale="log",
+            xlim=(0.025, 150),
+            ylim=(0.75, 1.02),
+            xlabel="inference latency (ms, log scale)",
+            ylabel="R$^2$",
+            title="Surrogate Accuracy vs. Inference Speed",
+        )
+
+        self.save(fig, "Fig16. Surrogate Model Comparison", building_type=None)
 
     def data_to_csv(self) -> None:
         data = []
@@ -1822,7 +1992,7 @@ class ChartGenerator:
 
     def _require_total_source_eui(
         self,
-        result: SimulationResult,
+        result: SimulationResultSchema,
         result_label: str,
         building_type: str,
         weather_code: str,
@@ -1844,7 +2014,7 @@ class ChartGenerator:
         building_type: str,
         weather_code: str,
         data_type: str,
-        data: SimulationResult,
+        data: SimulationResultSchema,
     ) -> dict:
         result = {}
         result["data_type"] = data_type
@@ -1865,13 +2035,14 @@ class ChartGenerator:
         return result
 
     def generate_all(self) -> None:
-        # self.data_to_csv()
-        # self.baseline_eui_heatmap()
-        # self.ecm_improvement_heatmap()
-        # self.optimal_improvement_violin()
-        # self.storage_soc()
-        # self.waterfall()
-        # self.carbon_three_plane()
-        # self.typical_day_storage_soc(weather_code="TMY")
-        # self.neutrality_timeline()
+        self.data_to_csv()
+        self.baseline_eui_heatmap()
+        self.ecm_improvement_heatmap()
+        self.optimal_improvement_violin()
+        self.storage_soc()
+        self.waterfall()
+        self.carbon_three_plane()
+        self.typical_day_storage_soc(weather_code="TMY")
+        self.neutrality_timeline()
         self.chicago_location_map()
+        self.surrogate_model_comparison()

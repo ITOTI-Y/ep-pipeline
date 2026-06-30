@@ -5,13 +5,13 @@ from uuid import UUID, uuid4
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .ecm_parameters import ECMParameters
+from .ecm_parameters import ECMParametersSchema
 from .enums import BuildingType
 
 logger = logger.bind(module=__name__)
 
 
-class Surface(BaseModel):
+class SurfaceSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -28,7 +28,7 @@ class Surface(BaseModel):
     type: str = Field(..., description="The type of the surface.")
 
 
-class SimulationResult(BaseModel):
+class SimulationResultSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -79,7 +79,7 @@ class SimulationResult(BaseModel):
         default=None,
         description="The code of the weather.",
     )
-    ecm_parameters: ECMParameters | None = Field(
+    ecm_parameters: ECMParametersSchema | None = Field(
         default=None,
         description="ECM parameters used in the simulation.",
     )
@@ -134,7 +134,7 @@ class SimulationResult(BaseModel):
         ge=0,
         description="Predicted EUI (kWh/m²/yr) - calculated by OptimizationModel",
     )
-    surfaces: list[Surface] = Field(
+    surfaces: list[SurfaceSchema] = Field(
         default_factory=list,
         description="The list of surfaces in the simulation.",
     )
@@ -177,6 +177,6 @@ class SimulationResult(BaseModel):
     def __str__(self) -> str:
         status = "Success" if self.success else "Failed"
         return (
-            f"SimulationResult(id={self.id}, job_id={self.job_id}, status={status}, "
+            f"SimulationResultSchema(id={self.id}, job_id={self.job_id}, status={status}, "
             f"total_source_eui={self.total_source_eui}, total_site_eui={self.total_site_eui})"
         )

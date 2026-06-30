@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..models.enums import BuildingType
 
 
-class ECMParameters(BaseModel):
+class ECMParametersSchema(BaseModel):
     model_config = ConfigDict(
         frozen=False,
         validate_assignment=True,
@@ -94,23 +94,23 @@ class ECMParameters(BaseModel):
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json", exclude_none=True)
 
-    def merge(self, other: "ECMParameters") -> "ECMParameters":
+    def merge(self, other: "ECMParametersSchema") -> "ECMParametersSchema":
         if other.building_type != self.building_type:
             raise ValueError(
                 "Cannot merge ECMParameters with different building types."
             )
         merged_dict = self.to_dict()
         merged_dict.update(other.to_dict())
-        return ECMParameters(**merged_dict)
+        return ECMParametersSchema(**merged_dict)
 
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.to_dict().items())))
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ECMParameters):
+        if not isinstance(other, ECMParametersSchema):
             return NotImplemented
         return self.to_dict() == other.to_dict()
 
     def __str__(self) -> str:
         non_none_params = [f"{k}={v}" for k, v in self.to_dict().items()]
-        return f"ECMParameters({', '.join(non_none_params)})"
+        return f"ECMParametersSchema({', '.join(non_none_params)})"

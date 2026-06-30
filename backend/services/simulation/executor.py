@@ -4,11 +4,10 @@ from pathlib import Path
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult
-from backend.services.interfaces import IEnergyPlusExecutor
+from backend.models import SimulationJobSchema, SimulationResultSchema
 
 
-class EnergyPlusExecutor(IEnergyPlusExecutor):
+class EnergyPlusExecutor:
     _SEVERE_PATTERN = re.compile(r"\*\*\s+Severe\s+\*\*.*", re.IGNORECASE)
     _FATAL_PATTERN = re.compile(r"\*\*\s+Fatal\s+\*\*.*", re.IGNORECASE)
     _WARNING_PATTERN = re.compile(r"\*\*\s+Warning\s+\*\*.*", re.IGNORECASE)
@@ -24,8 +23,8 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
 
     def run(
         self,
-        job: SimulationJob,
-    ) -> SimulationResult:
+        job: SimulationJobSchema,
+    ) -> SimulationResultSchema:
         idf = job.idf
         output_prefix = job.output_prefix
         weather_file = job.weather.file_path
@@ -46,7 +45,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
         output_directory.mkdir(parents=True, exist_ok=True)
         idf.saveas(str(output_directory / f"{output_prefix}.idf"))
 
-        result = SimulationResult(
+        result = SimulationResultSchema(
             job_id=job_id,
             building_type=job.building.building_type,
         )
@@ -88,7 +87,7 @@ class EnergyPlusExecutor(IEnergyPlusExecutor):
     def _parse_error_file(
         self,
         err_file: Path,
-        result: SimulationResult,
+        result: SimulationResultSchema,
     ) -> None:
         try:
             content = err_file.read_text(encoding="utf-8", errors="ignore")

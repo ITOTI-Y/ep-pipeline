@@ -1,24 +1,24 @@
 from collections.abc import Generator
 from copy import deepcopy
+from enum import Enum
 from itertools import chain, product  # noqa: F401
 from pathlib import Path
 from pickle import dump, load
+from typing import Annotated
 
 from eppy.modeleditor import IDF
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
-from typer import Typer
+from typer import Option, Typer
 
-from backend.bases.energyplus.executor import EnergyPlusExecutor
 from backend.models import (
-    Building,
+    BuildingSchema,
     BuildingType,
-    SimulationJob,
+    SimulationJobSchema,
     SimulationType,
-    Weather,
+    WeatherSchema,
 )
-from backend.script.parse_data import (  # noqa: F401
-    parse_optimal_data,
+from backend.script.parse_data import (
     parse_result_parameters,
     parse_results_to_csv,
 )
@@ -27,6 +27,7 @@ from backend.services.optimization import ParameterSampler
 from backend.services.simulation import (
     BaselineService,
     ECMService,
+    EnergyPlusExecutor,
     FileCleaner,
     OptimizationService,
     PVService,
@@ -37,12 +38,20 @@ from backend.utils.config import ConfigManager, set_logger
 app = Typer()
 
 
+class SimulationMode(Enum):
+    all = "all"
+    baseline = "baseline"
+    ecm = "ecm"
+    optimization = "optimization"
+    pv = "pv"
+
+
 def base_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
-) -> Generator[tuple[SimulationJob, BaselineService]]:
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
+) -> Generator[tuple[SimulationJobSchema, BaselineService]]:
     for building, weather in buildings_weather_combinations:
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=building,
             weather=weather,
             simulation_type=SimulationType.BASELINE,
@@ -63,8 +72,8 @@ def base_services_prepare(
 
 def ecm_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
-) -> Generator[tuple[SimulationJob, ECMService]]:
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
+) -> Generator[tuple[SimulationJobSchema, ECMService]]:
     n_sample = 512
 
     sampler = ParameterSampler(config=config)
@@ -74,7 +83,7 @@ def ecm_services_prepare(
             n_samples=n_sample, building_type=building.building_type
         )
         for i, ecm_sample in enumerate(ecm_samples):
-            job = SimulationJob(
+            job = SimulationJobSchema(
                 building=building,
                 weather=weather,
                 simulation_type=SimulationType.ECM,
@@ -97,11 +106,11 @@ def ecm_services_prepare(
 
 def optimization_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
 ):
     ecm_csv_path = config.paths.ecm_dir / "results.csv"
     for building, weather in buildings_weather_combinations:
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=building,
             weather=weather,
             simulation_type=SimulationType.OPTIMIZATION,
@@ -124,7 +133,7 @@ def optimization_services_prepare(
 
 def pv_services_prepare(
     config: ConfigManager,
-    buildings_weather_combinations: list[tuple[Building, Weather]],
+    buildings_weather_combinations: list[tuple[BuildingSchema, WeatherSchema]],
 ):
     baseline_dir = config.paths.baseline_dir
     for building, weather in buildings_weather_combinations:
@@ -135,7 +144,7 @@ def pv_services_prepare(
             / weather.code
             / "optimization_.idf"
         )
-        job = SimulationJob(
+        job = SimulationJobSchema(
             building=b,
             weather=weather,
             simulation_type=SimulationType.PV,
@@ -163,9 +172,21 @@ def pv_services_prepare(
 
 
 @app.command()
-def simulation_all():
+def simulation_all(
+    city: Annotated[str, Option(help="The city to simulate")],
+    mode: Annotated[
+        list[SimulationMode],
+        Option(help="The mode to run the simulation"),
+    ],
+    n_jobs: Annotated[
+        int,
+        Option(
+            help="The number of jobs to run in parallel",
+        ),
+    ] = cpu_count() - 2 if cpu_count() > 2 else 1,
+):
     def _single_run(
-        job: SimulationJob, service: ISimulationService, config: ConfigManager
+        job: SimulationJobSchema, service: ISimulationService, config: ConfigManager
     ):
         set_logger(config.paths.log_dir)
         IDF.setiddname(str(config.paths.idd_file))
@@ -178,6 +199,7 @@ def simulation_all():
 
         return result
 
+    modes = {m.value for m in mode}
     config = ConfigManager(Path("backend/configs"))
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
@@ -186,7 +208,7 @@ def simulation_all():
 
     buildings = []
     for idf_file in idf_files:
-        building = Building(
+        building = BuildingSchema(
             name=idf_file.stem,
             building_type=BuildingType.from_str(idf_file.stem),
             location="Chicago",
@@ -196,7 +218,9 @@ def simulation_all():
 
     weathers = []
     for weather_file in weather_files:
-        weather = Weather(
+        if city.lower() not in weather_file.stem.lower():
+            continue
+        weather = WeatherSchema(
             file_path=weather_file,
             location="Chicago",
         )
@@ -204,30 +228,32 @@ def simulation_all():
 
     buildings_weather_combinations = list(product(buildings, weathers))
 
-    n_jobs = cpu_count() - 2 if cpu_count() > 2 else 1
+    if "all" in modes or "baseline" in modes:
+        base_services = base_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in base_services
+        )
+    if "all" in modes or "ecm" in modes:
+        ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in ecm_services
+        )
+        parse_results_to_csv(config)
 
-    # base_services = base_services_prepare(config, buildings_weather_combinations)
-    # ecm_services = ecm_services_prepare(config, buildings_weather_combinations)
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in chain(base_services, ecm_services)
-    # )
-    # parse_results_to_csv(config)
+    if "all" in modes or "optimization" in modes:
+        optimization_services = optimization_services_prepare(
+            config, buildings_weather_combinations
+        )
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config)
+            for job, service in optimization_services
+        )
 
-    # optimization_services = optimization_services_prepare(
-    #     config, buildings_weather_combinations
-    # )
-    # _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-    #     delayed(_single_run)(job, service, config)
-    #     for job, service in optimization_services
-    # )
-
-    pv_services = pv_services_prepare(config, buildings_weather_combinations)
-    _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
-        delayed(_single_run)(job, service, config) for job, service in pv_services
-    )
-
-    # parse_optimal_data(config)
+    if "all" in modes or "pv" in modes:
+        pv_services = pv_services_prepare(config, buildings_weather_combinations)
+        _ = Parallel(n_jobs=n_jobs, verbose=10, backend="loky")(
+            delayed(_single_run)(job, service, config) for job, service in pv_services
+        )
 
 
 @app.command()
@@ -241,6 +267,25 @@ def visualization():
 @app.command()
 def parse_result():
     parse_result_parameters(ConfigManager(Path("backend/configs")))
+
+
+@app.command()
+def prepare_paper_data():
+    from backend.script.prepare_paper_data import main
+
+    main()
+
+
+@app.command()
+def benchmark_surrogate():
+    from backend.services.optimization.surrogate_benchmark import SurrogateBenchmark
+
+    config = ConfigManager(Path("backend/configs"))
+    df = SurrogateBenchmark(config).run()
+    output_path = config.paths.csv_dir / "02b_surrogate_benchmark.csv"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, index=False)
+    logger.info(f"Surrogate benchmark written to {output_path}")
 
 
 if __name__ == "__main__":
