@@ -7,7 +7,7 @@ from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
 
-class SettingApply(IApply):
+class GeneralApply(IApply):
     def __init__(self, config: ConfigManager):
         self._config = config
 

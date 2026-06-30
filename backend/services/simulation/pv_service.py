@@ -2,11 +2,11 @@ from loguru import logger
 
 from backend.models import SimulationJob, Surface
 from backend.services.configuration import (
+    GeneralApply,
     OutputApply,
     PeriodApply,
     PVApply,
     ScheduleApply,
-    SettingApply,
     StorageApply,
 )
 from backend.services.interfaces import (
@@ -35,7 +35,7 @@ class PVService(ISimulationService):
             config=config, building_type=job.idf_file.building_type
         )
         self._schedule_apply = ScheduleApply(config=config)
-        self._setting_apply = SettingApply(config=config)
+        self._general_apply = GeneralApply(config=config)
 
     def prepare(self) -> None:
         self._output_apply.apply(self._job)
@@ -43,7 +43,7 @@ class PVService(ISimulationService):
         self._pv_apply.apply(self._job)
         self._schedule_apply.apply(self._job)
         self._storage_apply.apply(self._job)
-        self._setting_apply.apply(self._job)
+        self._general_apply.apply(self._job)
         logger.info("PV preparation completed successfully")
 
     def cleanup(self) -> None:

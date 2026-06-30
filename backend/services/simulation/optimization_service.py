@@ -11,9 +11,9 @@ from backend.models import SimulationJob, SimulationResult
 from backend.models.config_models import ECMParametersConfig
 from backend.services.configuration import (
     ECMApply,
+    GeneralApply,
     OutputApply,
     PeriodApply,
-    SettingApply,
 )
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
@@ -61,7 +61,7 @@ class OptimizationService(ISimulationService):
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
-        self._setting_apply = SettingApply(config=config)
+        self._general_apply = GeneralApply(config=config)
 
         self._predicted_eui = None
 
@@ -165,7 +165,7 @@ class OptimizationService(ISimulationService):
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
         self._ecm_apply.apply(self._job)
-        self._setting_apply.apply(self._job)
+        self._general_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
     def cleanup(self) -> None:

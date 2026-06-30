@@ -1,7 +1,7 @@
 from loguru import logger
 
 from backend.models import SimulationJob
-from backend.services.configuration import OutputApply, PeriodApply, SettingApply
+from backend.services.configuration import GeneralApply, OutputApply, PeriodApply
 from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IResultParser,
@@ -20,14 +20,14 @@ class BaselineService(ISimulationService):
         job: SimulationJob,
     ):
         super().__init__(executor, result_parser, file_cleaner, config, job)
-        self._setting_apply = SettingApply(config=config)
+        self._general_apply = GeneralApply(config=config)
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
 
     def prepare(self) -> None:
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
-        self._setting_apply.apply(self._job)
+        self._general_apply.apply(self._job)
         logger.info("Baseline preparation completed successfully")
 
     def cleanup(self) -> None:
