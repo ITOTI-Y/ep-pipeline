@@ -439,6 +439,8 @@ class ChartGenerator:
             colorbar="r",
             labels=True,
             precision=1,
+            vmin=70,
+            vmax=160,
         )
         ax.format(
             aspect="auto",
@@ -454,26 +456,58 @@ class ChartGenerator:
     def ecm_improvement_heatmap(self) -> None:
         df = self._energy_summary
         df = df[df["stage"] == "ecm"]
-        pivot = df.pivot(
+        pivot_percent = df.pivot(
             index="building_type", columns="weather_code", values="ecm_improvement_pct"
         ).loc[BUILDING_ORDER, WEATHER_ORDER]
+        pivot_eui = df.pivot(
+            index="building_type", columns="weather_code", values="total_site_eui"
+        ).loc[BUILDING_ORDER, WEATHER_ORDER]
 
-        pivot.index = [BUILDING_NAME[i] for i in pivot.index]
-
-        fig, ax = self.create_figure(
+        pivot_percent.index = [BUILDING_NAME[i] for i in pivot_percent.index]
+        pivot_eui.index = [BUILDING_NAME[i] for i in pivot_eui.index]
+        fig, axs = self.create_figure(
             width=FigureWidth.DOUBLE_COLUMN,
             aspect_ratio=0.5,
+            nrows=2,
+            ncols=1,
+            sharey=False,
         )
-        ax.heatmap(
-            pivot,
+        axs.format(
+            abc="a",
+            abcloc="ul",
+        )
+
+        axs[0].heatmap(
+            pivot_eui,
+            cmap="YlOrRd",
+            colorbar="r",
+            labels=True,
+            precision=1,
+            vmin=70,
+            vmax=160,
+        )
+        axs[0].format(
+            aspect="auto",
+            xlabel="",
+            title="Site EUI (kWh m$^{-2}$ yr$^{-1}$) by ECM Optimization",
+            titleweight="bold",
+            titleloc="l",
+            titlesize=self.style.font_size_title,
+            labelsize=self.style.font_size_title,
+        )
+
+        axs[1].heatmap(
+            pivot_percent,
             cmap="Blues",
             colorbar="r",
             labels=True,
             formatter="simple",
             precision=1,
             formatter_kw={"suffix": "%"},
+            vmin=5,
+            vmax=27.5,
         )
-        ax.format(
+        axs[1].format(
             aspect="auto",
             xlabel="",
             title="Site EUI Improvement by ECM Optimization (%)",
@@ -555,6 +589,7 @@ class ChartGenerator:
         ax.format(
             xticks=xticks,
             xticklabels=xticklabels,
+            ylim=(-25, 175),
             xlim=(-0.5, len(BUILDING_ORDER) - 0.5),
             title="Optimization Potential Distribution Across Climate Scenarios",
             titleweight="bold",
@@ -707,7 +742,7 @@ class ChartGenerator:
             xlabel="Year",
             ylabel="Carbon Intensity (kg CO₂e/m²/yr)",
             xlim=(2024, 2053),
-            ylim=(-10, ymax),
+            ylim=(-10, 20),
             title="Carbon Neutrality Pathway Timeline (Mode A, MidCase with Scenario Bands)",
             titleweight="bold",
             titlesize=self.style.font_size_title,
@@ -863,10 +898,10 @@ class ChartGenerator:
                     fontweight="bold",
                 )
         ax1.legend(loc="ur")
-        y_min, ymax = ax1.get_ylim()
         ax1.format(
             xlim=(x[0] - 0.5, x[-1] + 0.75),
-            ylim=(y_min - 20 if y_min < 0 else 0, ymax + 20),
+            ylim=(-50, 200),
+            # yticks=np.arange(-40, 201, 20),
             ylabel="Site EUI (kWh/m²/yr)",
             title="Three-stage energy reduction pathway (6-scenario mean)",
         )
@@ -923,10 +958,9 @@ class ChartGenerator:
             va="bottom",
             style="italic",
         )
-        y2_min, y2_max = ax2.get_ylim()
         ax2.format(
             xlim=(x[0] - 0.5, x[-1] + 0.75),
-            ylim=(y2_min - 20 if y2_min < 0 else 0, y2_max + 65),
+            ylim=(0, 300),
             xticks=x,
             xticklabels=list(BUILDING_NAME.values()),
             ylabel="BCRC (%)",
