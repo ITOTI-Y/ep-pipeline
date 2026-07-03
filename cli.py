@@ -1,5 +1,4 @@
 from collections import defaultdict
-from functools import cache
 from itertools import product
 from pathlib import Path
 from typing import Annotated
@@ -8,8 +7,8 @@ import typer
 from joblib import Parallel, cpu_count, delayed
 from loguru import logger
 
+from backend._share import _run_job_spec
 from backend.citys.cli import app as citys_app
-from backend.models.config_models import IDFFile, WeatherFile
 from backend.models.simulation_job import BuildingWeatherCombination, SimulationType
 from backend.script.gen_manifest import check as manifest_check
 from backend.script.gen_manifest import generate as manifest_generate
@@ -19,30 +18,10 @@ from backend.script.parse_data import (  # noqa: F401
     parse_result_parameters,
     parse_results_to_csv,
 )
-from backend.services.simulation import (
-    build_service,
-)
 from backend.utils.config import ConfigManager, set_logger
 
 app = typer.Typer()
 app.add_typer(citys_app, name="city", help="City selection pipeline")
-
-
-@cache
-def _worker_config(config_dir: str) -> ConfigManager:
-    return ConfigManager(Path(config_dir))
-
-
-def _run_job_spec(
-    config_dir: str,
-    idf_file: IDFFile,
-    weather_file: WeatherFile,
-    simulation_type: SimulationType,
-) -> None:
-    config = _worker_config(config_dir)
-    service = build_service(config, idf_file, weather_file, simulation_type)
-    service.run()
-    return None
 
 
 @app.command()
