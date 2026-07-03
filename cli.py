@@ -1,5 +1,6 @@
 from collections import defaultdict
-from itertools import chain, product  # noqa: F401
+from functools import cache
+from itertools import product
 from pathlib import Path
 from typing import Annotated
 
@@ -8,6 +9,7 @@ from joblib import Parallel, cpu_count, delayed
 from loguru import logger
 
 from backend.citys.cli import app as citys_app
+from backend.models.config_models import IDFFile, WeatherFile
 from backend.models.simulation_job import BuildingWeatherCombination, SimulationType
 from backend.script.gen_manifest import check as manifest_check
 from backend.script.gen_manifest import generate as manifest_generate
@@ -18,13 +20,29 @@ from backend.script.parse_data import (  # noqa: F401
     parse_results_to_csv,
 )
 from backend.services.simulation import (
-    get_simulation_services,
+    build_service,
 )
-from backend.services.simulation._share import ISimulationService
 from backend.utils.config import ConfigManager, set_logger
 
 app = typer.Typer()
 app.add_typer(citys_app, name="city", help="City selection pipeline")
+
+
+@cache
+def _worker_config(config_dir: str) -> ConfigManager:
+    return ConfigManager(Path(config_dir))
+
+
+def _run_job_spec(
+    config_dir: str,
+    idf_file: IDFFile,
+    weather_file: WeatherFile,
+    simulation_type: SimulationType,
+) -> None:
+    config = _worker_config(config_dir)
+    service = build_service(config, idf_file, weather_file, simulation_type)
+    service.run()
+    return None
 
 
 @app.command()
@@ -40,25 +58,26 @@ def simulate(
     def _init_worker(log_dir: str) -> None:
         set_logger(Path(log_dir))
 
-    config = ConfigManager(Path("backend/configs"))
+    config_dir = "backend/configs"
+    config = ConfigManager(Path(config_dir))
     set_logger(config.paths.log_dir)
     logger.info("Starting simulation")
-    idf_epw_map: dict[str, BuildingWeatherCombination] = defaultdict(
+    idf_epw_map: dict[int, BuildingWeatherCombination] = defaultdict(
         lambda: BuildingWeatherCombination(set(), set())
     )
 
-    def _get_mapping(config: ConfigManager) -> dict[str, BuildingWeatherCombination]:
+    def _get_mapping(config: ConfigManager) -> dict[int, BuildingWeatherCombination]:
         import pandas as pd
 
         from backend.citys._share import CitysFileName
 
-        df = pd.read_csv(config.paths.citys_dir / CitysFileName().dest_mapped_results)
+        df = pd.read_json(config.paths.citys_dir / CitysFileName().dest_mapped_results)
         for idf_file in config.paths.idf_files:
             idf_city = idf_file.city
             tmyx_wmo_id = int(
-                df[df["dest_city"].str.lower() == idf_city.lower()][
+                df[df["tmyx_city"].str.lower() == idf_city.lower()][
                     "tmyx_epw_file_paths"
-                ].values[0][-12:-6]
+                ].values[0][0][-10:-4]
             )
             weather_files = [
                 ftmy_file
@@ -69,38 +88,37 @@ def simulate(
                 for tmy_file in config.paths.tmy_files
                 if tmy_file.wmo_id == tmyx_wmo_id
             ]
-            idf_epw_map[idf_city].idf_files.add(idf_file)
-            idf_epw_map[idf_city].weather_files.add(weather_files[0])
+            idf_epw_map[tmyx_wmo_id].idf_files.add(idf_file)
+            idf_epw_map[tmyx_wmo_id].weather_files.add(weather_files[0])
         return idf_epw_map
 
     idf_epw_map = _get_mapping(config)
 
-    services: dict[SimulationType, list[ISimulationService]] = defaultdict(list)
-    for _city, combination in idf_epw_map.items():
-        _baseline_services = get_simulation_services(
-            config, combination, SimulationType.BASELINE
-        )
-        services[SimulationType.BASELINE].extend(_baseline_services)
+    def _init_worker(log_dir: str) -> None:
+        set_logger(Path(log_dir))
 
-        # _ecm_services = get_simulation_services(config, combination, SimulationType.ECM)
-        # services[SimulationType.ECM].extend(_ecm_services)
+    simulation_types = (
+        SimulationType.BASELINE,
+        # SimulationType.ECM,
+        # SimulationType.OPTIMIZATION,
+        # SimulationType.PV,
+    )
 
-        # _optimization_services = get_simulation_services(
-        #     config, combination, SimulationType.OPTIMIZATION
-        # )
-        # services[SimulationType.OPTIMIZATION].extend(_optimization_services)
-
-        # _pv_services = get_simulation_services(config, combination, SimulationType.PV)
-        # services[SimulationType.PV].extend(_pv_services)
-
-    for _, simulation_services in services.items():
+    for sim_type in simulation_types:
+        logger.info(f"Running {sim_type.value} simulation")
         _ = Parallel(
             n_jobs=n_jobs,
             verbose=10,
             backend="loky",
             initializer=_init_worker,
             initargs=(str(config.paths.log_dir),),
-        )(delayed(service.run)() for service in simulation_services)
+        )(
+            delayed(_run_job_spec)(config_dir, idf_file, weather_file, sim_type)
+            for combination in idf_epw_map.values()
+            for idf_file, weather_file in product(
+                combination.idf_files, combination.weather_files
+            )
+        )
 
 
 @app.command()

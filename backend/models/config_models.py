@@ -73,7 +73,7 @@ class PathsConfig(BaseModel):
         """Initialize idf and weather files"""
         if not self.idf_files:
             for idf_file in self.idf_dir.glob("**/*.idf"):
-                city, building_type, year = idf_file.stem.split("_")
+                _province, city, building_type, year = idf_file.stem.split("_")
                 self.idf_files.append(
                     IDFFile(
                         city=city,
