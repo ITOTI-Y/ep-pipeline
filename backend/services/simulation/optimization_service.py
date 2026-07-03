@@ -21,8 +21,8 @@ from backend.services.interfaces import (
 )
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
 from backend.services.optimization.surrogate_model import (
+    CatboostSurrogateModel,
     ISurrogateModel,
-    XGBoostSurrogateModel,
 )
 from backend.services.simulation._share import IFileCleaner, ISimulationService
 from backend.utils.config import ConfigManager
@@ -92,7 +92,7 @@ class OptimizationService(ISimulationService):
                     f"Skipping {building_type}: insufficient samples ({len(data)})"
                 )
                 continue
-            surrogate_model = XGBoostSurrogateModel(config=self._config)
+            surrogate_model = CatboostSurrogateModel(config=self._config)
             categorical_features = self._one_hot_encoder.transform(
                 data["code"].values.reshape(-1, 1)
             )
