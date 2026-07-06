@@ -47,6 +47,4 @@ class PVService(ISimulationService):
         logger.info("PV preparation completed successfully")
 
     def cleanup(self) -> None:
-        self._file_cleaner.clean(
-            job=self._job, config=self._config, exclude_files=("*.sql", "*.csv")
-        )
+        self._file_cleaner.clean(job=self._job, config=self._config)

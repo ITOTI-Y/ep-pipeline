@@ -70,6 +70,16 @@ dev = [
     "ty>=0.0.38",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+ep-pipeline = "cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend"]
+
 [tool.ty.src]
 exclude = [
     "tests/**",
