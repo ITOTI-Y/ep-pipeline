@@ -14,7 +14,6 @@ from backend.script.gen_manifest import check as manifest_check
 from backend.script.gen_manifest import generate as manifest_generate
 from backend.script.gen_manifest import save as manifest_save
 from backend.script.parse_data import (  # noqa: F401
-    parse_optimal_data,
     parse_result_parameters,
     parse_results_to_csv,
 )
