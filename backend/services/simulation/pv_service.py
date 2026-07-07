@@ -13,7 +13,11 @@ from backend.services.interfaces import (
     IEnergyPlusExecutor,
     IResultParser,
 )
-from backend.services.simulation._share import IFileCleaner, ISimulationService
+from backend.services.simulation._share import (
+    IDataExtractor,
+    IFileCleaner,
+    ISimulationService,
+)
 from backend.utils.config import ConfigManager
 
 
@@ -23,11 +27,14 @@ class PVService(ISimulationService):
         executor: IEnergyPlusExecutor,
         result_parser: IResultParser,
         file_cleaner: IFileCleaner,
+        data_extractor: IDataExtractor,
         config: ConfigManager,
         job: SimulationJob,
         surfaces: list[Surface],
     ):
-        super().__init__(executor, result_parser, file_cleaner, config, job)
+        super().__init__(
+            executor, result_parser, file_cleaner, data_extractor, config, job
+        )
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
         self._pv_apply = PVApply(config=config, surfaces=surfaces)
@@ -47,4 +54,6 @@ class PVService(ISimulationService):
         logger.info("PV preparation completed successfully")
 
     def cleanup(self) -> None:
-        self._file_cleaner.clean(job=self._job, config=self._config)
+        self._file_cleaner.clean(
+            job=self._job, config=self._config, exclude_files=self._cleanup_exclude
+        )

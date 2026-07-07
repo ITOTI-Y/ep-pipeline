@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 from abc import ABC, abstractmethod
+from pathlib import Path
 from pickle import dump
 
 from loguru import logger
@@ -17,6 +18,7 @@ class ISimulationService(ABC):
         executor: IEnergyPlusExecutor,
         result_parser: IResultParser,
         file_cleaner: IFileCleaner,
+        data_extractor: IDataExtractor,
         config: ConfigManager,
         job: SimulationJob,
     ):
@@ -25,6 +27,8 @@ class ISimulationService(ABC):
         self._file_cleaner = file_cleaner
         self._config = config
         self._job = job
+        self._data_extractor = data_extractor
+        self._cleanup_exclude: tuple[str, ...] = ()
 
     @abstractmethod
     def prepare(self) -> None:
@@ -87,6 +91,7 @@ class ISimulationService(ABC):
             self._copy_schedules()
             result = self._execute()
             if result.success:
+                self._extract_data(result)
                 with open(self._job.output_directory / "result.pkl", "wb") as f:
                     dump(result, f)
             return result
@@ -99,6 +104,14 @@ class ISimulationService(ABC):
         if schedules_src.is_dir():
             shutil.copytree(schedules_src, schedules_dst, dirs_exist_ok=True)
 
+    def _extract_data(self, result: SimulationResult) -> None:
+        try:
+            self._data_extractor.extract(self._job)
+        except Exception as e:
+            self._cleanup_exclude += ("*.sql",)
+            logger.exception(f"Data extraction failed: {e}")
+            result.add_error(f"Data extraction failed: {e}")
+
 
 class IFileCleaner(ABC):
     @abstractmethod
@@ -108,4 +121,10 @@ class IFileCleaner(ABC):
         config: ConfigManager,
         exclude_files: tuple[str, ...] = (),
     ) -> None:
+        pass
+
+
+class IDataExtractor(ABC):
+    @abstractmethod
+    def extract(self, job: SimulationJob) -> Path:
         pass

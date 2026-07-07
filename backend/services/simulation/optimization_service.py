@@ -24,7 +24,11 @@ from backend.services.optimization.surrogate_model import (
     CatboostSurrogateModel,
     ISurrogateModel,
 )
-from backend.services.simulation._share import IFileCleaner, ISimulationService
+from backend.services.simulation._share import (
+    IDataExtractor,
+    IFileCleaner,
+    ISimulationService,
+)
 from backend.utils.config import ConfigManager
 
 FEATURE_NAMES = ECMParametersConfig().keys
@@ -43,11 +47,14 @@ class OptimizationService(ISimulationService):
         executor: IEnergyPlusExecutor,
         result_parser: IResultParser,
         file_cleaner: IFileCleaner,
+        data_extractor: IDataExtractor,
         config: ConfigManager,
         job: SimulationJob,
         ecm_csv_path: Path | None = None,
     ):
-        super().__init__(executor, result_parser, file_cleaner, config, job)
+        super().__init__(
+            executor, result_parser, file_cleaner, data_extractor, config, job
+        )
         np.random.seed(config.optimization.seed)
         self._ecm_csv_path = ecm_csv_path or config.paths.ecm_dir / "results.csv"
         self._ecm_data = pd.read_csv(self._ecm_csv_path)
@@ -172,6 +179,7 @@ class OptimizationService(ISimulationService):
         self._file_cleaner.clean(
             job=self._job,
             config=self._config,
+            exclude_files=self._cleanup_exclude,
         )
 
     def run(self) -> SimulationResult:

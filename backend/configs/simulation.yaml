@@ -25,3 +25,5 @@ simulation:
     - "*.dbg"
     - "*.expidf"
     - "*.csv"
+    - "*.sql"
+    - "schedules"

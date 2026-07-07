@@ -12,13 +12,14 @@ from backend.models.simulation_job import (
     SimulationType,
 )
 from backend.services.simulation._share import ISimulationService
+from backend.services.simulation.baseline_service import BaselineService
+from backend.services.simulation.data_extractor import DataExtractor
+from backend.services.simulation.ecm_service import ECMService
 from backend.services.simulation.file_cleaner import FileCleaner
+from backend.services.simulation.optimization_service import OptimizationService
 from backend.services.simulation.result_parser import ResultParser
 from backend.utils.config import ConfigManager
 
-from .baseline_service import BaselineService
-from .ecm_service import ECMService
-from .optimization_service import OptimizationService
 from .pv_service import PVService
 
 
@@ -50,6 +51,7 @@ def build_service(
                 executor=EnergyPlusExecutor(),
                 result_parser=ResultParser(),
                 file_cleaner=FileCleaner(),
+                data_extractor=DataExtractor(),
                 config=config,
                 job=job,
             )
@@ -58,6 +60,7 @@ def build_service(
                 executor=EnergyPlusExecutor(),
                 result_parser=ResultParser(),
                 file_cleaner=FileCleaner(),
+                data_extractor=DataExtractor(),
                 config=config,
                 job=job,
             )
@@ -66,6 +69,7 @@ def build_service(
                 executor=EnergyPlusExecutor(),
                 result_parser=ResultParser(),
                 file_cleaner=FileCleaner(),
+                data_extractor=DataExtractor(),
                 config=config,
                 job=job,
             )
@@ -84,6 +88,7 @@ def build_service(
                 executor=EnergyPlusExecutor(),
                 result_parser=ResultParser(),
                 file_cleaner=FileCleaner(),
+                data_extractor=DataExtractor(),
                 config=config,
                 job=job,
                 surfaces=baseline_result.surfaces,

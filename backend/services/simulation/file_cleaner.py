@@ -1,3 +1,5 @@
+import shutil
+
 from loguru import logger
 
 from backend.models import SimulationJob
@@ -18,11 +20,11 @@ class FileCleaner(IFileCleaner):
         for pattern in cleanup_files:
             file_paths = job.output_directory.glob(pattern)
             for file_path in file_paths:
-                if file_path.exists():
-                    file_path.unlink()
+                if file_path.is_dir():
+                    shutil.rmtree(file_path)
+                else:
+                    file_path.unlink(missing_ok=True)
                     logger.debug(f"Deleted: {file_path}")
                     deleted_count += 1
-                else:
-                    logger.warning(f"File not found: {file_path}")
 
         logger.info(f"Cleaned up {deleted_count} files for job {job.output_directory}")
