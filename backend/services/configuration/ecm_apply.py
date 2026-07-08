@@ -101,7 +101,7 @@ class ECMApply(IApply):
         modified_count = 0
         for surface_name, surface in fenestration_surfaces.items():
             if surface.surface_type.upper() == "WINDOW":
-                surface.Construction_Name = constructions_name
+                surface.construction_name = constructions_name
                 logger.debug(
                     f"Set construction name to {constructions_name} for {surface_name}"
                 )
