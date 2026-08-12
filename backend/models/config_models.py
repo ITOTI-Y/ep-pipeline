@@ -84,8 +84,7 @@ class PathsConfig(BaseModel):
                 )
         if not self.tmy_files:
             for tmy_file in self.tmy_dir.glob("**/*.epw"):
-                province, city, wmo_id = tmy_file.stem.split("_")
-                code = "TMY"
+                province, city, wmo_id, code = tmy_file.stem.split("_")
                 self.tmy_files.append(
                     WeatherFile(
                         file_path=tmy_file,
@@ -97,8 +96,7 @@ class PathsConfig(BaseModel):
                 )
         if not self.ftmy_files:
             for ftmy_file in self.ftmy_dir.glob("**/*.epw"):
-                province, city, wmo_id = ftmy_file.stem.split("_")
-                code = ftmy_file.parent.stem
+                province, city, wmo_id, code = ftmy_file.stem.split("_")
                 self.ftmy_files.append(
                     WeatherFile(
                         file_path=ftmy_file,
