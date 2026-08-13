@@ -2,11 +2,14 @@
 
 import hashlib
 import json
+import os
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 SAMPLE_THRESHOLD = 10 * 1024 * 1024  # 10MB
 SAMPLE_SIZE = 1024 * 1024  # 1MB per sample chunk
+PROGRESS_INTERVAL = 5000
 
 TRACKED_DIRS = [Path("backend/data"), Path("backend/output")]
 MANIFEST_PATH = Path("data.manifest.json")
@@ -40,25 +43,51 @@ def file_hash(path: Path) -> str:
     return _full_hash(path)
 
 
-def generate(dirs: list[Path] = TRACKED_DIRS) -> dict[str, dict]:
+def _log(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
+def generate(dirs: list[Path] = TRACKED_DIRS, progress: bool = True) -> dict[str, dict]:
+    if progress:
+        _log(f"Collecting file list from {', '.join(str(d) for d in dirs)} ...")
+    files = [
+        f
+        for d in dirs
+        if d.exists()
+        for f in sorted(x for x in d.rglob("*") if x.is_file())
+    ]
+    total = len(files)
+    if progress:
+        _log(f"Hashing {total} files (large files use sampled hash) ...")
+
     manifest: dict[str, dict] = {}
-    for d in dirs:
-        if not d.exists():
-            continue
-        for f in sorted(f for f in d.rglob("*") if f.is_file()):
-            stat = f.stat()
-            manifest[str(f.relative_to("."))] = {
-                "size": stat.st_size,
-                "modified": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
-                "sha256": file_hash(f),
-            }
+    done_bytes = 0
+    for i, f in enumerate(files, 1):
+        stat = f.stat()
+        manifest[str(f.relative_to("."))] = {
+            "size": stat.st_size,
+            "modified": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
+            "sha256": file_hash(f),
+        }
+        done_bytes += stat.st_size
+        if progress and (i % PROGRESS_INTERVAL == 0 or i == total):
+            _log(f"  {i}/{total} files, {done_bytes / 2**30:.1f} GiB covered")
     return manifest
 
 
 def save(manifest: dict[str, dict], path: Path = MANIFEST_PATH) -> None:
-    with open(path, "w") as f:
-        json.dump(manifest, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    """Write atomically so an interrupted run leaves the previous manifest intact."""
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        with open(tmp, "w") as f:
+            json.dump(manifest, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        tmp.replace(path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def load(path: Path = MANIFEST_PATH) -> dict[str, dict] | None:
