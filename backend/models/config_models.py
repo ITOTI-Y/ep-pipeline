@@ -72,7 +72,7 @@ class PathsConfig(BaseModel):
     def initialize_idf_and_weather_files(self) -> "PathsConfig":
         """Initialize idf and weather files"""
         if not self.idf_files:
-            for idf_file in self.idf_dir.glob("**/*.idf"):
+            for idf_file in sorted(self.idf_dir.glob("**/*.idf")):
                 _province, city, building_type, year = idf_file.stem.split("_")
                 self.idf_files.append(
                     IDFFile(
@@ -83,7 +83,7 @@ class PathsConfig(BaseModel):
                     )
                 )
         if not self.tmy_files:
-            for tmy_file in self.tmy_dir.glob("**/*.epw"):
+            for tmy_file in sorted(self.tmy_dir.glob("**/*.epw")):
                 province, city, wmo_id, code = tmy_file.stem.split("_")
                 self.tmy_files.append(
                     WeatherFile(
@@ -95,7 +95,7 @@ class PathsConfig(BaseModel):
                     )
                 )
         if not self.ftmy_files:
-            for ftmy_file in self.ftmy_dir.glob("**/*.epw"):
+            for ftmy_file in sorted(self.ftmy_dir.glob("**/*.epw")):
                 province, city, wmo_id, code = ftmy_file.stem.split("_")
                 self.ftmy_files.append(
                     WeatherFile(

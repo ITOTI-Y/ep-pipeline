@@ -67,7 +67,7 @@ def simulate(
                 if tmy_file.wmo_id == tmyx_wmo_id
             ]
             idf_epw_map[tmyx_wmo_id].idf_files.add(idf_file)
-            idf_epw_map[tmyx_wmo_id].weather_files.add(weather_files[0])
+            idf_epw_map[tmyx_wmo_id].weather_files.update(weather_files)
         return idf_epw_map
 
     idf_epw_map = _get_mapping(config)

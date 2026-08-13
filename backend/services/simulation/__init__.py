@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from itertools import product
+from pathlib import Path
 from pickle import load
 
 from idfpy import IDF
@@ -23,19 +24,28 @@ from backend.utils.config import ConfigManager
 from .pv_service import PVService
 
 
-def build_service(
+def job_output_dir(
     config: ConfigManager,
     idf_file: IDFFile,
     weather_file: WeatherFile,
     simulation_type: SimulationType,
-) -> ISimulationService:
-    output_directory = (
+) -> Path:
+    return (
         config.paths.sim_dir
         / simulation_type.value
         / weather_file.code
         / idf_file.city
         / idf_file.building_type
     )
+
+
+def build_service(
+    config: ConfigManager,
+    idf_file: IDFFile,
+    weather_file: WeatherFile,
+    simulation_type: SimulationType,
+) -> ISimulationService:
+    output_directory = job_output_dir(config, idf_file, weather_file, simulation_type)
     job = SimulationJob(
         idf_file=idf_file,
         idf=IDF.load(idf_file.file_path),
@@ -75,11 +85,7 @@ def build_service(
             )
         case SimulationType.PV:
             baseline_result_path = (
-                config.paths.sim_dir
-                / SimulationType.BASELINE.value
-                / weather_file.code
-                / idf_file.city
-                / idf_file.building_type
+                job_output_dir(config, idf_file, weather_file, SimulationType.BASELINE)
                 / "result.pkl"
             )
             with open(baseline_result_path, "rb") as f:
@@ -113,4 +119,5 @@ __all__ = [
     "ResultParser",
     "build_service",
     "get_simulation_services",
+    "job_output_dir",
 ]
