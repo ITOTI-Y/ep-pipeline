@@ -20,3 +20,5 @@ backend/data/*
 !backend/data/geo
 .claude/
 _dev/
+# Historical manifest baselines (kept locally only)
+data.manifest.[0-9]*.json
