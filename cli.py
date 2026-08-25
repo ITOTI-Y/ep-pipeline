@@ -52,6 +52,8 @@ def simulate(
         df = pd.read_json(config.paths.citys_dir / CitysFileName().dest_mapped_results)
         for idf_file in config.paths.idf_files:
             idf_city = idf_file.city
+            if city and idf_city.lower() != city.lower():
+                continue
             tmyx_wmo_id = int(
                 df[df["tmyx_city"].str.lower() == idf_city.lower()][
                     "tmyx_epw_file_paths"
