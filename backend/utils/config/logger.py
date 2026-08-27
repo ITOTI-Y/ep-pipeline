@@ -4,28 +4,28 @@ from pathlib import Path
 from loguru import logger
 
 
-def set_logger(log_dir: Path) -> None:
+def set_logger(log_dir: Path | None = None) -> None:
     logger.remove()
+    if log_dir:
+        logger.add(
+            log_dir / "info.log",
+            level="INFO",
+            rotation="100 MB",
+            retention="7 days",
+            encoding="utf-8",
+            enqueue=True,
+            diagnose=True,
+        )
 
-    logger.add(
-        log_dir / "info.log",
-        level="INFO",
-        rotation="100 MB",
-        retention="7 days",
-        encoding="utf-8",
-        enqueue=True,
-        diagnose=True,
-    )
-
-    logger.add(
-        log_dir / "error.log",
-        level="ERROR",
-        rotation="100 MB",
-        retention="30 days",
-        encoding="utf-8",
-        enqueue=True,
-        diagnose=True,
-    )
+        logger.add(
+            log_dir / "error.log",
+            level="ERROR",
+            rotation="100 MB",
+            retention="30 days",
+            encoding="utf-8",
+            enqueue=True,
+            diagnose=True,
+        )
 
     logger.add(
         sys.stdout,

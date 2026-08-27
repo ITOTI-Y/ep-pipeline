@@ -1,16 +1,15 @@
 from idfpy.models import (
-    AirTerminalSingleDuctVAVReheat,
     BuildingSurfaceDetailed,
-    ChillerElectricReformulatedEIR,
     Construction,
-    CoolingTowerVariableSpeed,
     FenestrationSurfaceDetailed,
+    HVACTemplatePlantChiller,
     Lights,
     MaterialNoMass,
     ScheduleConstant,
     SizingZone,
     SurfaceControlMovableInsulation,
     WindowMaterialSimpleGlazingSystem,
+    Zone,
     ZoneInfiltrationDesignFlowRate,
     ZoneVentilationWindandStackOpenArea,
 )
@@ -40,7 +39,6 @@ class ECMApply(IApply):
         self._apply_cooling_air_temperature_parameters(job, parameters)
         self._apply_heating_air_temperature_parameters(job, parameters)
         self._apply_lighting_parameters(job, parameters)
-        self._apply_hvac_settings_parameters(job)
         logger.info("ECM configuration applied successfully")
 
     def _apply_window_parameters(
@@ -231,17 +229,39 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        zone_ventilations = idf.all_of_type(ZoneVentilationWindandStackOpenArea)
         modified_count = 0
-
-        for zone_ventilation in zone_ventilations.values():
-            zone_ventilation.opening_area = parameters.natural_ventilation_area
-            logger.debug(
-                f"Set natural ventilation area to {parameters.natural_ventilation_area} m² for {zone_ventilation.name}"
-            )
-            modified_count += 1
-
-        logger.info(f"Modified {modified_count} ventilation objects")
+        for zone in idf.all_of_type(Zone).values():
+            zone_ventilations = zone.referencing(ZoneVentilationWindandStackOpenArea)
+            if zone_ventilations:
+                fenestration_surfaces = {}
+                total_area = 0.0
+                for surface in zone.referencing(BuildingSurfaceDetailed):
+                    for fenestration_surface in surface.referencing(
+                        FenestrationSurfaceDetailed
+                    ):
+                        fenestration_surfaces[fenestration_surface.name] = (
+                            fenestration_surface
+                        )
+                        total_area += fenestration_surface.area
+                if total_area == 0.0:
+                    continue
+                for zone_ventilation in zone_ventilations:
+                    for (
+                        fenestration_surface_name,
+                        fenestration_surface,
+                    ) in fenestration_surfaces.items():
+                        if fenestration_surface_name in zone_ventilation.name:
+                            open_area = min(
+                                fenestration_surface.area,
+                                fenestration_surface.area
+                                * parameters.natural_ventilation_area
+                                / total_area,
+                            )
+                            zone_ventilation.opening_area = open_area
+                            logger.debug(
+                                f"Set natural ventilation area to {open_area} m² for {zone_ventilation.name}"
+                            )
+                            modified_count += 1
 
     def _apply_cooling_coil_and_chiller_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -264,40 +284,25 @@ class ECMApply(IApply):
 
         modified_count = 0
 
-        cop_field_names = [
-            "Gross_Rated_Cooling_COP",
-            "Reference_COP",
-            "Rated_COP",
-            "High_Speed_Gross_Rated_Cooling_COP",
-            "Low_Speed_Gross_Rated_Cooling_COP",
-            "Rated_COP_at_Speed_1",
-            "Rated_COP_at_Speed_2",
-        ]
+        for chiller in idf.all_of_type(HVACTemplatePlantChiller).values():
+            chiller.nominal_cop = parameters.cooling_cop
+            logger.debug(
+                f"Set nominal COP to {parameters.cooling_cop} for {chiller.name}"
+            )
+            modified_count += 1
 
-        all_object_types = idf.types()
-
-        cooling_equipment_types = [
-            obj_type
-            for obj_type in all_object_types
-            if obj_type.upper().startswith("COIL:COOLING")
-            or obj_type.upper().startswith("CHILLER:")
-        ]
-
-        for equipment_type in cooling_equipment_types:
-            try:
-                equipment_list = idf.all_of_type(equipment_type)
-
-                for equipment in equipment_list.values():
-                    for cop_field_name in cop_field_names:
-                        if hasattr(equipment, cop_field_name):
-                            setattr(equipment, cop_field_name, parameters.cooling_cop)
-                            logger.debug(
-                                f"Set {cop_field_name} to {parameters.cooling_cop} for {equipment.name}"  # type: ignore
-                            )
-                            modified_count += 1
-            except Exception:
-                logger.exception(f"Failed to process {equipment_type} objects")
-                continue
+        if vrf_schedule := idf.get(ScheduleConstant, "VRF Proxy Cooling Efficiency"):
+            vrf_schedule.hourly_value = parameters.cooling_cop
+            logger.debug(
+                f"Set schedule value to {parameters.cooling_cop} for {vrf_schedule.name}"
+            )
+            modified_count += 1
+        if pthp_schedule := idf.get(ScheduleConstant, "PTHP Proxy Cooling Efficiency"):
+            pthp_schedule.hourly_value = parameters.cooling_cop
+            logger.debug(
+                f"Set schedule value to {parameters.cooling_cop} for {pthp_schedule.name}"
+            )
+            modified_count += 1
 
         logger.info(f"Modified {modified_count} coil and chiller objects")
 
@@ -322,41 +327,20 @@ class ECMApply(IApply):
 
         modified_count = 0
 
-        cop_field_names = [
-            "Gross_Rated_Heating_COP",
-            "Reference_COP",
-            "Rated_COP",
-            "High_Speed_Gross_Rated_Heating_COP",
-            "Low_Speed_Gross_Rated_Heating_COP",
-            "Rated_COP_at_Speed_1",
-            "Rated_COP_at_Speed_2",
-        ]
+        if vrf_schedule := idf.get(ScheduleConstant, "VRF Proxy Heating Efficiency"):
+            vrf_schedule.hourly_value = parameters.heating_cop
+            logger.debug(
+                f"Set schedule value to {parameters.heating_cop} for {vrf_schedule.name}"
+            )
+            modified_count += 1
+        if pthp_schedule := idf.get(ScheduleConstant, "PTHP Proxy Heating Efficiency"):
+            pthp_schedule.hourly_value = parameters.heating_cop
+            logger.debug(
+                f"Set schedule value to {parameters.heating_cop} for {pthp_schedule.name}"
+            )
+            modified_count += 1
 
-        all_object_types = idf.types()
-
-        heating_equipment_types = [
-            obj_type
-            for obj_type in all_object_types
-            if obj_type.upper().startswith("COIL:HEATING")
-        ]
-
-        for equipment_type in heating_equipment_types:
-            try:
-                equipment_list = idf.all_of_type(equipment_type)
-
-                for equipment in equipment_list.values():
-                    for cop_field_name in cop_field_names:
-                        if hasattr(equipment, cop_field_name):
-                            setattr(equipment, cop_field_name, parameters.heating_cop)
-                            logger.debug(
-                                f"Set {cop_field_name} to {parameters.heating_cop} for {equipment.name}"  # type: ignore
-                            )
-                            modified_count += 1
-            except Exception:
-                logger.exception(f"Failed to process {equipment_type} objects")
-                continue
-
-        logger.info(f"Modified {modified_count} heating coil objects")
+        logger.info(f"Modified {modified_count} coil and chiller objects")
 
     def _apply_cooling_air_temperature_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -490,53 +474,3 @@ class ECMApply(IApply):
                 continue
 
         logger.info(f"Modified {modified_count} lighting objects")
-
-    def _apply_hvac_settings_parameters(self, job: SimulationJob) -> None:
-        """
-        apply hvac settings parameters to idf object
-
-        Args:
-            job (SimulationJob): Simulation job
-            parameters (ECMParameters): ECM parameters
-        """
-        if job.idf is None:
-            logger.error("IDF is not set, skipping")
-            raise ValueError("IDF is not set")
-        idf = job.idf
-
-        modified_count = 0
-
-        vav_reheat_terminals = idf.all_of_type(AirTerminalSingleDuctVAVReheat)
-
-        for terminal in vav_reheat_terminals.values():
-            terminal.maximum_air_flow_rate = "Autosize"
-            terminal.maximum_hot_water_or_steam_flow_rate = "Autosize"
-            terminal.maximum_flow_fraction_during_reheat = "Autosize"
-            terminal.constant_minimum_air_flow_fraction = "Autosize"
-            terminal.fixed_minimum_air_flow_rate = "Autosize"
-            modified_count += 1
-
-        logger.info(f"Modified {modified_count} VAV reheat terminals")
-
-        modified_count = 0
-
-        chillers = idf.all_of_type(ChillerElectricReformulatedEIR)
-
-        for chiller in chillers.values():
-            chiller.reference_capacity = "Autosize"
-            chiller.reference_chilled_water_flow_rate = "Autosize"
-            chiller.reference_condenser_water_flow_rate = "Autosize"
-            modified_count += 1
-
-        logger.info(f"Modified {modified_count} chillers")
-
-        modified_count = 0
-
-        cooling_towers = idf.all_of_type(CoolingTowerVariableSpeed)
-        for tower in cooling_towers.values():
-            tower.design_water_flow_rate = "Autosize"
-            tower.design_air_flow_rate = "Autosize"
-            tower.design_fan_power = "Autosize"
-            modified_count += 1
-
-        logger.info(f"Modified {modified_count} CoolingTowers")
