@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from joblib import Parallel, cpu_count, delayed
+from joblib import cpu_count
 from loguru import logger
 
-from backend._share import _run_job_spec
+from backend._share import parallel_run
 from backend.citys.cli import app as citys_app
 from backend.models.simulation_job import BuildingWeatherCombination, SimulationType
 from backend.script.gen_manifest import check as manifest_check
@@ -21,6 +21,15 @@ from backend.utils.config import ConfigManager, set_logger
 
 app = typer.Typer()
 app.add_typer(citys_app, name="city", help="City selection pipeline")
+
+SSP_ORDER = {
+    "tmy": 0,
+    "ssp126": 1,
+    "ssp245": 2,
+    "ssp370": 3,
+    "ssp434": 4,
+    "ssp585": 5,
+}
 
 
 @app.command()
@@ -74,31 +83,30 @@ def simulate(
 
     idf_epw_map = _get_mapping(config)
 
-    def _init_worker(log_dir: str) -> None:
-        set_logger(Path(log_dir))
-
     simulation_types = (
-        SimulationType.BASELINE,
-        # SimulationType.ECM,
+        # SimulationType.BASELINE,
+        SimulationType.ECM,
         # SimulationType.OPTIMIZATION,
         # SimulationType.PV,
     )
 
-    for sim_type in simulation_types:
-        logger.info(f"Running {sim_type.value} simulation")
-        _ = Parallel(
-            n_jobs=n_jobs,
-            verbose=10,
-            backend="loky",
-            initializer=_init_worker,
-            initargs=(str(config.paths.log_dir),),
-        )(
-            delayed(_run_job_spec)(config_dir, idf_file, weather_file, sim_type)
+    jobs = sorted(
+        (
+            (idf_file, weather_file, 0, None)
             for combination in idf_epw_map.values()
             for idf_file, weather_file in product(
                 combination.idf_files, combination.weather_files
             )
-        )
+        ),
+        key=lambda pair: (
+            pair[0].city,
+            pair[0].building_type,
+            SSP_ORDER.get(pair[1].code, 99),
+        ),
+    )
+
+    for sim_type in simulation_types:
+        parallel_run(sim_type, jobs, n_jobs, _init_worker, config, config_dir)
 
 
 @app.command()

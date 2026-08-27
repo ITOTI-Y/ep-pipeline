@@ -55,4 +55,5 @@ class ECMService(ISimulationService):
     def run(self) -> SimulationResult:
         result = super().run()
         result.ecm_parameters = self._job.ecm_parameters or None
+        result.weather_code = self._job.weather_file.code
         return result

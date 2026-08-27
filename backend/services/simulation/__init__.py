@@ -1,14 +1,12 @@
-from collections.abc import Generator
-from itertools import product
 from pathlib import Path
 from pickle import load
 
 from idfpy import IDF
 
 from backend.bases.energyplus.executor import EnergyPlusExecutor
+from backend.models import ECMParameters
 from backend.models.config_models import IDFFile, WeatherFile
 from backend.models.simulation_job import (
-    BuildingWeatherCombination,
     SimulationJob,
     SimulationType,
 )
@@ -28,14 +26,30 @@ def job_output_dir(
     config: ConfigManager,
     idf_file: IDFFile,
     weather_file: WeatherFile,
+    idx: int,
     simulation_type: SimulationType,
 ) -> Path:
     return (
         config.paths.sim_dir
         / simulation_type.value
         / weather_file.code
+        / f"idx_{idx:03d}"
         / idf_file.city
         / idf_file.building_type
+    )
+
+
+def job_surrogate_model_path(
+    config: ConfigManager,
+    city: str,
+    building_type: str,
+) -> Path:
+    return (
+        config.paths.sim_dir
+        / SimulationType.OPTIMIZATION.value
+        / city
+        / building_type
+        / "surrogate_model.pkl"
     )
 
 
@@ -44,15 +58,20 @@ def build_service(
     idf_file: IDFFile,
     weather_file: WeatherFile,
     simulation_type: SimulationType,
+    idx: int,
+    ecm_params: ECMParameters | None,
 ) -> ISimulationService:
-    output_directory = job_output_dir(config, idf_file, weather_file, simulation_type)
+    output_directory = job_output_dir(
+        config, idf_file, weather_file, idx, simulation_type
+    )
     job = SimulationJob(
         idf_file=idf_file,
         idf=IDF.load(idf_file.file_path),
         weather_file=weather_file,
         simulation_type=simulation_type,
         output_directory=output_directory,
-        output_prefix="eplus",
+        output_prefix=f"eplus_{idx:03d}",
+        ecm_parameters=ecm_params if ecm_params is not None else None,
     )
 
     match simulation_type:
@@ -85,7 +104,9 @@ def build_service(
             )
         case SimulationType.PV:
             baseline_result_path = (
-                job_output_dir(config, idf_file, weather_file, SimulationType.BASELINE)
+                job_output_dir(
+                    config, idf_file, weather_file, 0, SimulationType.BASELINE
+                )
                 / "result.pkl"
             )
             with open(baseline_result_path, "rb") as f:
@@ -101,17 +122,6 @@ def build_service(
             )
         case _:
             raise ValueError(f"Invalid simulation type: {simulation_type}")
-
-
-def get_simulation_services(
-    config: ConfigManager,
-    combination: BuildingWeatherCombination,
-    simulation_type: SimulationType,
-) -> Generator[ISimulationService]:
-    for idf_file, weather_file in product(
-        combination.idf_files, combination.weather_files
-    ):
-        yield build_service(config, idf_file, weather_file, simulation_type)
 
 
 __all__ = [

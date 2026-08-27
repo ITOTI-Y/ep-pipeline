@@ -3,6 +3,7 @@ from pickle import load
 import pandas as pd
 from loguru import logger
 
+from backend.models import SimulationResult
 from backend.utils.config import ConfigManager
 
 
@@ -13,9 +14,10 @@ def parse_results_to_csv(config: ConfigManager):
     for result_file in results_dir.glob("**/result.pkl"):
         with open(result_file, "rb") as f:
             result = load(f)
+            result = SimulationResult.model_validate(result.model_dump())
             if result.ecm_parameters is None:
                 continue
-            code = {"code": result_file.parents[1].name}
+            code = {"code": result.weather_code}
             ecm_parameters = result.ecm_parameters.model_dump()
             eui_result = result.get_eui_summary()
             all_data = dict(sorted({**code, **ecm_parameters, **eui_result}.items()))

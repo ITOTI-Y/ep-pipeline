@@ -7,7 +7,7 @@
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulate", "--n-jobs", "1"]
+            "args": ["simulate", "--n-jobs", "1", "--city", "Guangzhou"]
         },
         {
             "name": "Simulate All Cities multi thread",

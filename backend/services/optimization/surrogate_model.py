@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import pandas as pd
 from catboost import CatBoostRegressor
+from joblib import load
 from loguru import logger
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
 
+from backend.models.simulation_job import SimulationResult, SimulationType
 from backend.utils.config import ConfigManager
 
 
@@ -139,3 +142,33 @@ class CatboostSurrogateModel(ISurrogateModel):
                 metrics[f"output_{i + 1}_mae"] = float(mae_i)
 
         return metrics
+
+
+def collect_ecm_rows(
+    config: ConfigManager, city: str, building_type: str
+) -> pd.DataFrame:
+    rows = []
+    root = config.paths.sim_dir / SimulationType.ECM.value
+    for pkl in root.glob(f"*/idx_*/{city}/{building_type}/result.pkl"):
+        result = load(pkl)
+        result = SimulationResult.model_validate(result)
+        if not result.success or result.ecm_parameters is None:
+            continue
+        rows.append(
+            {
+                "code": result.weather_code,
+                **result.ecm_parameters.model_dump(),
+                **result.get_eui_summary(),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def train_and_save_surrogate_model(
+    config: ConfigManager, city: str, building_type: str, df: pd.DataFrame
+) -> None:
+    pass
+
+
+def delete_ecm_outputs(config: ConfigManager, city: str, building_type: str) -> None:
+    pass
