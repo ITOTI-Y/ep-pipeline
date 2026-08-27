@@ -7,29 +7,20 @@ import typer
 from joblib import cpu_count
 from loguru import logger
 
-from backend._share import parallel_run
+from backend._share import SSP_ORDER
 from backend.citys.cli import app as citys_app
 from backend.models.simulation_job import BuildingWeatherCombination, SimulationType
 from backend.script.gen_manifest import check as manifest_check
 from backend.script.gen_manifest import generate as manifest_generate
 from backend.script.gen_manifest import save as manifest_save
-from backend.script.parse_data import (  # noqa: F401
+from backend.script.parse_data import (
     parse_result_parameters,
-    parse_results_to_csv,
 )
+from backend.services.simulation.runner import parallel_run
 from backend.utils.config import ConfigManager, set_logger
 
 app = typer.Typer()
 app.add_typer(citys_app, name="city", help="City selection pipeline")
-
-SSP_ORDER = {
-    "tmy": 0,
-    "ssp126": 1,
-    "ssp245": 2,
-    "ssp370": 3,
-    "ssp434": 4,
-    "ssp585": 5,
-}
 
 
 @app.command()
@@ -84,7 +75,7 @@ def simulate(
     idf_epw_map = _get_mapping(config)
 
     simulation_types = (
-        # SimulationType.BASELINE,
+        SimulationType.BASELINE,
         SimulationType.ECM,
         # SimulationType.OPTIMIZATION,
         # SimulationType.PV,

@@ -8,8 +8,41 @@ from pickle import dump
 from loguru import logger
 
 from backend.models import SimulationJob, SimulationResult
+from backend.models.config_models import IDFFile, WeatherFile
+from backend.models.simulation_job import SimulationType
 from backend.services.interfaces import IEnergyPlusExecutor, IResultParser
 from backend.utils.config import ConfigManager
+
+
+def job_output_dir(
+    config: ConfigManager,
+    idf_file: IDFFile,
+    weather_file: WeatherFile,
+    idx: int,
+    simulation_type: SimulationType,
+) -> Path:
+    return (
+        config.paths.sim_dir
+        / simulation_type.value
+        / idf_file.city
+        / idf_file.building_type
+        / weather_file.code
+        / f"idx_{idx:03d}"
+    )
+
+
+def job_surrogate_model_path(
+    config: ConfigManager,
+    city: str,
+    building_type: str,
+) -> Path:
+    return (
+        config.paths.sim_dir
+        / SimulationType.OPTIMIZATION.value
+        / city
+        / building_type
+        / "surrogate_model.pkl"
+    )
 
 
 class ISimulationService(ABC):
@@ -45,7 +78,6 @@ class ISimulationService(ABC):
             FileNotFoundError: If required files are missing.
             PreparationError: If preparation process fails.
         """
-        pass
 
     def _execute(self) -> SimulationResult:
         logger.info(
@@ -83,13 +115,14 @@ class ISimulationService(ABC):
         resources held during the simulation. It should not raise exceptions.
 
         """
-        pass
 
     def run(self) -> SimulationResult:
         try:
             self.prepare()
             self._copy_schedules()
             result = self._execute()
+            result.ecm_parameters = self._job.ecm_parameters
+            result.weather_code = self._job.weather_file.code
             if result.success:
                 self._extract_data(result)
                 with open(self._job.output_directory / "result.pkl", "wb") as f:

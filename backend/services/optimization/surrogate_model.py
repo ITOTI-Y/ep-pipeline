@@ -1,15 +1,20 @@
+import json
+import shutil
 from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
 from catboost import CatBoostRegressor
-from joblib import load
+from joblib import dump, load
 from loguru import logger
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 
+from backend._share import FEATURE_NAMES, SSP_ORDER, TARGET_NAMES
 from backend.models.simulation_job import SimulationResult, SimulationType
+from backend.services.simulation._share import job_surrogate_model_path
 from backend.utils.config import ConfigManager
 
 
@@ -148,8 +153,8 @@ def collect_ecm_rows(
     config: ConfigManager, city: str, building_type: str
 ) -> pd.DataFrame:
     rows = []
-    root = config.paths.sim_dir / SimulationType.ECM.value
-    for pkl in root.glob(f"*/idx_*/{city}/{building_type}/result.pkl"):
+    root = config.paths.sim_dir / SimulationType.ECM.value / city / building_type
+    for pkl in root.glob("**/result.pkl"):
         result = load(pkl)
         result = SimulationResult.model_validate(result)
         if not result.success or result.ecm_parameters is None:
@@ -165,10 +170,63 @@ def collect_ecm_rows(
 
 
 def train_and_save_surrogate_model(
-    config: ConfigManager, city: str, building_type: str, df: pd.DataFrame
+    config: ConfigManager, city: str, building_type: str, ecm_data: pd.DataFrame
 ) -> None:
-    pass
+
+    surrogate_model_path = job_surrogate_model_path(config, city, building_type)
+
+    encode_model_path = surrogate_model_path.parents[3] / "encode_model.pkl"
+    if not encode_model_path.exists():
+        encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+        encoder.fit(np.array(list(SSP_ORDER.keys())).reshape(-1, 1))
+        encode_model_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(encode_model_path, "wb") as f:
+            dump(encoder, f)
+            logger.info(f"Encode model saved to {encode_model_path}")
+    else:
+        with open(encode_model_path, "rb") as f:
+            encoder = load(f)
+
+    if surrogate_model_path.exists():
+        logger.info(f"Surrogate model already exists at {surrogate_model_path}")
+        return
+    else:
+        if len(ecm_data) < 2:
+            logger.warning(
+                f"Skipping {building_type}: insufficient samples ({len(ecm_data)})"
+            )
+            return
+        surrogate_model = CatboostSurrogateModel(config)
+        categorical_features = encoder.transform(
+            ecm_data["code"].to_numpy().reshape(-1, 1)
+        )
+        x = np.concatenate(
+            [
+                ecm_data[FEATURE_NAMES].values.astype(np.float32),
+                categorical_features,
+            ],
+            axis=1,
+        )
+        y = ecm_data[TARGET_NAMES].values.astype(np.float32)
+        surrogate_model.train(x, y)
+
+        evaluate_file_path = surrogate_model_path.parent / "evaluate.json"
+        evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(
+            file=evaluate_file_path,
+            mode="w",
+            encoding="utf-8",
+        ) as f:
+            evaluate_metrics = surrogate_model.evaluate()
+            json.dump(evaluate_metrics, f, indent=4)
+
+        with open(surrogate_model_path, "wb") as f:
+            dump(surrogate_model, f)
+            logger.info(f"Surrogate model saved to {surrogate_model_path}")
 
 
 def delete_ecm_outputs(config: ConfigManager, city: str, building_type: str) -> None:
-    pass
+    ecm_output_dir = (
+        config.paths.sim_dir / SimulationType.ECM.value / city / building_type
+    )
+    shutil.rmtree(ecm_output_dir)

@@ -550,7 +550,7 @@ def prepare_carbon_mode_a(
     cambium_cache: dict[tuple[str, int], CambiumFactors] = {}
     for scen in CAMBIUM_SCENARIOS:
         for yr in CAMBIUM_YEARS:
-            cambium_cache[(scen, yr)] = load_cambium(scen, yr)
+            cambium_cache[scen, yr] = load_cambium(scen, yr)
     logger.info(f"  Loaded {len(cambium_cache)} Cambium files")
 
     # Pre-build area and gas lookups
@@ -582,7 +582,7 @@ def prepare_carbon_mode_a(
 
                 for scen in CAMBIUM_SCENARIOS:
                     for yr in CAMBIUM_YEARS:
-                        cam = cambium_cache[(scen, yr)]
+                        cam = cambium_cache[scen, yr]
 
                         carbon_purchased = (bl_demand_kwh * cam.aer).sum()
                         carbon_gas = bl_gas * EF_GAS
@@ -631,7 +631,7 @@ def prepare_carbon_mode_a(
 
             for scen in CAMBIUM_SCENARIOS:
                 for yr in CAMBIUM_YEARS:
-                    cam = cambium_cache[(scen, yr)]
+                    cam = cambium_cache[scen, yr]
 
                     carbon_purchased = (purchased_kwh * cam.aer).sum()
                     carbon_credit = (exported_kwh * cam.lrmer).sum()

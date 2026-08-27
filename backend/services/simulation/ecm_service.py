@@ -1,6 +1,6 @@
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult
+from backend.models import SimulationJob
 from backend.services.configuration import (
     ECMApply,
     GeneralApply,
@@ -51,9 +51,3 @@ class ECMService(ISimulationService):
             config=self._config,
             exclude_files=self._cleanup_exclude,
         )
-
-    def run(self) -> SimulationResult:
-        result = super().run()
-        result.ecm_parameters = self._job.ecm_parameters or None
-        result.weather_code = self._job.weather_file.code
-        return result
