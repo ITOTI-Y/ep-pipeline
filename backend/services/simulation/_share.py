@@ -124,7 +124,8 @@ class ISimulationService(ABC):
             result.ecm_parameters = self._job.ecm_parameters
             result.weather_code = self._job.weather_file.code
             if result.success:
-                self._extract_data(result)
+                if self._job.simulation_type != SimulationType.ECM:
+                    self._extract_data(result)
                 with open(self._job.output_directory / "result.pkl", "wb") as f:
                     dump(result, f)
             return result

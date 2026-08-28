@@ -22,3 +22,4 @@ backend/data/*
 _dev/
 # Historical manifest baselines (kept locally only)
 data.manifest.[0-9]*.json
+catboost_info/
