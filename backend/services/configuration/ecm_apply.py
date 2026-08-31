@@ -258,6 +258,10 @@ class ECMApply(IApply):
                                 / total_area,
                             )
                             zone_ventilation.opening_area = open_area
+                            zone_ventilation.maximum_outdoor_temperature = 26.0
+                            zone_ventilation.minimum_outdoor_temperature = 18.0
+                            zone_ventilation.minimum_indoor_temperature = 18.0
+                            zone_ventilation.delta_temperature = 1.0
                             logger.debug(
                                 f"Set natural ventilation area to {open_area} m² for {zone_ventilation.name}"
                             )
