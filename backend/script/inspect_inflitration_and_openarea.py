@@ -64,6 +64,10 @@ def process_idf(idf_path: Path) -> None:
                         opening_area=0.0,
                         effective_angle=fenestration_surface.azimuth,
                         height_difference=0.0,
+                        maximum_outdoor_temperature=26.0,
+                        minimum_outdoor_temperature=18.0,
+                        minimum_indoor_temperature=18.0,
+                        delta_temperature=1.0,
                     )
                     idf.add(open_area)
     idf.save(idf_path)
