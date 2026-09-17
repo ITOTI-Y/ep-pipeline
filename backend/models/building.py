@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from .enums import BuildingType
 
 
-class Building(BaseModel):
+class BuildingSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -66,7 +66,7 @@ class Building(BaseModel):
 
     def __str__(self) -> str:
         return (
-            f"Building(name='{self.name}',"
+            f"BuildingSchema(name='{self.name}',"
             f"type={self.building_type.value},"
             f"location='{self.location}')"
         )

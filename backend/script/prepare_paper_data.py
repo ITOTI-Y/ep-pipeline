@@ -11,11 +11,13 @@ import json
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
+from pickle import load
 
 import numpy as np
 import pandas as pd
 from loguru import logger
 
+from backend.models.config_models import ECMParametersConfigSchema
 from backend.models.enums import BuildingType
 from backend.utils.config.config_manager import ConfigManager
 
@@ -25,6 +27,27 @@ BUILDING_TYPES = [bt.value for bt in BuildingType]
 WEATHER_CODES = ["TMY", "SSP126", "SSP245", "SSP370", "SSP434", "SSP585"]
 STAGES = ["baseline", "ecm", "pv"]
 
+# GA decision variables, ordered by the single source of truth
+ECM_PARAM_NAMES = ECMParametersConfigSchema().keys
+
+# Parameter name → (display label, markdown unit, LaTeX unit)
+ECM_PARAM_LABELS: dict[str, tuple[str, str, str]] = {
+    "window_shgc": ("Window SHGC", "", "--"),
+    "window_u_value": ("Window U-value", "W/m²K", r"W/(m$^2$K)"),
+    "visible_transmittance": ("Visible transmittance", "", "--"),
+    "wall_insulation": ("Wall insulation R-value", "m²K/W", r"m$^2$K/W"),
+    "infiltration_rate": ("Infiltration rate", "ACH", "ACH"),
+    "natural_ventilation_area": ("Natural ventilation area", "m²", r"m$^2$"),
+    "cooling_cop": ("Cooling COP", "", "--"),
+    "heating_cop": ("Heating COP", "", "--"),
+    "cooling_air_temperature": ("Cooling supply air temperature", "°C", r"$^\circ$C"),
+    "heating_air_temperature": ("Heating supply air temperature", "°C", r"$^\circ$C"),
+    "lighting_power_reduction_level": (
+        "Lighting power reduction level",
+        "1-3",
+        "1--3",
+    ),
+}
 # eGRID RFCW emission factors
 EF_ELEC_AVG = 0.4134  # kg CO₂/kWh (average)
 EF_ELEC_MARGINAL = 0.7973  # kg CO₂/kWh (marginal)
@@ -510,24 +533,29 @@ def prepare_carbon_mode_bc(
 
 @dataclass
 class CambiumFactors:
-    """Pre-computed Cambium emission factors adjusted for distribution loss (kg/kWh)."""
+    """End-use Cambium emission factors (kg/kWh)."""
 
-    aer: np.ndarray  # 8760 hourly average emission rate
-    lrmer: np.ndarray  # 8760 hourly long-run marginal emission rate
+    aer: np.ndarray  # 8760 hourly average emission rate, end-use
+    lrmer: np.ndarray  # 8760 hourly long-run marginal emission rate, end-use
     aer_raw_mean: float  # raw aer_load_co2e annual mean (kg/MWh)
     lrmer_raw_mean: float  # raw lrmer_co2e annual mean (kg/MWh)
 
 
 def load_cambium(scenario: str, year: int) -> CambiumFactors:
-    """Load Cambium CSV and pre-compute distloss-adjusted emission factors."""
+    """Load Cambium CSV emission factors (already end-use, just kg/MWh → kg/kWh).
+
+    Per Cambium 2024 documentation §5.4, ``aer_load_co2e`` and ``lrmer_co2e``
+    are reported at end-use delivery with distribution losses already applied
+    (Distribution Loss Metric: average). No further ``/ (1 - distloss)``
+    adjustment is needed — doing so would double-count T&D losses (~+3.7-3.9%).
+    """
     path = cambium_path(scenario, year)
-    df = pd.read_csv(  # ty: ignore[no-matching-overload]
+    df = pd.read_csv(  # type: ignore
         path,
         skiprows=5,
-        usecols=["aer_load_co2e", "lrmer_co2e", "distloss_rate_avg"],
+        usecols=["aer_load_co2e", "lrmer_co2e"],
     )
-    distloss = df["distloss_rate_avg"].values
-    factor = 1 / (1 - distloss) / 1000  # kg/MWh → kg/kWh with distloss adj
+    factor = 1 / 1000  # kg/MWh_end-use → kg/kWh_end-use
     return CambiumFactors(
         aer=df["aer_load_co2e"].values * factor,
         lrmer=df["lrmer_co2e"].values * factor,
@@ -547,7 +575,7 @@ def prepare_carbon_mode_a(
     """
     logger.info("Preparing CSV 6: Carbon Mode A (Cambium)")
 
-    # Pre-load all Cambium data (emission factors pre-adjusted for distloss)
+    # Pre-load all Cambium data (end-use emission factors, kg/kWh)
     cambium_cache: dict[tuple[str, int], CambiumFactors] = {}
     for scen in CAMBIUM_SCENARIOS:
         for yr in CAMBIUM_YEARS:
@@ -788,6 +816,145 @@ def prepare_bcrc_summary(
     return df
 
 
+def prepare_optimal_ecm_parameters() -> pd.DataFrame:
+    """Prepare 30-row optimal ECM parameter table from optimization results.
+
+    The GA-selected ECM parameters only live inside each optimization run's
+    result.pkl. This aggregates them into one CSV: 5 building types x 6
+    weather codes, the 11 decision variables, the derived lighting power
+    reduction fraction, and surrogate-predicted vs simulated site EUI.
+    """
+    logger.info("Preparing CSV 8: Optimal ECM Parameters")
+    rows = []
+    for bt in BUILDING_TYPES:
+        for wc in WEATHER_CODES:
+            path = CONFIG.paths.optimization_dir / bt / wc / "result.pkl"
+            if not path.exists():
+                logger.warning(f"  Missing: {path}")
+                continue
+            with open(path, "rb") as f:
+                result = load(f)
+            if result.ecm_parameters is None:
+                logger.warning(f"  No ECM parameters in {path}")
+                continue
+            params = result.ecm_parameters.model_dump()
+            row: dict[str, object] = {"building_type": bt, "weather_code": wc}
+            row.update({name: params[name] for name in ECM_PARAM_NAMES})
+            row["lighting_power_reduction"] = (
+                result.ecm_parameters.lighting_power_reduction
+            )
+            row["predicted_site_eui"] = result.predicted_eui
+            row["simulated_site_eui"] = result.total_site_eui
+            row["prediction_error_pct"] = (
+                (result.predicted_eui - result.total_site_eui)
+                / result.total_site_eui
+                * 100
+                if result.predicted_eui is not None and result.total_site_eui
+                else np.nan
+            )
+            rows.append(row)
+
+    df = pd.DataFrame(rows)
+    expected = len(BUILDING_TYPES) * len(WEATHER_CODES)
+    if len(df) != expected:
+        logger.warning(f"  Expected {expected} rows, got {len(df)}")
+    logger.info(f"  → {len(df)} rows")
+    return df
+
+
+def export_optimal_ecm_table(df: pd.DataFrame | None = None) -> None:
+    """Export markdown and LaTeX tables of GA-optimal ECM parameters.
+
+    Markdown: one block per building type, parameters x six weather
+    scenarios. LaTeX: compact parameters x building types table where each
+    cell is the single optimal value, or a min--max range when the optimum
+    varies across the six weather scenarios.
+    """
+    logger.info("Exporting optimal ECM parameter tables (markdown + LaTeX)")
+    if df is None:
+        path = PAPER_DIR / "08_optimal_ecm_parameters.csv"
+        if not path.exists():
+            logger.warning(f"  Missing {path}, run prepare-paper-data first")
+            return
+        df = pd.read_csv(path)
+
+    def fmt(v: float) -> str:
+        return f"{v:g}"
+
+    md: list[str] = ["# Optimal ECM Parameters", ""]
+    for bt in BUILDING_TYPES:
+        sub = df[df["building_type"] == bt].set_index("weather_code")
+        if sub.empty:
+            continue
+        codes = [wc for wc in WEATHER_CODES if wc in sub.index]
+        md += [f"## {bt}", ""]
+        md.append("| Parameter | " + " | ".join(codes) + " |")
+        md.append("| --- | " + " | ".join(["---"] * len(codes)) + " |")
+        for name in ECM_PARAM_NAMES:
+            label, unit, _ = ECM_PARAM_LABELS[name]
+            head = f"{label} ({unit})" if unit else label
+            cells = [fmt(sub.loc[wc, name]) for wc in codes]
+            md.append(f"| {head} | " + " | ".join(cells) + " |")
+        for col, head in (
+            ("lighting_power_reduction", "Lighting power reduction (fraction)"),
+            ("predicted_site_eui", "Predicted site EUI (kWh/m²/yr)"),
+            ("simulated_site_eui", "Simulated site EUI (kWh/m²/yr)"),
+            ("prediction_error_pct", "Prediction error (%)"),
+        ):
+            cells = [f"{sub.loc[wc, col]:.2f}" for wc in codes]
+            md.append(f"| {head} | " + " | ".join(cells) + " |")
+        md.append("")
+    (PAPER_DIR / "08_optimal_ecm_parameters.md").write_text(
+        "\n".join(md), encoding="utf-8"
+    )
+
+    short = {
+        "OfficeLarge": "Office L",
+        "OfficeMedium": "Office M",
+        "ApartmentHighRise": "Apt HR",
+        "MultiFamilyResidential": "MF Res",
+        "SingleFamilyResidential": "SF Res",
+    }
+    bts = [bt for bt in BUILDING_TYPES if bt in set(df["building_type"])]
+    tex = [
+        r"\begin{table}[htbp]",
+        r"\centering",
+        r"\caption{GA-optimal ECM parameters per building type. A single value "
+        r"indicates the optimum is identical across the six weather scenarios "
+        r"(TMY and five SSPs); a range gives the min--max across scenarios.}",
+        r"\label{tab:optimal_ecm_parameters}",
+        r"\begin{tabular}{l l " + " ".join(["r"] * len(bts)) + "}",
+        r"\toprule",
+        "Parameter & Unit & " + " & ".join(short.get(bt, bt) for bt in bts) + r" \\",
+        r"\midrule",
+    ]
+    for name in ECM_PARAM_NAMES:
+        label, _, tex_unit = ECM_PARAM_LABELS[name]
+        cells = []
+        for bt in bts:
+            vals = sorted(df[df["building_type"] == bt][name].unique())
+            cells.append(
+                fmt(vals[0]) if len(vals) == 1 else f"{fmt(vals[0])}--{fmt(vals[-1])}"
+            )
+        tex.append(f"{label} & {tex_unit} & " + " & ".join(cells) + r" \\")
+    frac_cells = []
+    for bt in bts:
+        vals = sorted(
+            df[df["building_type"] == bt]["lighting_power_reduction"].unique()
+        )
+        frac_cells.append(
+            f"{vals[0]:.2f}" if len(vals) == 1 else f"{vals[0]:.2f}--{vals[-1]:.2f}"
+        )
+    tex.append(
+        "Lighting power reduction & fraction & " + " & ".join(frac_cells) + r" \\"
+    )
+    tex += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    (PAPER_DIR / "08_optimal_ecm_parameters.tex").write_text(
+        "\n".join(tex) + "\n", encoding="utf-8"
+    )
+    logger.info(f"  → tables for {len(bts)} building types written")
+
+
 # ── Validation ───────────────────────────────────────────────────────────────
 
 
@@ -860,10 +1027,14 @@ def validate(
     mode_b = df_carbon_bc[df_carbon_bc["mode"] == "mode_b"]
     mode_c = df_carbon_bc[df_carbon_bc["mode"] == "mode_c"]
     if len(mode_b) != expected_mode_b_rows:
-        logger.error(f"CSV 5 mode_b should have {expected_mode_b_rows} rows, got {len(mode_b)}")
+        logger.error(
+            f"CSV 5 mode_b should have {expected_mode_b_rows} rows, got {len(mode_b)}"
+        )
         ok = False
     if len(mode_c) != expected_mode_c_rows:
-        logger.error(f"CSV 5 mode_c should have {expected_mode_c_rows} rows, got {len(mode_c)}")
+        logger.error(
+            f"CSV 5 mode_c should have {expected_mode_c_rows} rows, got {len(mode_c)}"
+        )
         ok = False
 
     # 2. Presence / per-scenario consistency checks
@@ -946,7 +1117,9 @@ def validate(
                     )
                     ok = False
 
-                r_values_present = sorted(float(r) for r in rows_c["R"].dropna().unique())
+                r_values_present = sorted(
+                    float(r) for r in rows_c["R"].dropna().unique()
+                )
                 if r_values_present != R_VALUES:
                     logger.error(
                         f"CSV 5 mode_c should contain R values {R_VALUES} for {scenario}, "
@@ -1089,10 +1262,13 @@ def main() -> None:
     df_bcrc = prepare_bcrc_summary(df_energy, df_carbon_bc, df_carbon_a)
     df_bcrc.to_csv(PAPER_DIR / "07_bcrc_summary.csv", index=False)
 
+    # CSV 8: Optimal ECM parameters (+ markdown/LaTeX paper tables)
+    df_ecm_params = prepare_optimal_ecm_parameters()
+    df_ecm_params.to_csv(PAPER_DIR / "08_optimal_ecm_parameters.csv", index=False)
+    export_optimal_ecm_table(df_ecm_params)
+
     # Validate
-    if not validate(
-        df_energy, df_elec, df_hourly, df_carbon_a, df_carbon_bc, df_bcrc
-    ):
+    if not validate(df_energy, df_elec, df_hourly, df_carbon_a, df_carbon_bc, df_bcrc):
         logger.error("Validation failed! Check errors above.")
         raise SystemExit(1)
 

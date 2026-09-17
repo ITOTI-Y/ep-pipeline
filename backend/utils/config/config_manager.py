@@ -4,12 +4,12 @@ from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from backend.models.config_models import (
-    ECMParametersConfig,
-    OptimizationConfig,
-    PathsConfig,
-    PVConfig,
-    SimulationConfig,
-    StorageConfig,
+    ECMParametersConfigSchema,
+    OptimizationConfigSchema,
+    PathsConfigSchema,
+    PVConfigSchema,
+    SimulationConfigSchema,
+    StorageConfigSchema,
 )
 
 
@@ -49,7 +49,7 @@ class ConfigManager:
         merged_config = OmegaConf.merge(*configs)
         return merged_config
 
-    def _parse_paths_config(self) -> PathsConfig:
+    def _parse_paths_config(self) -> PathsConfigSchema:
         paths_config = OmegaConf.select(self._raw_config, "paths")
         if paths_config is None:
             logger.error(f"Paths config not found in {self._raw_config}")
@@ -61,9 +61,9 @@ class ConfigManager:
             throw_on_missing=True,
         )
 
-        return PathsConfig(**paths_dict)  # type: ignore
+        return PathsConfigSchema(**paths_dict)  # type: ignore
 
-    def _parse_simulation_config(self) -> SimulationConfig:
+    def _parse_simulation_config(self) -> SimulationConfigSchema:
         simulation_config = OmegaConf.select(self._raw_config, "simulation")
         if simulation_config is None:
             logger.error(f"Simulation config not found in {self._raw_config}")
@@ -75,13 +75,13 @@ class ConfigManager:
             throw_on_missing=True,
         )
 
-        return SimulationConfig(**sim_dict)  # type: ignore
+        return SimulationConfigSchema(**sim_dict)  # type: ignore
 
-    def _parse_optimization_config(self) -> OptimizationConfig:
+    def _parse_optimization_config(self) -> OptimizationConfigSchema:
         optimization_config = OmegaConf.select(self._raw_config, "optimization")
         if optimization_config is None:
             logger.warning("Optimization config not found; using defaults")
-            return OptimizationConfig()
+            return OptimizationConfigSchema()
 
         optimization_dict = OmegaConf.to_container(
             optimization_config,
@@ -89,13 +89,13 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return OptimizationConfig(**optimization_dict)  # type: ignore
+        return OptimizationConfigSchema(**optimization_dict)  # type: ignore
 
-    def _parse_ecm_parameters_config(self) -> ECMParametersConfig:
+    def _parse_ecm_parameters_config(self) -> ECMParametersConfigSchema:
         ecm_parameters_config = OmegaConf.select(self._raw_config, "ecm_parameters")
         if ecm_parameters_config is None:
             logger.warning("ECM parameters config not found; using defaults")
-            return ECMParametersConfig()
+            return ECMParametersConfigSchema()
 
         ecm_parameters_dict = OmegaConf.to_container(
             ecm_parameters_config,
@@ -103,13 +103,13 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return ECMParametersConfig(**ecm_parameters_dict)  # type: ignore
+        return ECMParametersConfigSchema(**ecm_parameters_dict)  # type: ignore
 
-    def _parse_pv_config(self) -> PVConfig:
+    def _parse_pv_config(self) -> PVConfigSchema:
         pv_config = OmegaConf.select(self._raw_config, "pv")
         if pv_config is None:
             logger.warning("PV config not found; using defaults")
-            return PVConfig()
+            return PVConfigSchema()
 
         pv_dict = OmegaConf.to_container(
             pv_config,
@@ -117,13 +117,13 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return PVConfig(**pv_dict)  # type: ignore
+        return PVConfigSchema(**pv_dict)  # type: ignore
 
-    def _parse_storage_config(self) -> StorageConfig:
+    def _parse_storage_config(self) -> StorageConfigSchema:
         storage_config = OmegaConf.select(self._raw_config, "storage")
         if storage_config is None:
             logger.warning("Storage config not found; using defaults")
-            return StorageConfig()
+            return StorageConfigSchema()
 
         storage_dict = OmegaConf.to_container(
             storage_config,
@@ -131,7 +131,7 @@ class ConfigManager:
             throw_on_missing=False,
         )
 
-        return StorageConfig(**storage_dict)  # type: ignore
+        return StorageConfigSchema(**storage_dict)  # type: ignore
 
     @property
     def value(self):

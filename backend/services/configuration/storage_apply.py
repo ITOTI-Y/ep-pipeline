@@ -1,7 +1,7 @@
 from eppy.modeleditor import IDF
 from loguru import logger
 
-from backend.models import BuildingType, SimulationJob
+from backend.models import BuildingType, SimulationJobSchema
 from backend.services.configuration.iapply import IApply
 from backend.utils.config import ConfigManager
 
@@ -12,7 +12,7 @@ class StorageApply(IApply):
         self._config = config
         self._building_type = building_type
 
-    def apply(self, job: SimulationJob) -> None:
+    def apply(self, job: SimulationJobSchema) -> None:
         logger.info("Applying storage configuration")
         if job.idf is None:
             logger.error("IDF is not set, skipping")

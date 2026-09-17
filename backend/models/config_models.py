@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class PathsConfig(BaseModel):
+class PathsConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         arbitrary_types_allowed=True,
@@ -25,23 +25,16 @@ class PathsConfig(BaseModel):
     csv_dir: Path = Field(..., description="CSV output directory")
     data_dir: Path = Field(..., description="Data directory")
     log_dir: Path = Field(..., description="Log directory")
-    eplus_executable: Path = Field(..., description="EnergyPlus executable path")
-    idd_file: Path = Field(..., description="IDD file path")
+    eplus_executable: Path | None = Field(
+        default=None, description="EnergyPlus executable path"
+    )
+    idd_file: Path | None = Field(default=None, description="IDD file path")
     temp_dir: Path = Field(..., description="Temporary directory")
     idf_files: list[Path] = Field(default_factory=list, description="IDF files")
     tmy_files: list[Path] = Field(default_factory=list, description="TMY weather files")
     ftmy_files: list[Path] = Field(
         default_factory=list, description="Future TMY weather files"
     )
-
-    @field_validator("eplus_executable", "idd_file")
-    def validate_file_exists(cls, v: Path) -> Path:
-        """Validate file exists"""
-        if not v.exists():
-            raise ValueError(f"File does not exist: {v}")
-        if not v.is_file():
-            raise ValueError(f"Path is not a file: {v}")
-        return v
 
     @field_validator(
         "prototype_dir",
@@ -65,7 +58,7 @@ class PathsConfig(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def initialize_idf_and_weather_files(self) -> "PathsConfig":
+    def initialize_idf_and_weather_files(self) -> "PathsConfigSchema":
         """Initialize idf and weather files"""
         if not self.idf_files:
             object.__setattr__(
@@ -78,7 +71,7 @@ class PathsConfig(BaseModel):
         return self
 
 
-class SimulationConfig(BaseModel):
+class SimulationConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -141,7 +134,7 @@ class SimulationConfig(BaseModel):
         return f"{start} to {end}"
 
 
-class ECMParametersConfig(BaseModel):
+class ECMParametersConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -185,7 +178,7 @@ class ECMParametersConfig(BaseModel):
         return list(self.model_dump().keys())
 
 
-class PVConfig(BaseModel):
+class PVConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -194,7 +187,7 @@ class PVConfig(BaseModel):
     coverage: dict = Field(default_factory=dict, description="Coverage")
 
 
-class StorageConfig(BaseModel):
+class StorageConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -203,7 +196,7 @@ class StorageConfig(BaseModel):
     max_power: dict = Field(default_factory=dict, description="Storage max power")
 
 
-class GeneticAlgorithmConfig(BaseModel):
+class GeneticAlgorithmConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
     )
@@ -232,12 +225,13 @@ class GeneticAlgorithmConfig(BaseModel):
     )
 
 
-class OptimizationConfig(BaseModel):
+class OptimizationConfigSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
     )
 
     seed: int = Field(default=0, description="Random seed")
-    genetic: GeneticAlgorithmConfig = Field(
-        default_factory=GeneticAlgorithmConfig, description="Genetic configuration"
+    genetic: GeneticAlgorithmConfigSchema = Field(
+        default_factory=GeneticAlgorithmConfigSchema,
+        description="Genetic configuration",
     )

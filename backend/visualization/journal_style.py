@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
+from cycler import cycler
+
 
 class FigureWidth(Enum):
     """Elsevier standard figure widths in inches."""
@@ -63,6 +65,7 @@ class JournalStyle:
     def get_rc_params(self) -> dict:
         """Return matplotlib/ultraplot rc parameters."""
         return {
+            "axes.prop_cycle": cycler(color=list(self.colors)),
             "font.family": self.font_family,
             "font.size": self.font_size,
             "axes.linewidth": self.axis_line_width,

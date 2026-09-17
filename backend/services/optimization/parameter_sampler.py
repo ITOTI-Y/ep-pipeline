@@ -2,40 +2,8 @@ import numpy as np
 from loguru import logger
 from scipy.stats.qmc import LatinHypercube
 
-from backend.models import BuildingType, ECMParameters
+from backend.models import BuildingType, ECMParametersSchema
 from backend.utils.config import ConfigManager
-
-# class ParameterSampler:
-#     def __init__(self, config: ConfigManager, seed: int = 1):
-#         self._seed = seed
-#         np.random.seed(seed)
-#         self._ecm_parameters: dict[str, list] = config.ecm_parameters.model_dump()
-#         self._ecm_parameters_names: list[str] = config.ecm_parameters.keys
-
-#     def sample(
-#         self,
-#         n_samples: int,
-#         building_type: BuildingType,
-#     ) -> list[ECMParameters]:
-#         logger.info(f"Generating {n_samples} samples for building type {building_type}")
-#         ecm_samples = []
-#         attempts = 0
-#         max_attempts = n_samples * 10
-#         while len(ecm_samples) < n_samples:
-#             attempts += 1
-#             if attempts > max_attempts:
-#                 raise RuntimeError(
-#                     "Failed to generate unique samples after max attempts"
-#                 )
-#             ecm_model = ECMParameters(building_type=building_type)
-#             for param_name in self._ecm_parameters_names:
-#                 select_value = np.random.choice(self._ecm_parameters[param_name])
-#                 ecm_model.__setattr__(param_name, select_value)
-#             if ecm_model in ecm_samples:
-#                 continue
-#             ecm_samples.append(ecm_model)
-
-#         return ecm_samples
 
 
 class ParameterSampler:
@@ -49,7 +17,7 @@ class ParameterSampler:
         self,
         n_samples: int,
         building_type: BuildingType,
-    ) -> list[ECMParameters]:
+    ) -> list[ECMParametersSchema]:
         logger.info(f"Generating {n_samples} samples for building type {building_type}")
 
         n_dimensions: int = len(self._ecm_parameters_names)
@@ -61,7 +29,7 @@ class ParameterSampler:
         seen_samples = set()
 
         for sample_idx in range(n_samples):
-            ecm_model = ECMParameters(building_type=building_type)
+            ecm_model = ECMParametersSchema(building_type=building_type)
             param_values = []
 
             for dim_idx, param_name in enumerate(self._ecm_parameters_names):
@@ -96,7 +64,7 @@ class ParameterSampler:
 
     def _supplement_samples(
         self,
-        ecm_samples: list[ECMParameters],
+        ecm_samples: list[ECMParametersSchema],
         n_samples: int,
         seen_samples: set[tuple],
         building_type: BuildingType,
@@ -106,7 +74,7 @@ class ParameterSampler:
 
         while len(ecm_samples) < n_samples and attempts < max_attempts:
             attempts += 1
-            ecm_model = ECMParameters(building_type=building_type)
+            ecm_model = ECMParametersSchema(building_type=building_type)
             param_values = []
 
             for param_name in self._ecm_parameters_names:

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Location(BaseModel):
+class LocationSchema(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         validate_assignment=True,

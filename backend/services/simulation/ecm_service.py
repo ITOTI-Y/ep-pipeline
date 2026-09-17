@@ -1,29 +1,29 @@
 from loguru import logger
 
-from backend.models import SimulationJob, SimulationResult
+from backend.models import SimulationJobSchema, SimulationResultSchema
 from backend.services.configuration import (
     ECMApply,
     OutputApply,
     PeriodApply,
     SettingApply,
 )
-from backend.services.interfaces import (
-    IEnergyPlusExecutor,
-    IFileCleaner,
-    IResultParser,
-    ISimulationService,
-)
+from backend.services.interfaces import ISimulationService
+from backend.services.simulation.executor import EnergyPlusExecutor
+from backend.services.simulation.file_cleaner import FileCleaner
+from backend.services.simulation.result_parser import ResultParser
 from backend.utils.config import ConfigManager
 
 
 class ECMService(ISimulationService):
+    _cleanup_exclude: tuple[str, ...] = ()
+
     def __init__(
         self,
-        executor: IEnergyPlusExecutor,
-        result_parser: IResultParser,
-        file_cleaner: IFileCleaner,
+        executor: EnergyPlusExecutor,
+        result_parser: ResultParser,
+        file_cleaner: FileCleaner,
         config: ConfigManager,
-        job: SimulationJob,
+        job: SimulationJobSchema,
     ):
         self._job = job
         self._executor = executor
@@ -43,39 +43,7 @@ class ECMService(ISimulationService):
         self._setting_apply.apply(self._job)
         logger.info("ECM preparation completed")
 
-    def execute(self) -> SimulationResult:
-        logger.info(f"ECM simulation for job {self._job.id} started")
-
-        result = SimulationResult(
-            job_id=self._job.id,
-            building_type=self._job.building.building_type,
-        )
-
-        try:
-            result = self._executor.run(
-                job=self._job,
-            )
-            result = self._result_parser.parse(
-                result=result,
-                job=self._job,
-            )
-            return result
-        except Exception as e:
-            logger.exception(f"Failed to execute ecm simulation for job {self._job.id}")
-            result.add_error(str(e))
-            return result
-
-    def cleanup(self) -> None:
-        self._file_cleaner.clean(
-            job=self._job,
-            config=self._config,
-        )
-
-    def run(self) -> SimulationResult:
-        try:
-            self.prepare()
-            result = self.execute()
-            result.ecm_parameters = self._job.ecm_parameters or None
-            return result
-        finally:
-            self.cleanup()
+    def run(self) -> SimulationResultSchema:
+        result = super().run()
+        result.ecm_parameters = self._job.ecm_parameters or None
+        return result

@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class Weather(BaseModel):
+class WeatherSchema(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
         frozen=False,
@@ -63,4 +63,4 @@ class Weather(BaseModel):
         return f"{self.location}_{self.code}"
 
     def __str__(self) -> str:
-        return f"Weather(location='{self.location}', scenario='{self.scenario}')"
+        return f"WeatherSchema(location='{self.location}', scenario='{self.scenario}')"
