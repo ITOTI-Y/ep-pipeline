@@ -1939,7 +1939,6 @@ class ChartGenerator:
             ylim=(0.75, 1.02),
             xlabel="inference latency (ms, log scale)",
             ylabel="R$^2$",
-            title="Surrogate Accuracy vs. Inference Speed",
         )
 
         self.save(fig, "Figure S1. Surrogate Model Comparison", building_type=None)
