@@ -294,7 +294,7 @@ class ChartGenerator:
             suptitle=f"Storage SOC - {weather_code}",
         )
 
-        self.save(fig, f"Fig11. {Prefix.pv}-Storage SOC - {weather_code}")
+        self.save(fig, f"Figure 4. {Prefix.pv}-Storage SOC - {weather_code}")
 
     def _load_typical_day_data(
         self,
@@ -412,13 +412,12 @@ class ChartGenerator:
             xticks=np.arange(
                 0, max(summer["hour_cont"].max(), winter["hour_cont"].max()) + 1, 12
             ),
-            suptitle=f"Typical Day Storage SOC - {weather_code}",
         )
 
         axs.set_xlabel("Hour", fontsize=self.style.font_size_title)
         axs.set_ylabel("Power (kW)", fontsize=self.style.font_size_title)
 
-        self.save(fig, f"Fig10. {Prefix.pv}-Typical Day Storage SOC - {weather_code}")
+        self.save(fig, f"Figure 3. {Prefix.pv}-Typical Day Storage SOC - {weather_code}")
 
     def baseline_eui_heatmap(self) -> None:
         df = self._energy_summary
@@ -451,7 +450,7 @@ class ChartGenerator:
             titlesize=self.style.font_size_title,
             labelsize=self.style.font_size_title,
         )
-        self.save(fig, f"Fig05. {Prefix.baseline}-Baseline EUI Heatmap")
+        self.save(fig, f"Figure 1. {Prefix.baseline}-Baseline EUI Heatmap")
 
     def ecm_improvement_heatmap(self) -> None:
         df = self._energy_summary
@@ -516,7 +515,7 @@ class ChartGenerator:
             titlesize=self.style.font_size_title,
             labelsize=self.style.font_size_title,
         )
-        self.save(fig, f"Fig06. {Prefix.optimization}-ECM Improvement Heatmap")
+        self.save(fig, f"Figure 2. {Prefix.optimization}-ECM Improvement Heatmap")
 
     def optimal_improvement_violin(self) -> None:
         base = np.arange(len(BUILDING_ORDER))
@@ -601,7 +600,7 @@ class ChartGenerator:
         )
         ax.legend(loc="upper right", ncols=3, frameon=False)
 
-        self.save(fig, f"Fig09. {Prefix.pv}-Optimal Improvement Violin")
+        self.save(fig, f"Figure 6. {Prefix.pv}-Optimal Improvement Violin")
 
     def neutrality_timeline(self, stage: Literal["pv", "baseline"] = "pv") -> None:
         df_a = self._carbon_mode_a
@@ -752,7 +751,7 @@ class ChartGenerator:
 
         self.save(
             fig,
-            f"Fig15. {Prefix.pv}-Carbon Neutrality Pathway Timeline",
+            f"Figure 7. {Prefix.pv}-Carbon Neutrality Pathway Timeline",
             building_type=None,
         )
 
@@ -968,7 +967,7 @@ class ChartGenerator:
         )
         ax2.legend(loc="ur")
 
-        self.save(fig, f"Fig12. {Prefix.pv}-Waterfall Chart", building_type=None)
+        self.save(fig, f"Figure 5. {Prefix.pv}-Waterfall Chart", building_type=None)
 
     def carbon_three_plane(self) -> None:
         mc_bc = self._carbon_mode_bc
@@ -1186,7 +1185,7 @@ class ChartGenerator:
         )
 
         self.save(
-            fig, f"Fig14. {Prefix.pv}-Carbon Intensity Three-Plane", building_type=None
+            fig, f"Figure 8. {Prefix.pv}-Carbon Intensity Three-Plane", building_type=None
         )
 
     def _region_map(self, ax: Any) -> None:
@@ -1773,7 +1772,7 @@ class ChartGenerator:
 
         fig.draw = _centered_draw  # type: ignore
 
-        self.save(fig, "Fig04. Chicago Location Map", building_type=None)
+        self.save(fig, "Figure 10. Chicago Location Map", building_type=None)
 
     def surrogate_model_comparison(self) -> None:
         selected_models = ["CatBoost"]
@@ -1943,7 +1942,7 @@ class ChartGenerator:
             title="Surrogate Accuracy vs. Inference Speed",
         )
 
-        self.save(fig, "Fig16. Surrogate Model Comparison", building_type=None)
+        self.save(fig, "Figure S1. Surrogate Model Comparison", building_type=None)
 
     def data_to_csv(self) -> None:
         data = []
