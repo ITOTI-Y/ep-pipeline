@@ -811,7 +811,7 @@ wheels = [
 
 [[package]]
 name = "idfpy"
-version = "26.1.2"
+version = "26.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -819,9 +819,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7c/b1/5212ce79bab7de40ea54b36849638a8d4758fb7ee83d7cda3b485883bf46/idfpy-26.1.2.tar.gz", hash = "sha256:297e98e67193f7a4c5a35f1b9cc0d57f85c5a8affde49d767676f3144e5ac250", size = 620868, upload-time = "2026-08-27T10:33:20.023Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/3b/ac9f4dbca2bfe2a36537b8a77a321a15ab02e41fa9bbfa50c51252d885c1/idfpy-26.1.5.tar.gz", hash = "sha256:7c85a4a07bef3b9fba8e23df40ca24845de1b1a92f0643818c95af7417d1edf7", size = 653235, upload-time = "2026-10-08T15:27:26.854Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/fc/cf1a36b3ba024b41ddc9ba49178c1f859b17d6a4777d9382876907d182d2/idfpy-26.1.2-py3-none-any.whl", hash = "sha256:e8934c161d485d21f8dd167129fe298967dba64935b7f042fa126d5d5951c0ab", size = 634392, upload-time = "2026-08-27T10:33:18.567Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/81/2668fc9772bdce88834f4ee7ad21df1d7200341219869951b13a2aa173b2/idfpy-26.1.5-py3-none-any.whl", hash = "sha256:245089cc4f078e12cf0297aaa118b771a8725cc4fd77785c42a16237571c3fa2", size = 652690, upload-time = "2026-10-08T15:27:25.064Z" },
 ]
 
 [[package]]

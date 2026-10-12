@@ -171,8 +171,8 @@ class OptimizationService(ISimulationService):
         self._get_best_ecm_parameters()
         self._output_apply.apply(self._job)
         self._period_apply.apply(self._job)
-        self._ecm_apply.apply(self._job)
         self._general_apply.apply(self._job)
+        self._ecm_apply.apply(self._job)
         logger.info("Optimization preparation completed")
 
     def cleanup(self) -> None:
