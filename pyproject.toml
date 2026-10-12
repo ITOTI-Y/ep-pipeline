@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "cartopy>=0.25.0",
     "catboost>=1.2.10",
+    "connectorx>=0.4.6",
     "deap>=1.4.3",
     "eppy>=0.5.63",
     "httpx>=0.28.1",
@@ -16,6 +17,7 @@ dependencies = [
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
     "pandas>=2.3.3",
+    "polars>=2.0.0",
     "pvlib>=0.13.1",
     "py7zr>=1.1.0",
     "pyarrow>=24.0.0",
