@@ -1,6 +1,7 @@
 import json
 import shutil
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -149,6 +150,13 @@ class CatboostSurrogateModel(ISurrogateModel):
         return metrics
 
 
+def _dump_atomic(obj: object, path: Path) -> None:
+    partial_path = path.with_name(f"{path.name}.partial")
+    with open(partial_path, "wb") as f:
+        dump(obj, f)
+    partial_path.replace(path)
+
+
 def collect_ecm_rows(
     config: ConfigManager, city: str, building_type: str
 ) -> pd.DataFrame:
@@ -180,9 +188,8 @@ def train_and_save_surrogate_model(
         encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         encoder.fit(np.array(list(SSP_ORDER.keys())).reshape(-1, 1))
         encode_model_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(encode_model_path, "wb") as f:
-            dump(encoder, f)
-            logger.info(f"Encode model saved to {encode_model_path}")
+        _dump_atomic(encoder, encode_model_path)
+        logger.info(f"Encode model saved to {encode_model_path}")
     else:
         with open(encode_model_path, "rb") as f:
             encoder = load(f)
@@ -220,9 +227,8 @@ def train_and_save_surrogate_model(
             evaluate_metrics = surrogate_model.evaluate()
             json.dump(evaluate_metrics, f, indent=4)
 
-        with open(surrogate_model_path, "wb") as f:
-            dump(surrogate_model, f)
-            logger.info(f"Surrogate model saved to {surrogate_model_path}")
+        _dump_atomic(surrogate_model, surrogate_model_path)
+        logger.info(f"Surrogate model saved to {surrogate_model_path}")
 
 
 def delete_ecm_outputs(config: ConfigManager, city: str, building_type: str) -> None:

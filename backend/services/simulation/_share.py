@@ -126,8 +126,11 @@ class ISimulationService(ABC):
             if result.success:
                 if self._job.simulation_type != SimulationType.ECM:
                     self._extract_data(result)
-                with open(self._job.output_directory / "result.pkl", "wb") as f:
+                result_path = self._job.output_directory / "result.pkl"
+                partial_path = result_path.with_name(f"{result_path.name}.partial")
+                with open(partial_path, "wb") as f:
                     dump(result, f)
+                partial_path.replace(result_path)
             return result
         finally:
             self.cleanup()
