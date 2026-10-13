@@ -8,8 +8,7 @@ from backend.utils.config import ConfigManager
 
 class ParameterSampler:
     def __init__(self, config: ConfigManager, seed: int = 1):
-        self._seed = seed
-        np.random.seed(seed)
+        self._rng = np.random.default_rng(seed)
         self._ecm_parameters: dict[str, list] = config.ecm_parameters.model_dump()
         self._ecm_parameters_names: list[str] = config.ecm_parameters.keys
 
@@ -20,7 +19,7 @@ class ParameterSampler:
     ) -> list[ECMParameters]:
         n_dimensions: int = len(self._ecm_parameters_names)
 
-        lhs_sampler = LatinHypercube(d=n_dimensions)
+        lhs_sampler = LatinHypercube(d=n_dimensions, rng=self._rng)
         lhs_samples = lhs_sampler.random(n=n_samples)
 
         ecm_samples = []
@@ -77,7 +76,7 @@ class ParameterSampler:
 
             for param_name in self._ecm_parameters_names:
                 param_options = self._ecm_parameters[param_name]
-                select_value = np.random.choice(param_options)
+                select_value = self._rng.choice(param_options)
                 ecm_model.__setattr__(param_name, select_value)
                 param_values.append(select_value)
 
