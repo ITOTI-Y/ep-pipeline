@@ -1,5 +1,5 @@
 optimization:
-  seed: 1
+  seed: 0
 
   genetic:
     generations: 200

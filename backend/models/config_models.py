@@ -268,7 +268,7 @@ class OptimizationConfig(BaseModel):
         validate_assignment=True,
     )
 
-    seed: int = Field(default=0, description="Random seed")
+    seed: int = Field(description="Random seed")
     genetic: GeneticAlgorithmConfig = Field(
         default_factory=GeneticAlgorithmConfig, description="Genetic configuration"
     )

@@ -7,7 +7,7 @@ from backend.utils.config import ConfigManager
 
 
 class ParameterSampler:
-    def __init__(self, config: ConfigManager, seed: int = 1):
+    def __init__(self, config: ConfigManager, seed: int):
         self._rng = np.random.default_rng(seed)
         self._ecm_parameters: dict[str, list] = config.ecm_parameters.model_dump()
         self._ecm_parameters_names: list[str] = config.ecm_parameters.keys

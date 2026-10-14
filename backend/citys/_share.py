@@ -1,10 +1,4 @@
-from typing import Final
-
 from pydantic import BaseModel, ConfigDict
-
-from backend.models.config_models import OptimizationConfig
-
-RANDOM_SEED: Final = OptimizationConfig().seed
 
 
 class CitysFileName(BaseModel):

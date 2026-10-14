@@ -1,3 +1,4 @@
+import random
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -43,6 +44,7 @@ class GeneticAlgorithmModel(IOptimizationModel):
             len(self._ecm_parameters[name]) - 1 for name in self._ecm_parameters_names
         ]
         np.random.seed(self._seed)
+        random.seed(self._seed)
 
         self._surrogate_model = surrogate_model
         self._encode_model = encode_model

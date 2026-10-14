@@ -11,7 +11,6 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import calinski_harabasz_score, silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-from backend.citys._share import RANDOM_SEED
 from backend.citys.core._share import GROUP_A_COLS, GROUP_B_COLS
 from backend.citys.models.schemas import ClusterConfigSchema
 
@@ -31,7 +30,7 @@ def build_energy_space(df: pd.DataFrame, pca_variance: float) -> NDArray:
 
 
 def select_k_by_coverage(
-    x_energy: NDArray, df: pd.DataFrame, cfg: ClusterConfigSchema
+    x_energy: NDArray, df: pd.DataFrame, cfg: ClusterConfigSchema, seed: int
 ) -> tuple[int, pd.DataFrame]:
     resources = {
         name: StandardScaler().fit_transform(df[cols].to_numpy())
@@ -45,7 +44,7 @@ def select_k_by_coverage(
     dist = squareform(pdist(x_energy, metric="euclidean"))
     rows = []
     for k in range(cfg.k_min, cfg.k_max + 1):
-        result = fasterpam(dist, k, random_state=RANDOM_SEED)
+        result = fasterpam(dist, k, random_state=seed)
         assigned = np.asarray(result.medoids)[np.asarray(result.labels)]
         record: dict[str, float | int | bool] = {"k": k}
         meets = True
@@ -79,8 +78,10 @@ def compute_ward_linkage(x: NDArray) -> NDArray:
     return linkage(x, method="ward", metric="euclidean")
 
 
-def evaluate_k_range(x: NDArray, z: NDArray, cfg: ClusterConfigSchema) -> pd.DataFrame:
-    rng = np.random.RandomState(RANDOM_SEED)
+def evaluate_k_range(
+    x: NDArray, z: NDArray, cfg: ClusterConfigSchema, seed: int
+) -> pd.DataFrame:
+    rng = np.random.RandomState(seed)
     x_min, x_max = x.min(axis=0), x.max(axis=0)
     results = []
 
@@ -133,9 +134,9 @@ def select_optimal_k(metrics_df: pd.DataFrame, sil_tol: float = 0.1) -> int:
     return k
 
 
-def run_kmedoids(x: NDArray, k: int) -> KMedoidsResult:
+def run_kmedoids(x: NDArray, k: int, seed: int) -> KMedoidsResult:
     dist_matrix = squareform(pdist(x, metric="euclidean"))
-    result = fasterpam(dist_matrix, k, random_state=RANDOM_SEED)
+    result = fasterpam(dist_matrix, k, random_state=seed)
     labels = np.array(result.labels)
     medoid_indices = np.array(result.medoids)
     logger.info(f"K-Medoids: k={k}, loss={result.loss:.2f}")

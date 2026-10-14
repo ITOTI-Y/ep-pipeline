@@ -82,8 +82,8 @@ class ConfigManager:
     def _parse_optimization_config(self) -> OptimizationConfig:
         optimization_config = OmegaConf.select(self._raw_config, "optimization")
         if optimization_config is None:
-            logger.warning("Optimization config not found; using defaults")
-            return OptimizationConfig()
+            logger.error(f"Optimization config not found in {self._raw_config}")
+            raise ValueError(f"Optimization config not found in {self._raw_config}")
 
         optimization_dict = OmegaConf.to_container(
             optimization_config,

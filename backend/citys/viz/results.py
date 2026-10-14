@@ -275,11 +275,12 @@ def cluster_dendrogram(z: np.ndarray, k: int) -> None:
     _chart_generator.save(fig, VIZ_FILE_NAME.cluster_dendrogram)
 
 
-def k_metrics(feature_df: pd.DataFrame, cfg: CitySelectionConfigSchema, k: int) -> None:
+def k_metrics(
+    feature_df: pd.DataFrame, cfg: CitySelectionConfigSchema, k: int, seed: int
+) -> None:
     from kmedoids import fasterpam
     from scipy.spatial.distance import pdist, squareform
 
-    from backend.citys._share import RANDOM_SEED
     from backend.citys.core.cluster import build_energy_space
 
     resources = {
@@ -294,7 +295,7 @@ def k_metrics(feature_df: pd.DataFrame, cfg: CitySelectionConfigSchema, k: int) 
     ks = list(range(cfg.cluster.k_min, cfg.cluster.k_max + 1))
     curves: dict[str, list[float]] = {c: [] for c in resources}
     for kk in ks:
-        result = fasterpam(dist, kk, random_state=RANDOM_SEED)
+        result = fasterpam(dist, kk, random_state=seed)
         assigned = np.asarray(result.medoids)[np.asarray(result.labels)]
         for c in resources:
             v = feature_df[c].to_numpy()
@@ -344,4 +345,5 @@ def generation_all(config: ConfigManager):
         epw_feature_df,
         config.citys,
         epw_cluster_df["cluster_label"].nunique(),
+        config.optimization.seed,
     )

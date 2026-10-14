@@ -74,11 +74,13 @@ def cluster_epw() -> None:
         logger.info(f"Using override K={optimal_k}")
 
     else:
-        optimal_k, coverage_df = select_k_by_coverage(x_energy, df, cfg.citys.cluster)
+        optimal_k, coverage_df = select_k_by_coverage(
+            x_energy, df, cfg.citys.cluster, cfg.optimization.seed
+        )
         coverage_df.to_csv(output_dir / CITYS_FILE_NAME.epw_k_metrics, index=False)
         logger.info(f"Coverage-selected K={optimal_k}")
 
-    km_result = run_kmedoids(x_energy, optimal_k)
+    km_result = run_kmedoids(x_energy, optimal_k, cfg.optimization.seed)
 
     forced_cities = cfg.citys.forced_cities
 

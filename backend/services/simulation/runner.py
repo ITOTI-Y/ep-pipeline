@@ -149,7 +149,9 @@ def parallel_run(
     logger.info(f"Running {simulation_type.value} simulation")
     if simulation_type == SimulationType.ECM:
         samples_by_bt = {
-            bt: ParameterSampler(config).sample(n_samples=512, building_type=bt)
+            bt: ParameterSampler(config, config.optimization.seed).sample(
+                n_samples=512, building_type=bt
+            )
             for bt in {idf.building_type for idf, _, _, _ in jobs}
         }
         for (city, building_type), group in groupby(jobs, key=_group_key):
