@@ -59,6 +59,12 @@ class GeneralApply(IApply):
         for zone in idf.all_of_type(Zone).values():
             if zone.referencing(ZoneInfiltrationDesignFlowRate):
                 continue
+            if not any(
+                surface.surface_type == "Wall"
+                and surface.outside_boundary_condition == "Outdoors"
+                for surface in zone.referencing(BuildingSurfaceDetailed)
+            ):
+                continue
             idf.add(
                 ZoneInfiltrationDesignFlowRate(
                     name=f"{zone.name}_infiltration",
