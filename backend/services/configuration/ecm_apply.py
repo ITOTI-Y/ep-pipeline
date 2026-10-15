@@ -5,6 +5,10 @@ from idfpy.models import (
     HVACTemplatePlantChiller,
     Lights,
     MaterialNoMass,
+    OutputMeter,
+    OutputTableSummaryReports,
+    OutputTableSummaryReportsReportsItem,
+    OutputVariable,
     ScheduleConstant,
     SizingZone,
     SurfaceControlMovableInsulation,
@@ -30,6 +34,7 @@ class ECMApply(IApply):
             raise ValueError("ECM parameters are not set")
         parameters = job.ecm_parameters
 
+        self._reset_output_variables(job)
         self._apply_window_parameters(job, parameters)
         self._apply_wall_insulation_parameters(job, parameters)
         self._apply_infiltration_parameters(job, parameters)
@@ -40,6 +45,30 @@ class ECMApply(IApply):
         self._apply_heating_air_temperature_parameters(job, parameters)
         self._apply_lighting_parameters(job, parameters)
         logger.info("ECM configuration applied successfully")
+
+    def _reset_output_variables(self, job: SimulationJob) -> None:
+        if job.idf is None:
+            logger.error("IDF is not set, skipping")
+            raise ValueError("IDF is not set")
+        idf = job.idf
+        for output_variable_name in idf.all_of_type(OutputVariable):
+            idf.remove(OutputVariable, output_variable_name)
+        logger.info("Removed all output variables")
+        for output_meter_name in idf.all_of_type(OutputMeter):
+            idf.remove(OutputMeter, output_meter_name)
+        logger.info("Removed all output meters")
+        for output_table_summary_name in idf.all_of_type(OutputTableSummaryReports):
+            idf.remove(OutputTableSummaryReports, output_table_summary_name)
+        idf.add(
+            OutputTableSummaryReports(
+                reports=[
+                    OutputTableSummaryReportsReportsItem(
+                        report_name="AllSummary",
+                    ),
+                ],
+            )
+        )
+        logger.info("Reset output variables successfully")
 
     def _apply_window_parameters(
         self, job: SimulationJob, parameters: ECMParameters
