@@ -62,6 +62,7 @@ class GeneralApply(IApply):
         self._configure_setting(job.idf)
         self._add_infiltration(job.idf)
         self._add_natural_ventilation(job.idf)
+        self._add_ground_foundations(job.idf, job.weather_file.file_path)
         logger.success("Setting configuration applied successfully")
 
     def _configure_setting(self, idf: IDF) -> None:
