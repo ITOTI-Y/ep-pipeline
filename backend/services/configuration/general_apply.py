@@ -4,6 +4,12 @@ from typing import Final
 from idfpy import IDF
 from idfpy.models import (
     BuildingSurfaceDetailed,
+    EnergyManagementSystemMeteredOutputVariable,
+    EnergyManagementSystemProgram,
+    EnergyManagementSystemProgramCallingManager,
+    EnergyManagementSystemProgramCallingManagerProgramsItem,
+    EnergyManagementSystemProgramLinesItem,
+    EnergyManagementSystemSensor,
     FenestrationSurfaceDetailed,
     FoundationKiva,
     SimulationControl,
@@ -11,6 +17,7 @@ from idfpy.models import (
     SizingPlant,
     SurfacePropertyExposedFoundationPerimeter,
     Zone,
+    ZoneHVACIdealLoadsAirSystem,
     ZoneInfiltrationDesignFlowRate,
     ZoneVentilationWindandStackOpenArea,
 )
@@ -49,6 +56,12 @@ MONTHS: Final = (
     "december",
 )
 
+IDEAL_LOADS_FAN_PRESSURE_RISE_PA: Final = 75.0
+IDEAL_LOADS_FAN_TOTAL_EFFICIENCY: Final = 0.7
+IDEAL_LOADS_FAN_AIR_DENSITY_KG_M3: Final = 1.2
+IDEAL_LOADS_FAN_PROGRAM: Final = "IdealLoadsFanEnergyProgram"
+IDEAL_LOADS_FAN_ENERGY_VARIABLE: Final = "IdealLoadsFanEnergy"
+
 
 class GeneralApply(IApply):
     def __init__(self, config: ConfigManager):
@@ -63,6 +76,7 @@ class GeneralApply(IApply):
         self._add_infiltration(job.idf)
         self._add_natural_ventilation(job.idf)
         self._add_ground_foundations(job.idf, job.weather_file.file_path)
+        self._add_ideal_loads_fan_energy(job.idf)
         logger.success("Setting configuration applied successfully")
 
     def _configure_setting(self, idf: IDF) -> None:
@@ -220,6 +234,79 @@ class GeneralApply(IApply):
         logger.info(
             f"Added {len(floors)} Kiva foundations with {attached} attached walls; "
             f"{len(remaining)} ground walls use the annual mean temperature"
+        )
+
+    def _add_ideal_loads_fan_energy(self, idf: IDF) -> None:
+        """
+        meter a supply fan on every ideal loads system through EMS
+
+        The fan moves the ideal loads supply air mass flow against the fan coil
+        template pressure rise and efficiency; its energy is metered as
+        Electricity/Fans and therefore enters Electricity:Facility.
+        """
+        ideal_loads_names = list(idf.all_of_type(ZoneHVACIdealLoadsAirSystem))
+
+        if not ideal_loads_names or idf.has(
+            EnergyManagementSystemProgram, IDEAL_LOADS_FAN_PROGRAM
+        ):
+            return
+
+        lines = ["SET MassFlow = 0"]
+        for index, ideal_loads_name in enumerate(ideal_loads_names):
+            sensor_name = f"IdealLoadsMassFlow{index}"
+            idf.add(
+                EnergyManagementSystemSensor(
+                    name=sensor_name,
+                    output_variable_or_output_meter_index_key_name=ideal_loads_name,
+                    output_variable_or_output_meter_name=(
+                        "Zone Ideal Loads Supply Air Mass Flow Rate"
+                    ),
+                )
+            )
+            lines.append(f"SET MassFlow = MassFlow + {sensor_name}")
+        lines.append(
+            f"SET {IDEAL_LOADS_FAN_ENERGY_VARIABLE} = MassFlow"
+            f" / {IDEAL_LOADS_FAN_AIR_DENSITY_KG_M3}"
+            f" * {IDEAL_LOADS_FAN_PRESSURE_RISE_PA}"
+            f" / {IDEAL_LOADS_FAN_TOTAL_EFFICIENCY}"
+            " * SystemTimeStep * 3600"
+        )
+
+        idf.add(
+            EnergyManagementSystemProgram(
+                name=IDEAL_LOADS_FAN_PROGRAM,
+                lines=[
+                    EnergyManagementSystemProgramLinesItem(program_line=line)
+                    for line in lines
+                ],
+            )
+        )
+        idf.add(
+            EnergyManagementSystemProgramCallingManager(
+                name=f"{IDEAL_LOADS_FAN_PROGRAM}Manager",
+                energyplus_model_calling_point="EndOfSystemTimestepBeforeHVACReporting",
+                programs=[
+                    EnergyManagementSystemProgramCallingManagerProgramsItem(
+                        program_name=IDEAL_LOADS_FAN_PROGRAM
+                    )
+                ],
+            )
+        )
+        idf.add(
+            EnergyManagementSystemMeteredOutputVariable(
+                name="Ideal Loads Supply Fan Electricity Energy",
+                ems_variable_name=IDEAL_LOADS_FAN_ENERGY_VARIABLE,
+                update_frequency="SystemTimestep",
+                ems_program_or_subroutine_name=IDEAL_LOADS_FAN_PROGRAM,
+                resource_type="Electricity",
+                group_type="HVAC",
+                end_use_category="Fans",
+                end_use_subcategory="Ideal Loads Supply Fan",
+                units="J",
+            )
+        )
+        logger.info(
+            f"Added EMS supply fan energy for {len(ideal_loads_names)} ideal loads systems"
         )
 
 

@@ -85,7 +85,7 @@ def compute_sensitivity(
     target_name: str,
     n_samples: int,
     n_bootstrap: int,
-):
+) -> pd.DataFrame:
     target_index = TARGET_NAMES.index(target_name)
     grid = config.ecm_parameters.model_dump()
     encoder = load(config.paths.sim_dir / "encode_model.pkl")

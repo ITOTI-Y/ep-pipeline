@@ -25,7 +25,7 @@
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "args": ["simulate", "--city", "Guangzhou", "-n", "1"]
+            "args": ["simulate", "--city", "Shenzhen", "-n", "1"]
         },
         {
             "name": "Parse Result",
@@ -35,6 +35,15 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["parse-result"]
+        },
+        {
+            "name": "Compute Sensitivity",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["sensitivity"]
         },
         {
             "name": "Visualization",

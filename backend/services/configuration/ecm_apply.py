@@ -1,8 +1,11 @@
+from typing import Final
+
 from idfpy.models import (
     BuildingSurfaceDetailed,
     Construction,
     FenestrationSurfaceDetailed,
     HVACTemplatePlantChiller,
+    HVACTemplateZoneFanCoil,
     Lights,
     MaterialNoMass,
     OutputMeter,
@@ -10,10 +13,10 @@ from idfpy.models import (
     OutputTableSummaryReportsReportsItem,
     OutputVariable,
     ScheduleConstant,
-    SizingZone,
     SurfaceControlMovableInsulation,
     WindowMaterialSimpleGlazingSystem,
     Zone,
+    ZoneHVACIdealLoadsAirSystem,
     ZoneInfiltrationDesignFlowRate,
     ZoneVentilationWindandStackOpenArea,
 )
@@ -21,6 +24,29 @@ from loguru import logger
 
 from backend.models import ECMParameters, SimulationJob
 from backend.services.configuration.iapply import IApply
+
+REFERENCE_COOLING_SUPPLY_AIR_TEMPERATURE_C: Final = 13.0
+REFERENCE_HEATING_SUPPLY_AIR_TEMPERATURE_C: Final = 50.0
+COOLING_COP_CHANGE_PER_K: Final = 0.023
+HEATING_COP_CHANGE_PER_K: Final = 0.021
+
+
+def cooling_cop_factor(supply_air_temperature: float | None) -> float:
+    """COP multiplier for a cooling supply air temperature relative to the reference."""
+    if supply_air_temperature is None:
+        return 1.0
+    return (1 + COOLING_COP_CHANGE_PER_K) ** (
+        supply_air_temperature - REFERENCE_COOLING_SUPPLY_AIR_TEMPERATURE_C
+    )
+
+
+def heating_cop_factor(supply_air_temperature: float | None) -> float:
+    """COP multiplier for a heating supply air temperature relative to the reference."""
+    if supply_air_temperature is None:
+        return 1.0
+    return (1 - HEATING_COP_CHANGE_PER_K) ** (
+        supply_air_temperature - REFERENCE_HEATING_SUPPLY_AIR_TEMPERATURE_C
+    )
 
 
 class ECMApply(IApply):
@@ -295,6 +321,7 @@ class ECMApply(IApply):
                                 f"Set natural ventilation area to {open_area} m² for {zone_ventilation.name}"
                             )
                             modified_count += 1
+        logger.info(f"Modified {modified_count} natural ventilation objects")
 
     def _apply_cooling_coil_and_chiller_parameters(
         self, job: SimulationJob, parameters: ECMParameters
@@ -324,18 +351,19 @@ class ECMApply(IApply):
             )
             modified_count += 1
 
-        if vrf_schedule := idf.get(ScheduleConstant, "VRF Proxy Cooling Efficiency"):
-            vrf_schedule.hourly_value = parameters.cooling_cop
-            logger.debug(
-                f"Set schedule value to {parameters.cooling_cop} for {vrf_schedule.name}"
-            )
-            modified_count += 1
-        if pthp_schedule := idf.get(ScheduleConstant, "PTHP Proxy Cooling Efficiency"):
-            pthp_schedule.hourly_value = parameters.cooling_cop
-            logger.debug(
-                f"Set schedule value to {parameters.cooling_cop} for {pthp_schedule.name}"
-            )
-            modified_count += 1
+        proxy_cop = parameters.cooling_cop * cooling_cop_factor(
+            parameters.cooling_air_temperature
+        )
+        for schedule_name in (
+            "VRF Proxy Cooling Efficiency",
+            "PTHP Proxy Cooling Efficiency",
+        ):
+            if schedule := idf.get(ScheduleConstant, schedule_name):
+                schedule.hourly_value = proxy_cop
+                logger.debug(
+                    f"Set schedule value to {proxy_cop:.3f} for {schedule.name}"
+                )
+                modified_count += 1
 
         logger.info(f"Modified {modified_count} coil and chiller objects")
 
@@ -360,18 +388,19 @@ class ECMApply(IApply):
 
         modified_count = 0
 
-        if vrf_schedule := idf.get(ScheduleConstant, "VRF Proxy Heating Efficiency"):
-            vrf_schedule.hourly_value = parameters.heating_cop
-            logger.debug(
-                f"Set schedule value to {parameters.heating_cop} for {vrf_schedule.name}"
-            )
-            modified_count += 1
-        if pthp_schedule := idf.get(ScheduleConstant, "PTHP Proxy Heating Efficiency"):
-            pthp_schedule.hourly_value = parameters.heating_cop
-            logger.debug(
-                f"Set schedule value to {parameters.heating_cop} for {pthp_schedule.name}"
-            )
-            modified_count += 1
+        proxy_cop = parameters.heating_cop * heating_cop_factor(
+            parameters.heating_air_temperature
+        )
+        for schedule_name in (
+            "VRF Proxy Heating Efficiency",
+            "PTHP Proxy Heating Efficiency",
+        ):
+            if schedule := idf.get(ScheduleConstant, schedule_name):
+                schedule.hourly_value = proxy_cop
+                logger.debug(
+                    f"Set schedule value to {proxy_cop:.3f} for {schedule.name}"
+                )
+                modified_count += 1
 
         logger.info(f"Modified {modified_count} coil and chiller objects")
 
@@ -379,7 +408,7 @@ class ECMApply(IApply):
         self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
-        apply cooling air temperature parameters to idf object
+        apply cooling supply air temperature to ideal loads and fan coil objects
 
         Args:
             job (SimulationJob): Simulation job
@@ -394,25 +423,26 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        sizing_zone_objects = idf.all_of_type(SizingZone)
         modified_count = 0
-
-        for sizing_zone in sizing_zone_objects.values():
-            sizing_zone.zone_cooling_design_supply_air_temperature = (
+        for ideal_loads in idf.all_of_type(ZoneHVACIdealLoadsAirSystem).values():
+            ideal_loads.minimum_cooling_supply_air_temperature = (
                 parameters.cooling_air_temperature
             )
-            logger.debug(
-                f"Set cooling air temperature to {parameters.cooling_air_temperature}°C for {sizing_zone.zone_or_zonelist_name}"
-            )
+            modified_count += 1
+        for fan_coil in idf.all_of_type(HVACTemplateZoneFanCoil).values():
+            fan_coil.cooling_coil_design_setpoint = parameters.cooling_air_temperature
             modified_count += 1
 
-        logger.info(f"Modified {modified_count} sizing zone objects")
+        logger.info(
+            f"Set cooling supply air temperature to {parameters.cooling_air_temperature}°C "
+            f"for {modified_count} ideal loads and fan coil objects"
+        )
 
     def _apply_heating_air_temperature_parameters(
         self, job: SimulationJob, parameters: ECMParameters
     ) -> None:
         """
-        apply heating air temperature parameters to idf object
+        apply heating supply air temperature to ideal loads and fan coil objects
 
         Args:
             job (SimulationJob): Simulation job
@@ -427,19 +457,20 @@ class ECMApply(IApply):
             raise ValueError("IDF is not set")
         idf = job.idf
 
-        sizing_zone_objects = idf.all_of_type(SizingZone)
         modified_count = 0
-
-        for sizing_zone in sizing_zone_objects.values():
-            sizing_zone.zone_heating_design_supply_air_temperature = (
+        for ideal_loads in idf.all_of_type(ZoneHVACIdealLoadsAirSystem).values():
+            ideal_loads.maximum_heating_supply_air_temperature = (
                 parameters.heating_air_temperature
             )
-            logger.debug(
-                f"Set heating air temperature to {parameters.heating_air_temperature}°C for {sizing_zone.zone_or_zonelist_name}"
-            )
+            modified_count += 1
+        for fan_coil in idf.all_of_type(HVACTemplateZoneFanCoil).values():
+            fan_coil.heating_coil_design_setpoint = parameters.heating_air_temperature
             modified_count += 1
 
-        logger.info(f"Modified {modified_count} sizing zone objects")
+        logger.info(
+            f"Set heating supply air temperature to {parameters.heating_air_temperature}°C "
+            f"for {modified_count} ideal loads and fan coil objects"
+        )
 
     def _apply_lighting_parameters(
         self, job: SimulationJob, parameters: ECMParameters
