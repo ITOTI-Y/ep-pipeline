@@ -7,7 +7,7 @@ import typer
 from joblib import cpu_count
 from loguru import logger
 
-from backend._share import SSP_ORDER
+from backend._share import SSP_ORDER, TARGET_NAMES
 from backend.citys.cli import app as citys_app
 from backend.models.simulation_job import BuildingWeatherCombination, SimulationType
 from backend.script.gen_manifest import check as manifest_check
@@ -110,6 +110,27 @@ def visualization():
 @app.command()
 def parse_result():
     parse_result_parameters(ConfigManager(Path("backend/configs")))
+
+
+@app.command()
+def sensitivity(
+    target: Annotated[
+        str, typer.Option(help="Target column used for the total-order indices")
+    ] = TARGET_NAMES[2],
+    n_samples: Annotated[
+        int, typer.Option(help="Base sample size of the estimator")
+    ] = 2**14,
+    n_bootstrap: Annotated[
+        int, typer.Option(help="Bootstrap resamples for the confidence interval")
+    ] = 200,
+):
+    from backend.services.optimization.sensitivity import compute_sensitivity
+
+    config = ConfigManager(Path("backend/configs"))
+    result = compute_sensitivity(config, target, n_samples, n_bootstrap)
+    out_path = config.paths.sim_dir / "optimization" / "sensitivity_total_order.csv"
+    result.to_csv(out_path, index=False)
+    print(f"Saved {len(result)} rows to {out_path}")
 
 
 @app.command()
