@@ -1,14 +1,8 @@
-import json
-from pathlib import Path
-from pickle import dump, load
-
-import numpy as np
-import pandas as pd
+from joblib import load
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
 from backend.models import SimulationJob, SimulationResult
-from backend.models.config_models import ECMParametersConfig
 from backend.services.configuration import (
     ECMApply,
     GeneralApply,
@@ -20,25 +14,14 @@ from backend.services.interfaces import (
     IResultParser,
 )
 from backend.services.optimization.optimization_model import GeneticAlgorithmModel
-from backend.services.optimization.surrogate_model import (
-    CatboostSurrogateModel,
-    ISurrogateModel,
-)
+from backend.services.optimization.surrogate_model import ISurrogateModel
 from backend.services.simulation._share import (
     IDataExtractor,
     IFileCleaner,
     ISimulationService,
+    job_surrogate_model_path,
 )
 from backend.utils.config import ConfigManager
-
-FEATURE_NAMES = ECMParametersConfig().keys
-
-TARGET_NAMES = [
-    "net_site_eui",
-    "net_source_eui",
-    "total_site_eui",
-    "total_source_eui",
-]
 
 
 class OptimizationService(ISimulationService):
@@ -50,121 +33,40 @@ class OptimizationService(ISimulationService):
         data_extractor: IDataExtractor,
         config: ConfigManager,
         job: SimulationJob,
-        ecm_csv_path: Path | None = None,
     ):
         super().__init__(
             executor, result_parser, file_cleaner, data_extractor, config, job
         )
-        np.random.seed(config.optimization.seed)
-        self._ecm_csv_path = ecm_csv_path or config.paths.ecm_dir / "results.csv"
-        self._ecm_data = pd.read_csv(self._ecm_csv_path)
-        logger.info(f"ECM data loaded from {self._ecm_csv_path}")
-        self._ecm_parameters_names = config.ecm_parameters.keys
-        self._surrogate_model = None
-        self._one_hot_encoder = OneHotEncoder(
-            sparse_output=False, handle_unknown="ignore"
-        )
-        self._prepare_surrogate_models()
+        self._surrogate_model, self._one_hot_encoder = self._load_models()
         self._ecm_apply = ECMApply()
         self._output_apply = OutputApply(config=config)
         self._period_apply = PeriodApply(config=config)
         self._general_apply = GeneralApply(config=config)
 
-        self._predicted_eui = None
+        self._predicted_eui: float | None = None
 
-    def _prepare_surrogate_models(self) -> None:
-        surrogate_model_path = (
-            self._config.paths.optimization_dir
-            / str(self._job.idf_file.building_type)
-            / "surrogate_model.pkl"
+    def _load_models(self) -> tuple[ISurrogateModel, OneHotEncoder]:
+        surrogate_model_path = job_surrogate_model_path(
+            self._config, self._job.idf_file.city, self._job.idf_file.building_type
         )
+        encode_model_path = self._config.paths.sim_dir / "encode_model.pkl"
+        for path in [surrogate_model_path, encode_model_path]:
+            if not path.exists():
+                raise FileNotFoundError(f"Required model not found: {path}")
+        logger.info(f"Surrogate model loaded from {surrogate_model_path}")
+        return load(surrogate_model_path), load(encode_model_path)
 
-        encode_model_path = self._config.paths.optimization_dir / "encode_model.pkl"
-        if not encode_model_path.exists():
-            self._one_hot_encoder.fit(self._ecm_data["code"].values.reshape(-1, 1))
-            self._save_encode_model(self._one_hot_encoder, encode_model_path)
-        else:
-            with open(encode_model_path, "rb") as f:
-                self._one_hot_encoder = load(f)
-
-        if surrogate_model_path.exists():
-            with open(surrogate_model_path, "rb") as f:
-                self._surrogate_model = load(f)
-            return
-
-        group_data = self._ecm_data.groupby("building_type")
-        for building_type, data in group_data:
-            if len(data) < 2:
-                logger.warning(
-                    f"Skipping {building_type}: insufficient samples ({len(data)})"
-                )
-                continue
-            surrogate_model = CatboostSurrogateModel(config=self._config)
-            categorical_features = self._one_hot_encoder.transform(
-                data["code"].values.reshape(-1, 1)
-            )
-            x = np.concatenate(
-                [
-                    data[FEATURE_NAMES].values.astype(np.float32),
-                    categorical_features,
-                ],
-                axis=1,
-            )
-            y = data[TARGET_NAMES].values.astype(np.float32)
-            surrogate_model.train(x, y)
-
-            bt_model_path = (
-                self._config.paths.optimization_dir
-                / str(building_type)
-                / "surrogate_model.pkl"
-            )
-
-            evaluate_file_path = bt_model_path.parent / "evaluate.json"
-            evaluate_file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(
-                file=evaluate_file_path,
-                mode="w",
-                encoding="utf-8",
-            ) as f:
-                evaluate_metrics = surrogate_model.evaluate()
-                json.dump(evaluate_metrics, f, indent=4)
-
-            if str(building_type) == str(self._job.idf_file.building_type):
-                self._surrogate_model = surrogate_model
-            logger.info(f"Surrogate model trained for building type {building_type}")
-            self._save_surrogate_model(surrogate_model, bt_model_path)
-
-    def _save_surrogate_model(
-        self, surrogate_model: ISurrogateModel, surrogate_model_path: Path
-    ) -> None:
-        surrogate_model_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(surrogate_model_path, "wb") as f:
-            dump(surrogate_model, f)
-            logger.info(f"Surrogate model saved to {surrogate_model_path}")
-
-    def _save_encode_model(
-        self, encode_model: OneHotEncoder, encode_model_path: Path
-    ) -> None:
-        encode_model_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(encode_model_path, "wb") as f:
-            dump(encode_model, f)
-            logger.info(f"Encode model saved to {encode_model_path}")
-
-    def _get_best_ecm_parameters(self):
-        building_type = self._job.idf_file.building_type
-        surrogate_model = self._surrogate_model
-        if surrogate_model is None:
-            raise ValueError("Surrogate model not found")
+    def _get_best_ecm_parameters(self) -> None:
         optimization_model = GeneticAlgorithmModel(
             config=self._config,
-            surrogate_model=surrogate_model,
+            surrogate_model=self._surrogate_model,
             encode_model=self._one_hot_encoder,
             code=self._job.weather_file.code,
         )
         best_ecm, predicted_eui = optimization_model.optimize(
-            building_type=building_type
+            building_type=self._job.idf_file.building_type
         )
-        self._predicted_eui = predicted_eui
+        self.predicted_eui = predicted_eui
         self._job = self._job.model_copy(update={"ecm_parameters": best_ecm})
 
     def prepare(self) -> None:
