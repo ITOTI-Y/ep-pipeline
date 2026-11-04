@@ -66,7 +66,7 @@ class OptimizationService(ISimulationService):
         best_ecm, predicted_eui = optimization_model.optimize(
             building_type=self._job.idf_file.building_type
         )
-        self.predicted_eui = predicted_eui
+        self._predicted_eui = predicted_eui
         self._job = self._job.model_copy(update={"ecm_parameters": best_ecm})
 
     def prepare(self) -> None:
