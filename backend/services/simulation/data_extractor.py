@@ -70,6 +70,8 @@ class DataExtractor(IDataExtractor):
 
         parquet_path = sql_path.with_suffix(".parquet")
         n_rows, n_variables = self.extract_to_parquet(sql_path, parquet_path)
+        if n_rows == 0:
+            raise ValueError("No data extracted from EnergyPlus SQL output")
         logger.success(
             f"Extracted {n_rows} rows "
             f"({n_variables} variables/meters) to {parquet_path}"
