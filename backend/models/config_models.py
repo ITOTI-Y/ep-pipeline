@@ -263,6 +263,23 @@ class GeneticAlgorithmConfig(BaseModel):
     )
 
 
+class RelaxationConfig(BaseModel):
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
+    rmse_multiplier: float = Field(
+        default=1.0,
+        ge=0.0,
+        description="Allowed rise of the predicted EUI as a multiple of the "
+        "surrogate RMSE",
+    )
+    reference_values: dict[str, float] = Field(
+        default_factory=dict,
+        description="Preferred value of each parameter when it does not affect "
+        "the EUI: the most comfortable or the least-upgrade level",
+    )
+
+
 class OptimizationConfig(BaseModel):
     model_config = ConfigDict(
         validate_assignment=True,
@@ -271,4 +288,7 @@ class OptimizationConfig(BaseModel):
     seed: int = Field(description="Random seed")
     genetic: GeneticAlgorithmConfig = Field(
         default_factory=GeneticAlgorithmConfig, description="Genetic configuration"
+    )
+    relaxation: RelaxationConfig = Field(
+        default_factory=RelaxationConfig, description="Relaxation configuration"
     )

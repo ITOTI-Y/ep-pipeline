@@ -68,6 +68,69 @@ class GeneticAlgorithmModel(IOptimizationModel):
         features = np.concatenate([[features], code_encoded], axis=1)
         return features
 
+    def predict(self, ecm_parameters: ECMParameters) -> float:
+        features = self._encode_to_features(ecm_parameters)
+        return float(self._surrogate_model.predict(features)[0, 2])
+
+    def relax_to_reference(
+        self,
+        best_ecm: ECMParameters,
+        best_fitness: float,
+        reference_values: dict[str, float],
+        tolerance: float,
+    ) -> tuple[ECMParameters, float]:
+        """Move parameters of the optimum to their reference values.
+
+        Parameters are tried in order of the predicted EUI after moving each one
+        alone, and a move is kept while the predicted EUI stays within
+        ``tolerance`` of ``best_fitness``.
+
+        Args:
+            best_ecm: Optimum found by the genetic algorithm.
+            best_fitness: Predicted EUI of ``best_ecm``.
+            reference_values: Reference value of each parameter that may move.
+            tolerance: Allowed rise of the predicted EUI in kWh/m².
+
+        Returns:
+            Relaxed parameters and their predicted EUI.
+
+        Raises:
+            ValueError: If a reference value is not one of the parameter levels.
+        """
+        for name, value in reference_values.items():
+            if value not in self._ecm_parameters[name]:
+                raise ValueError(
+                    f"Reference value {value} of {name} is not in "
+                    f"{self._ecm_parameters[name]}"
+                )
+
+        def with_reference(ecm_parameters: ECMParameters, name: str) -> ECMParameters:
+            return ECMParameters.model_validate(
+                {**ecm_parameters.model_dump(), name: reference_values[name]}
+            )
+
+        candidates = sorted(
+            (
+                name
+                for name, value in reference_values.items()
+                if getattr(best_ecm, name) != value
+            ),
+            key=lambda name: self.predict(with_reference(best_ecm, name)),
+        )
+        relaxed, relaxed_fitness = best_ecm, best_fitness
+
+        for name in candidates:
+            trial = with_reference(relaxed, name)
+            trial_fitness = self.predict(trial)
+            if trial_fitness - best_fitness <= tolerance:
+                relaxed, relaxed_fitness = trial, trial_fitness
+
+        logger.info(
+            f"Relaxed parameters: {relaxed}, predicted EUI "
+            f"{best_fitness:.2f} -> {relaxed_fitness:.2f}"
+        )
+        return relaxed, relaxed_fitness
+
     def _create_individual(self, icls: type[list]) -> list:
         individual = icls(
             np.random.randint(0, max_idx + 1) for max_idx in self._max_indices

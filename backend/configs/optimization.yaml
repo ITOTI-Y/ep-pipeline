@@ -1,6 +1,21 @@
 optimization:
   seed: 0
 
+  relaxation:
+    rmse_multiplier: 1.0
+    reference_values:
+      window_shgc: 0.8
+      window_u_value: 3
+      visible_transmittance: 0.7
+      wall_insulation: 1
+      infiltration_rate: 1.5
+      natural_ventilation_area: 2.4
+      cooling_cop: 3.5
+      heating_cop: 3.5
+      cooling_air_temperature: 16
+      heating_air_temperature: 32
+      lighting_power_reduction_level: 1
+
   genetic:
     generations: 200
     population_size: 200

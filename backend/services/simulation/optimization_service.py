@@ -1,7 +1,10 @@
+import json
+
 from joblib import load
 from loguru import logger
 from sklearn.preprocessing import OneHotEncoder
 
+from backend._share import TARGET_NAMES
 from backend.models import SimulationJob, SimulationResult
 from backend.services.configuration import (
     ECMApply,
@@ -56,6 +59,16 @@ class OptimizationService(ISimulationService):
         logger.info(f"Surrogate model loaded from {surrogate_model_path}")
         return load(surrogate_model_path), load(encode_model_path)
 
+    def _surrogate_rmse(self) -> float:
+        evaluate_path = (
+            job_surrogate_model_path(
+                self._config, self._job.idf_file.city, self._job.idf_file.building_type
+            ).parent
+            / "evaluate.json"
+        )
+        target_index = TARGET_NAMES.index("total_site_eui")
+        return json.loads(evaluate_path.read_text())[f"output_{target_index + 1}_rmse"]
+
     def _get_best_ecm_parameters(self) -> None:
         optimization_model = GeneticAlgorithmModel(
             config=self._config,
@@ -65,6 +78,13 @@ class OptimizationService(ISimulationService):
         )
         best_ecm, predicted_eui = optimization_model.optimize(
             building_type=self._job.idf_file.building_type
+        )
+        relaxation = self._config.optimization.relaxation
+        best_ecm, predicted_eui = optimization_model.relax_to_reference(
+            best_ecm=best_ecm,
+            best_fitness=predicted_eui,
+            reference_values=relaxation.reference_values,
+            tolerance=relaxation.rmse_multiplier * self._surrogate_rmse(),
         )
         self._predicted_eui = predicted_eui
         self._job = self._job.model_copy(update={"ecm_parameters": best_ecm})
